@@ -19,11 +19,14 @@ class DatabaseSeeder extends Seeder
         // Jalankan seeder admin terlebih dahulu
         $this->call([
             AdminUserSeeder::class,
+            AdminStockSeeder::class,
         ]);
 
         // Akun yang dipertahankan
         $keep = [
             'admin@admin.com',
+            'adminstock@admin.com',
+            'AdminArStock@gmail.com',
             'admsvc.cwi.dca@gmail.com',
             'admsvc.cjr.dca@gmail.com',
             'admsvc.cnr.dca@gmail.com',
@@ -31,11 +34,31 @@ class DatabaseSeeder extends Seeder
             'admbp.dcajts@gmail.com',
         ];
 
+        // Pastikan akun Admin Stock tetap ada meski data user lain dibersihkan
+        User::updateOrCreate(
+            ['email' => 'adminstock@admin.com'],
+            [
+                'name' => 'Admin Stock',
+                'password' => bcrypt('AdminStock123!'),
+                'branch' => 'stock',
+                'is_admin' => false,
+                'is_admin_stock' => true,
+            ]
+        );
+
         // Hapus user lain yang tidak ada dalam daftar
         DB::table('users')->whereNotIn('email', $keep)->delete();
 
         // Data user cabang
         $users = [
+            [
+                'branch' => 'admin',
+                'email' => 'AdminArStock@gmail.com',
+                'name' => 'Admin AR Stock',
+                'password' => 'AdminArStock123!',
+                'is_admin' => true,
+                'is_admin_stock' => true,
+            ],
             [
                 'branch' => 'ciawi',
                 'email' => 'admsvc.cwi.dca@gmail.com',
@@ -77,7 +100,8 @@ class DatabaseSeeder extends Seeder
                     'name' => $u['name'],
                     'password' => bcrypt($u['password']),
                     'branch' => $u['branch'],
-                    'is_admin' => false,
+                    'is_admin' => $u['is_admin'] ?? false,
+                    'is_admin_stock' => $u['is_admin_stock'] ?? false,
                 ]
             );
         }

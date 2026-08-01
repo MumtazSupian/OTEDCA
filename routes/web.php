@@ -25,7 +25,7 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware('auth')->group(function () {
-    
+
     Route::get('/', function () {
         return redirect('/dashboard');
     });
@@ -54,7 +54,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('asuransi', AsuransiController::class);
         Route::resource('users', UserController::class);
         Route::resource('perusahaan', PerusahaanController::class);
-        
+
         Route::get('stocks/report', [StockController::class, 'report'])->name('stocks.report');
         Route::get('stocks/report/export-pdf', [StockController::class, 'exportReportPdf'])->name('stocks.report.exportPdf');
         Route::get('stocks/report/export-excel', [StockController::class, 'exportReportExcel'])->name('stocks.report.exportExcel');
@@ -62,7 +62,7 @@ Route::middleware('auth')->group(function () {
         Route::get('stocks/export-excel', [StockController::class, 'exportExcel'])->name('stocks.exportExcel');
         Route::get('stocks/print', [StockController::class, 'print'])->name('stocks.print');
         Route::resource('stocks', StockController::class);
-        
+
         Route::resource('units', UnitController::class);
         Route::resource('varians', VarianController::class);
         Route::resource('warnas', WarnaController::class);
@@ -73,12 +73,12 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::prefix('dev-tools')->group(function () {
-        
+
         Route::get('/bersihin-cache-it', function() {
             Artisan::call('config:clear');
             return "MANTAP! Cache .env Suzuki Duta Cendana berhasil dihapus tanpa terminal!";
         });
-           
+
         Route::get('/jalankan-inunit-seeder', function () {
             Artisan::call('db:seed', ['--class' => 'InUnitSeeder']);
             return '<h1>SELESAI!</h1>
@@ -91,6 +91,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/panggil-semua-seeder', function () {
             Artisan::call('db:seed', ['--class' => 'AdminStockSeeder']);
             Artisan::call('db:seed', ['--class' => 'InUnitSeeder']);
+            Artisan::call('db:seed', ['--class' => 'DatabaseSeeder']);
             return "Sukses! Admin Stock dan Admin In Unit berhasil dipanggil kembali dari kematian. Silakan login!";
         });
 
