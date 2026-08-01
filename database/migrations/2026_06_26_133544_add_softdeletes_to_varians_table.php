@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('varians', function (Blueprint $table) {
-            $table->softDeletes(); // adds deleted_at column
-        });
+        if (Schema::hasTable('varians') && !Schema::hasColumn('varians', 'deleted_at')) {
+            Schema::table('varians', function (Blueprint $table) {
+                $table->softDeletes();
+            });
+        }
     }
 
     /**

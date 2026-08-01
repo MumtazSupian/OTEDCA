@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('warnas', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama');
-            $table->text('deskripsi')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('units')) {
+            Schema::create('units', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama');
+                $table->text('deskripsi')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**
@@ -24,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('warnas');
+        Schema::dropIfExists('units');
     }
 };

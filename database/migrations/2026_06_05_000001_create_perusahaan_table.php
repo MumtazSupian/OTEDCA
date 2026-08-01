@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (Schema::hasTable('in_units') && !Schema::hasColumn('in_units', 'created_at')) {
-            Schema::table('in_units', function (Blueprint $table) {
+        if (!Schema::hasTable('perusahaan')) {
+            Schema::create('perusahaan', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama');
+                $table->text('deskripsi')->nullable();
+                $table->integer('overdue')->default(28);
                 $table->timestamps();
             });
         }
@@ -23,8 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('in_units', function (Blueprint $table) {
-            $table->dropTimestamps();
-        });
+        Schema::dropIfExists('perusahaan');
     }
 };
