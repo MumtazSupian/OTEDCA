@@ -27,6 +27,8 @@ return new class extends Migration
                 $table->unsignedBigInteger('warna_id')->nullable();
                 $table->foreign('warna_id')->references('id')->on('warnas')->onDelete('set null');
                 $table->string('kode_mobil')->nullable();
+                $table->string('nama_mobil')->nullable();
+                $table->string('warna')->nullable();
                 $table->integer('tahun')->nullable();
                 $table->string('chassis_code')->nullable();
                 $table->string('norangka')->nullable();
@@ -39,6 +41,7 @@ return new class extends Migration
                 $table->bigInteger('acs2')->nullable();
                 $table->bigInteger('subsidi')->nullable();
                 $table->bigInteger('hpp')->nullable();
+                $table->string('lokasi')->nullable();
                 $table->string('estimasi_unit_masuk_gudang_dca')->nullable();
                 $table->string('status')->nullable();
                 $table->string('lain_lain')->nullable();

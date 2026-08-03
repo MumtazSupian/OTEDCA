@@ -118,16 +118,18 @@ body {
 .nav-link.active { background: rgba(239,68,68,.13); color: var(--accent-red); }
 .nav-link svg { width: 18px; height: 18px; flex-shrink: 0; }
 
-.nav-arrow { margin-left: auto; transition: transform .3s ease; }
-.nav-group.open .nav-arrow { transform: rotate(0deg); }
-.nav-group:not(.open) .nav-arrow { transform: rotate(180deg); }
+.nav-arrow { margin-left: auto; transition: transform .3s ease; flex-shrink: 0; }
+.nav-group > .nav-link .nav-arrow,
+.nav-group > .nav-toggle .nav-arrow { transform: rotate(-90deg); }
+.nav-group.open > .nav-link .nav-arrow,
+.nav-group.open > .nav-toggle .nav-arrow { transform: rotate(0deg); }
 
 .nav-submenu {
     max-height: 0; overflow: hidden;
     transition: max-height .3s ease;
-    padding-left: 18px;
+    padding-left: 14px;
 }
-.nav-group.open .nav-submenu { max-height: 200px; }
+.nav-group.open > .nav-submenu { max-height: 2000px; }
 
 .nav-sublink {
     display: flex; align-items: center; gap: 8px;
