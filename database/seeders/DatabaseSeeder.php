@@ -20,9 +20,9 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AdminUserSeeder::class,
             AdminStockSeeder::class,
+            InUnitSeeder::class,
         ]);
 
-        // Akun yang dipertahankan
         $keep = [
             'admin@admin.com',
             'adminstock@admin.com',
@@ -32,6 +32,8 @@ class DatabaseSeeder extends Seeder
             'admsvc.cnr.dca@gmail.com',
             'admsvc.jts.dca@gmail.com',
             'admbp.dcajts@gmail.com',
+            'inunit.jatiasih@suzuki.com',
+            'inunit.cinere@suzuki.com',
         ];
 
         // Pastikan akun Admin Stock tetap ada meski data user lain dibersihkan

@@ -23,6 +23,7 @@ class User extends Authenticatable
         'password',
         'branch',
         'is_admin',
+        'is_admin_stock',
     ];
 
     /**
@@ -46,6 +47,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'is_admin_stock' => 'boolean',
         ];
     }
 }
