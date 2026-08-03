@@ -27,6 +27,7 @@ return new class extends Migration
                 $table->unsignedBigInteger('warna_id')->nullable();
                 $table->foreign('warna_id')->references('id')->on('warnas')->onDelete('set null');
                 $table->string('kode_mobil')->nullable();
+                $table->string('nama_mobil')->nullable();
                 $table->integer('tahun')->nullable();
                 $table->string('chassis_code')->nullable();
                 $table->string('norangka')->nullable();
