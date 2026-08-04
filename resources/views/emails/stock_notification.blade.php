@@ -5,8 +5,8 @@
         body { font-family: sans-serif; color: #333; line-height: 1.6; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
         th, td { border: 1px solid #ddd; padding: 8px 6px; text-align: left; }
-        th { background-color: #1e293b; color: white; text-transform: uppercase; font-size: 10px; }
-        .header { background: #1e293b; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        th { background-color: #1e293b; color: #1e293b; font-weight:800; text-transform: uppercase; font-size: 10px; }
+        .header { background: #1e293b; color: #1e293b; font-weight:800; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .content { padding: 20px; border: 1px solid #ddd; border-top: none; }
         .text-center { text-align: center; }
     </style>
@@ -78,8 +78,8 @@
         body { font-family: sans-serif; color: #333; line-height: 1.6; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
         th, td { border: 1px solid #ddd; padding: 8px 6px; text-align: left; }
-        th { background-color: #1e293b; color: white; text-transform: uppercase; font-size: 10px; }
-        .header { background: #1e293b; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        th { background-color: #1e293b; color: #1e293b; font-weight:800; text-transform: uppercase; font-size: 10px; }
+        .header { background: #1e293b; color: #1e293b; font-weight:800; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .content { padding: 20px; border: 1px solid #ddd; border-top: none; }
         .text-center { text-align: center; }
     </style>
@@ -97,8 +97,8 @@
             <h3 style="margin-top: 20px; color: #1e293b; font-size: 14px;">Ringkasan Data Kendaraan Stock</h3>
             <table width="100%" style="margin-bottom: 20px; border-collapse: separate; border-spacing: 10px 0;">
                 <tr>
-                    <td style="padding: 15px; background: #eff6ff; border-left: 4px solid #3b82f6; text-align:center;">
-                        <h3 style="margin:0; color:#3b82f6; font-size:18px;">{{ $dashboardData['totalStock'] }}</h3>
+                    <td style="padding: 15px; background: #eff6ff; border-left: 4px solid #dc2626; text-align:center;">
+                        <h3 style="margin:0; color:#dc2626; font-size:18px;">{{ $dashboardData['totalStock'] }}</h3>
                         <span style="font-size:12px; color:#555;">Total Stock</span>
                     </td>
                     <td style="padding: 15px; background: #ecfdf5; border-left: 4px solid #10b981; text-align:center;">

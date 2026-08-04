@@ -20,9 +20,9 @@
         {{-- Total Piutang --}}
         <div class="stat-card">
             <div class="stat-icon" style="background:rgba(59,130,246,.15); display: flex; align-items: center; justify-content: center;">
-                <i class="fas fa-calculator" style="color: #3b82f6; font-size: 1.5rem;"></i>
+                <i class="fas fa-calculator" style="color: #dc2626; font-size: 1.5rem;"></i>
             </div>
-            <div class="stat-value" style="color:#3b82f6;">Rp {{ number_format($totalPiutang ?? 0, 0, ',', '.') }}</div>
+            <div class="stat-value" style="color:#dc2626;">Rp {{ number_format($totalPiutang ?? 0, 0, ',', '.') }}</div>
             <div class="stat-label">Total Piutang</div>
         </div>
 
@@ -112,7 +112,7 @@
                     <div
                         style="width:36px;height:36px;background:rgba(59,130,246,.12);border-radius:8px;display:flex;align-items:center;justify-content:center;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                            fill="none" stroke="#3b82f6" stroke-width="2">
+                            fill="none" stroke="#dc2626" stroke-width="2">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                             <polyline points="14 2 14 8 20 8" />
                         </svg>
@@ -222,9 +222,9 @@
         <div class="dashboard-grid">
             <div class="stat-card">
                 <div class="stat-icon" style="background:rgba(59,130,246,.15); display: flex; align-items: center; justify-content: center;">
-                    <i class="fas fa-car" style="color: #3b82f6; font-size: 1.5rem;"></i>
+                    <i class="fas fa-car" style="color: #dc2626; font-size: 1.5rem;"></i>
                 </div>
-                <div class="stat-value" style="color:#3b82f6;">{{ $totalStock ?? 0 }}</div>
+                <div class="stat-value" style="color:#dc2626;">{{ $totalStock ?? 0 }}</div>
                 <div class="stat-label">Total Stock</div>
             </div>
 
@@ -307,7 +307,7 @@
                         <div style="position:absolute;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.08);bottom:-20px;left:-20px;"></div>
 
                         {{-- total badge --}}
-                        <div style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.25);backdrop-filter:blur(8px);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:#fff;border:1px solid rgba(255,255,255,0.4); z-index: 10;">
+                        <div style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.25);backdrop-filter:blur(8px);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:#1e293b; font-weight:800;border:1px solid rgba(255,255,255,0.4); z-index: 10;">
                             {{ $mobil->total }} Unit
                         </div>
 

@@ -5,8 +5,8 @@
         body { font-family: sans-serif; color: #333; line-height: 1.6; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
         th, td { border: 1px solid #ddd; padding: 8px 6px; text-align: left; }
-        th { background-color: #1e293b; color: white; text-transform: uppercase; font-size: 10px; }
-        .header { background: #1e293b; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        th { background-color: #1e293b; color: #1e293b; font-weight:800; text-transform: uppercase; font-size: 10px; }
+        .header { background: #1e293b; color: #1e293b; font-weight:800; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .content { padding: 20px; border: 1px solid #ddd; border-top: none; }
         .text-center { text-align: center; }
     </style>

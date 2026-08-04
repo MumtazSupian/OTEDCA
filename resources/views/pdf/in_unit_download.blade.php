@@ -8,7 +8,7 @@
         h2 { text-align: center; margin-bottom: 2px; font-size: 14px; }
         p.subtitle { text-align: center; font-size: 10px; margin-top: 0; margin-bottom: 10px; color: #666; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th, td { border: 1px solid #000; padding: 4px 2px; text-align: left; vertical-align: middle; word-wrap: break-word; }
+        th, td { border: 1px solid #cbd5e1; padding: 4px 2px; text-align: left; vertical-align: middle; word-wrap: break-word; }
         th { background-color: #1e293b; color: #ffffff; font-size: 7px; text-transform: uppercase; text-align: center; }
         .text-center { text-align: center; }
     </style>

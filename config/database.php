@@ -64,6 +64,21 @@ return [
             ]) : [],
         ],
 
+        'dms' => [
+            'driver'                  => 'sqlsrv',
+            'url'                     => env('DMS_DATABASE_URL'),
+            'host'                    => env('DMS_DB_HOST', '36.95.146.107'),
+            'port'                    => env('DMS_DB_PORT', '24835'),
+            'database'                => env('DMS_DB_DATABASE', 'DCA'),
+            'username'                => env('DMS_DB_USERNAME', 'DCACJR'),
+            'password'                => env('DMS_DB_PASSWORD', 'DCA5FB2435DCA123'),
+            'charset'                 => 'utf8',
+            'prefix'                  => '',
+            'prefix_indexes'          => true,
+            'encrypt'                 => env('DB_ENCRYPT', 'yes'),
+            'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'true'),
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),

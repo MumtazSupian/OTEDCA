@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Piutang;
+use App\Models\Finance\Piutang;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 

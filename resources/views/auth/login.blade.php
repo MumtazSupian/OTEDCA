@@ -14,7 +14,7 @@
             --text-main: #1e293b;
             --text-muted: #64748b;
             --accent-red: #dc2626;
-            --border-color: #e2e8f0;
+            --border-color: #0f172a;
         }
 
         body {

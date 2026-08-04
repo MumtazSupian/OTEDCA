@@ -1,18 +1,52 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\PiutangController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\AsuransiController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\PerusahaanController;
-use App\Http\Controllers\StockController;
-use App\Http\Controllers\UnitController;
-use App\Http\Controllers\VarianController;
-use App\Http\Controllers\WarnaController;
-use App\Http\Controllers\Admin\GudangController;
-use App\Http\Controllers\Admin\CabangController;
+// Finance Controllers
+use App\Http\Controllers\Finance\PiutangController;
+use App\Http\Controllers\Finance\AsuransiController;
+use App\Http\Controllers\Finance\UserController;
+use App\Http\Controllers\Finance\PerusahaanController;
+// Sales Controllers
+use App\Http\Controllers\Sales\StockController;
+use App\Http\Controllers\Sales\UnitController;
+use App\Http\Controllers\Sales\VarianController;
+use App\Http\Controllers\Sales\WarnaController;
+use App\Http\Controllers\Sales\GudangController;
+use App\Http\Controllers\Sales\CabangController;
+use App\Http\Controllers\Sales\InUnitController;
+// Sales VSV
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Sales\vsv\rka\TargetDoUnitController;
+use App\Http\Controllers\Sales\vsv\rka\TargetSalesforceController;
+use App\Http\Controllers\Sales\vsv\rka\TargetInquiryController;
+use App\Http\Controllers\Sales\vsv\rka\TargetDoBySoiController;
+
+use App\Http\Controllers\Sales\vsv\TargetRkaController;
+use App\Http\Controllers\Sales\vsv\ActualController;
+
+use App\Http\Controllers\Sales\vsv\leasing\AktualAplikasiInController;
+use App\Http\Controllers\Sales\vsv\leasing\AktualPoController;
+use App\Http\Controllers\Sales\vsv\leasing\AktualRejectController;
+
+use App\Http\Controllers\Sales\vsv\activity\PlanActivityController;
+use App\Http\Controllers\Sales\vsv\activity\ActualActivityController;
+
+use App\Http\Controllers\Sales\vsv\current\ActualDoByTypeController;
+use App\Http\Controllers\Sales\vsv\current\ActualDoSalesForceController;
+use App\Http\Controllers\Sales\vsv\current\ActualInquaryByTypeController;
+use App\Http\Controllers\Sales\vsv\current\ActualSalesByLeasingController;
+use App\Http\Controllers\Sales\vsv\current\ActualSalesForceController;
+use App\Http\Controllers\Sales\vsv\current\ActualSourceDoInquaryController;
+use App\Http\Controllers\Sales\vsv\current\ActualSourceInquaryController;
+use App\Http\Controllers\Sales\vsv\current\ActualSpkByTypeController;
+
+use App\Http\Controllers\Sales\vsv\evaluasi\EvaluasiWiraniagaController;
+
+use App\Http\Controllers\Sales\vsv\summary\SummaryController;
+use App\Http\Controllers\Sales\vsv\summary\SummaryActionController;
+
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
@@ -31,6 +65,11 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/finance/dashboard', [\App\Http\Controllers\Finance\DashboardController::class, 'index'])->name('finance.dashboard');
+    Route::get('/sales/dashboard', [\App\Http\Controllers\Sales\DashboardController::class, 'index'])->name('sales.dashboard');
+    Route::get('/sales/vsv/dashboard/v1', [\App\Http\Controllers\Sales\vsv\DashboardController::class, 'v1'])->name('sales.vsv.dashboard.v1');
+    Route::get('/sales/vsv/dashboard/v1/export-pdf', [\App\Http\Controllers\Sales\vsv\DashboardController::class, 'exportPdfV1'])->name('sales.vsv.dashboard.v1.export_pdf');
+    Route::get('/sales/vsv/dashboard/v2', [\App\Http\Controllers\Sales\vsv\DashboardController::class, 'v2'])->name('sales.vsv.dashboard.v2');
 
     Route::get('/bp', [PiutangController::class, 'indexBp']);
     Route::post('/bp', [PiutangController::class, 'storeBp']);
@@ -47,7 +86,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/asuransi/list', function () {
-        return \App\Models\Asuransi::select('id', 'nama')->orderBy('nama')->get();
+        return \App\Models\Finance\Asuransi::select('id', 'nama')->orderBy('nama')->get();
     })->name('asuransi.list');
 
     Route::prefix('admin')->name('admin.')->group(function () {
@@ -68,9 +107,147 @@ Route::middleware('auth')->group(function () {
         Route::resource('warnas', WarnaController::class);
         Route::resource('gudangs', GudangController::class);
         Route::resource('cabangs', CabangController::class);
-        Route::resource('in-units', \App\Http\Controllers\InUnitController::class);
-        Route::get('in-units/export-excel', [\App\Http\Controllers\InUnitController::class, 'exportExcel'])->name('in-units.exportExcel');
+        Route::resource('in-units', InUnitController::class);
+        Route::get('in-units/export-excel', [InUnitController::class, 'exportExcel'])->name('in-units.exportExcel');
     });
+
+Route::middleware(['auth', 'no-direct'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/v1', [DashboardController::class, 'v1'])->name('dashboard.v1');
+    Route::get('/dashboard/v2', [DashboardController::class, 'v2'])->name('dashboard.v2');
+
+    Route::resource('users', UserController::class);
+
+    Route::prefix('target')->group(function () {
+        Route::get('/salesforce', [TargetRkaController::class, 'salesforce'])->name('target.salesforce');
+        Route::get('/do-unit', [TargetRkaController::class, 'doUnit'])->name('target.do_unit');
+        Route::get('/do-by-soi', [TargetRkaController::class, 'doBySoi'])->name('target.do_by_soi');
+    });
+
+    Route::prefix('actual')->name('actual.')->group(function () {
+        Route::get('/do-by-type', [ActualController::class, 'doByType'])->name('do_by_type');
+        Route::get('/spk-by-type', [ActualController::class, 'spkByType'])->name('spk_by_type');
+        Route::get('/inquiry-by-type', [ActualController::class, 'inquiryByType'])->name('inquiry_by_type');
+        Route::get('/source-inquiry', [ActualController::class, 'sourceInquiry'])->name('source_inquiry');
+        Route::get('/source-do-inquiry', [ActualController::class, 'sourceDoInquiry'])->name('source_do_inquiry');
+        Route::get('/salesforces', [ActualController::class, 'salesforces'])->name('salesforces');
+        Route::get('/do-salesforces', [ActualController::class, 'doSalesforces'])->name('do_salesforces');
+        Route::get('/sales-by-leasing', [ActualController::class, 'salesByLeasing'])->name('sales_by_leasing');
+    });
+
+    Route::prefix('rka')->name('rka.')->group(function () {
+        Route::get('/dashboard', function () {
+            return view('rka.dashboard_rka');
+        });
+        Route::get('target-do-unit/export-pdf', [TargetDoUnitController::class, 'exportPdf'])->name('target-do-unit.pdf');
+        Route::get('target-do-unit/export-excel', [TargetDoUnitController::class, 'exportExcel'])->name('target-do-unit.excel');
+        Route::get('target-inquiries/export-pdf', [TargetInquiryController::class, 'exportPdf'])->name('target-inquiries.pdf');
+        Route::get('target-inquiries/export-excel', [TargetInquiryController::class, 'exportExcel'])->name('target-inquiries.excel');
+        Route::get('target-do-by-soi/pdf', [TargetDoBySoiController::class, 'exportPdf'])->name('target-do-by-soi.pdf');
+        Route::get('target-do-by-soi/excel', [TargetDoBySoiController::class, 'exportExcel'])->name('target-do-by-soi.excel');
+        Route::get('target-salesforces/pdf', [TargetSalesforceController::class, 'exportPdf'])->name('target-salesforces.pdf');
+        Route::get('target-salesforces/excel', [TargetSalesforceController::class, 'exportExcel'])->name('target-salesforces.excel');
+        Route::resource('target-do-units', TargetDoUnitController::class);
+        Route::resource('target-salesforces', TargetSalesforceController::class);
+        Route::resource('target-inquiries', TargetInquiryController::class);
+        Route::resource('target-do-by-soi', TargetDoBySoiController::class);
+    });
+
+    Route::prefix('leasing')->name('leasing.')->group(function () {
+        Route::get('/dashboard', function () {
+            return view('leasing.dashboard_leasing');
+        });
+        Route::get('aktual-aplikasi-in/export-pdf', [AktualAplikasiInController::class, 'exportPdf'])->name('aktual-aplikasi-in.pdf');
+        Route::get('aktual-aplikasi-in/export-excel', [AktualAplikasiInController::class, 'exportExcel'])->name('aktual-aplikasi-in.excel');
+        Route::get('aktual-po/export-excel', [AktualPoController::class, 'exportExcel'])->name('aktual-po.excel');
+        Route::get('aktual-po/export-pdf', [AktualPoController::class, 'exportPdf'])->name('aktual-po.pdf');
+        Route::get('aktual-reject/export-excel', [AktualRejectController::class, 'exportExcel'])->name('aktual-reject.excel');
+        Route::get('aktual-reject/export-pdf', [AktualRejectController::class, 'exportPdf'])->name('aktual-reject.pdf');
+        Route::resource('aktual-aplikasi-in', AktualAplikasiInController::class);
+        Route::resource('aktual-po', AktualPoController::class);
+        Route::resource('aktual-reject', AktualRejectController::class);
+    });
+
+
+    Route::prefix('activity')->name('activity.')->group(function () {
+        Route::get('/dashboard', function () {
+            return view('activity.dashboard_activity');
+        });
+        Route::get('plan/export-excel', [PlanActivityController::class, 'exportExcel'])->name('plan.excel');
+        Route::get('plan/export-pdf', [PlanActivityController::class, 'exportPdf'])->name('plan.pdf');
+        
+        Route::get('actual/export-excel', [ActualActivityController::class, 'exportExcel'])->name('actual.excel');
+        Route::get('actual/export-pdf', [ActualActivityController::class, 'exportPdf'])->name('actual.pdf');
+
+        Route::resource('plan', PlanActivityController::class);
+        Route::resource('actual', ActualActivityController::class);
+    });
+
+
+    Route::prefix('current')->name('current.')->group(function () {
+        Route::get('/dashboard', function () {
+            return view('current.dashboard_current');
+        });
+        Route::get('/actual-do-by-type/export-excel', [ActualDoByTypeController::class, 'exportExcel'])->name('actual-do-by-type.excel');
+        Route::get('/actual-do-by-type/export-pdf', [ActualDoByTypeController::class, 'exportPdf'])->name('actual-do-by-type.pdf');
+        Route::get('/actual-do-salesforces/export-excel', [ActualDoSalesForceController::class, 'exportExcel'])->name('actual-do-salesforces.excel');
+        Route::get('/actual-do-salesforces/export-pdf', [ActualDoSalesForceController::class, 'exportPdf'])->name('actual-do-salesforces.pdf');
+        Route::get('/actual-inquary-by-type/export-excel', [ActualInquaryByTypeController::class, 'exportExcel'])->name('actual-inquary-by-type.excel');
+        Route::get('/actual-inquary-by-type/export-pdf', [ActualInquaryByTypeController::class, 'exportPdf'])->name('actual-inquary-by-type.pdf');
+        Route::get('/actual-sales-by-leasing/export-excel', [ActualSalesByLeasingController::class, 'exportExcel'])->name('actual-sales-by-leasing.excel');
+        Route::get('/actual-sales-by-leasing/export-pdf', [ActualSalesByLeasingController::class, 'exportPdf'])->name('actual-sales-by-leasing.pdf');
+        Route::get('/actual-salesforces/export-excel', [ActualSalesForceController::class, 'exportExcel'])->name('actual-salesforces.excel');
+        Route::get('/actual-salesforces/export-pdf', [ActualSalesForceController::class, 'exportPdf'])->name('actual-salesforces.pdf');
+        Route::get('/actual-source-do-inquary/export-excel', [ActualSourceDoInquaryController::class, 'exportExcel'])->name('actual-source-do-inquary.excel');
+        Route::get('/actual-source-do-inquary/export-pdf', [ActualSourceDoInquaryController::class, 'exportPdf'])->name('actual-source-do-inquary.pdf');
+        Route::get('/actual-source-inquary/export-excel', [ActualSourceInquaryController::class, 'exportExcel'])->name('actual-source-inquary.excel');
+        Route::get('/actual-source-inquary/export-pdf', [ActualSourceInquaryController::class, 'exportPdf'])->name('actual-source-inquary.pdf');
+        Route::get('/actual-spk-by-type/export-excel', [ActualSpkByTypeController::class, 'exportExcel'])->name('actual-spk-by-type.excel');
+        Route::get('/actual-spk-by-type/export-pdf', [ActualSpkByTypeController::class, 'exportPdf'])->name('actual-spk-by-type.pdf');
+
+        Route::resource('actual-do-by-type', ActualDoByTypeController::class);
+        Route::resource('actual-do-salesforces', ActualDoSalesForceController::class);
+        Route::resource('actual-inquary-by-type', ActualInquaryByTypeController::class);
+        Route::resource('actual-sales-by-leasing', ActualSalesByLeasingController::class);
+        Route::resource('actual-salesforces', ActualSalesForceController::class);
+        Route::resource('actual-source-do-inquary', ActualSourceDoInquaryController::class);
+        Route::resource('actual-source-inquary', ActualSourceInquaryController::class);
+        Route::resource('actual-spk-by-type', ActualSpkByTypeController::class);
+    });
+
+
+    Route::prefix('evaluasi')->group(function () {
+        Route::get('/dashboard', function () {
+            return redirect()->route('evaluasi.index');
+        });
+        Route::get('/evaluasi/export/excel', [EvaluasiWiraniagaController::class, 'exportExcel'])->name('evaluasi.excel');
+        Route::get('/evaluasi/export/pdf', [EvaluasiWiraniagaController::class, 'exportPdf'])->name('evaluasi.pdf');
+
+        Route::resource('evaluasi', EvaluasiWiraniagaController::class);
+    });
+
+
+    Route::prefix('summary')->name('summary.')->group(function () {
+        Route::get('/dashboard', function () {
+            return view('summary.dashboard_summary');
+        });
+        Route::get('/summary/export/excel', [SummaryController::class, 'exportExcel'])->name('summary.excel');
+        Route::get('/summary/export/pdf', [SummaryController::class, 'exportPdf'])->name('summary.pdf');
+        Route::get('/summary-action/export/excel', [SummaryActionController::class, 'exportExcel'])->name('summary-action.excel');
+        Route::get('/summary-action/export/pdf', [SummaryActionController::class, 'exportPdf'])->name('summary-action.pdf');
+
+        Route::resource('summary', SummaryController::class);
+        Route::resource('summaryaction', SummaryActionController::class);
+    });
+});
+
+Route::fallback(function () {
+    if (Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+
+    return redirect()->route('login');
+});
 
     Route::prefix('dev-tools')->group(function () {
 

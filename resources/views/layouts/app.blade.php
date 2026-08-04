@@ -239,11 +239,12 @@
 
                 @if(auth()->check() && (strtolower(auth()->user()->email) === 'adminarstock@gmail.com' || (auth()->user()->is_admin && auth()->user()->is_admin_stock)))
                     @php
-                        $isSalesActive = request()->is('admin/stocks*') || request()->is('admin/units*') || request()->is('admin/warnas*') || request()->is('admin/varians*') || request()->is('admin/in-units*') || request()->is('admin/gudangs*') || request()->is('admin/cabangs*') || request()->is('sales/*');
-                        $isStockGroupActive = request()->is('admin/stocks*') || request()->is('admin/units*') || request()->is('admin/warnas*') || request()->is('admin/varians*') || request()->is('admin/in-units*') || request()->is('admin/gudangs*') || request()->is('admin/cabangs*');
+                        $isVsvActive = request()->is('sales/vsv*') || request()->is('target*') || request()->is('actual*') || request()->is('rka*') || request()->is('leasing*') || request()->is('activity*') || request()->is('current*') || request()->is('evaluasi*') || request()->is('summary*');
+                        $isSalesActive = request()->is('admin/stocks*') || request()->is('admin/units*') || request()->is('admin/warnas*') || request()->is('admin/varians*') || request()->is('admin/in-units*') || request()->is('admin/gudangs*') || request()->is('admin/cabangs*') || request()->is('sales/*') || $isVsvActive;
+                        $isStockGroupActive = request()->is('admin/stocks*') || request()->is('admin/units*') || request()->is('admin/warnas*') || request()->is('admin/varians*') || request()->is('admin/in-units*') || request()->is('admin/gudangs*') || request()->is('admin/cabangs*') || request()->is('sales/dashboard');
                         $isUnitGroupActive = request()->is('admin/units*') || request()->is('admin/warnas*') || request()->is('admin/varians*');
                         $isFinanceActive = request()->is('admin/users*') || request()->is('admin/asuransi*') || request()->is('admin/perusahaan*') || request()->is('finance/*');
-                        $isArGroupActive = request()->is('admin/users*') || request()->is('admin/asuransi*') || request()->is('admin/perusahaan*');
+                        $isArGroupActive = request()->is('admin/users*') || request()->is('admin/asuransi*') || request()->is('admin/perusahaan*') || request()->is('finance/*');
                     @endphp
 
                     <!-- SALES (menu beranak) -->
@@ -261,7 +262,7 @@
                         </button>
                         <div class="nav-submenu">
                             <!-- VSV (menu beranak) -->
-                            <div class="nav-group {{ request()->is('sales/vsv*') ? 'open' : '' }}" id="vsvMenu">
+                            <div class="nav-group {{ request()->is('dashboard*') || request()->is('target*') || request()->is('actual*') || request()->is('rka*') || request()->is('leasing*') || request()->is('activity*') || request()->is('current*') || request()->is('evaluasi*') || request()->is('summary*') ? 'open' : '' }}" id="vsvMenu">
                                 <button class="nav-link nav-toggle nav-sublink-toggle" onclick="toggleSubmenu('vsvMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 6px 12px; font-size: 12px;">
                                     <span>VSV</span>
                                     <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-left: auto;">
@@ -269,7 +270,14 @@
                                     </svg>
                                 </button>
                                 <div class="nav-submenu">
-                                    <span class="nav-sublink" style="opacity: 0.5; font-style: italic; cursor: default;">(kosong)</span>
+                                    <a href="{{ url('/sales/vsv/dashboard/v1') }}" class="nav-sublink {{ request()->is('sales/vsv/dashboard/v1') ? 'active' : '' }}">Dashboard V1</a>
+                                    <a href="{{ url('/sales/vsv/dashboard/v2') }}" class="nav-sublink {{ request()->is('sales/vsv/dashboard/v2') || request()->is('dashboard') ? 'active' : '' }}">Dashboard V2</a>
+                                    <a href="{{ url('/rka/dashboard') }}" class="nav-sublink {{ request()->is('rka*') ? 'active' : '' }}">RKA</a>
+                                    <a href="{{ url('/leasing/dashboard') }}" class="nav-sublink {{ request()->is('leasing*') ? 'active' : '' }}">Leasing</a>
+                                    <a href="{{ url('/activity/dashboard') }}" class="nav-sublink {{ request()->is('activity*') ? 'active' : '' }}">Activity</a>
+                                    <a href="{{ url('/current/dashboard') }}" class="nav-sublink {{ request()->is('current*') ? 'active' : '' }}">Current</a>
+                                    <a href="{{ url('/evaluasi/dashboard') }}" class="nav-sublink {{ request()->is('evaluasi*') ? 'active' : '' }}">Evaluasi</a>
+                                    <a href="{{ url('/summary/dashboard') }}" class="nav-sublink {{ request()->is('summary*') ? 'active' : '' }}">Summary</a>
                                 </div>
                             </div>
 
@@ -282,6 +290,7 @@
                                     </svg>
                                 </button>
                                 <div class="nav-submenu">
+                                    <a href="{{ url('/sales/dashboard') }}" class="nav-sublink {{ request()->is('sales/dashboard') ? 'active' : '' }}">Dashboard Stock</a>
                                     <a href="{{ url('/admin/stocks') }}" class="nav-sublink {{ request()->is('admin/stocks') ? 'active' : '' }}">Stock</a>
                                     <a href="{{ url('/admin/stocks/report') }}" class="nav-sublink {{ request()->is('admin/stocks/report') ? 'active' : '' }}">Report Stock</a>
                                     
@@ -330,6 +339,7 @@
                                     </svg>
                                 </button>
                                 <div class="nav-submenu">
+                                    <a href="{{ url('/finance/dashboard') }}" class="nav-sublink {{ request()->is('finance/dashboard') ? 'active' : '' }}">Dashboard AR</a>
                                     <a href="{{ url('/admin/users') }}" class="nav-sublink {{ request()->is('admin/users*') ? 'active' : '' }}">Users</a>
                                     <a href="{{ url('/admin/asuransi') }}" class="nav-sublink {{ request()->is('admin/asuransi*') ? 'active' : '' }}">Asuransi</a>
                                     <a href="{{ url('/admin/perusahaan') }}" class="nav-sublink {{ request()->is('admin/perusahaan*') ? 'active' : '' }}">Perusahaan</a>
@@ -483,17 +493,6 @@
         </aside>
 
         <main class="main-content">
-            @if (! request()->is('dashboard'))
-                <div style="margin-bottom: 18px;">
-                    <a href="{{ url('/dashboard') }}" class="btn-primary" style="background-color: transparent; color: white; border: 1px solid var(--accent-red); padding: 8px 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; color: white;">
-                            <path d="M19 12H5"></path>
-                            <path d="M12 19l-7-7 7-7"></path>
-                        </svg>
-                        Kembali ke Dashboard
-                    </a>
-                </div>
-            @endif
             @yield('content')
         </main>
     </div>

@@ -24,6 +24,8 @@ class User extends Authenticatable
         'branch',
         'is_admin',
         'is_admin_stock',
+        'role',
+        'cabang',
     ];
 
     /**

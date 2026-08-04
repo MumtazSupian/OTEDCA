@@ -11,7 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'no-direct' => \App\Http\Middleware\PreventDirectAccess::class,
+            'admin.stock' => \App\Http\Middleware\IsAdminStock::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
