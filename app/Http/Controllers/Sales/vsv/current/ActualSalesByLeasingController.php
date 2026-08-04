@@ -56,9 +56,7 @@ class ActualSalesByLeasingController extends Controller
 
     public function create()
     {
-        if (!in_array(Auth::user()->role, ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return redirect()->route('current.actual-sales-by-leasing.index')->with('error', 'Akses dibatasi.');
-        }
+        // Role check relaxed for all authenticated users
 
         $leasingOptions = ['tunai','suzuki_finance','bca_finance','kbb_bca','mandiri_tunas_finance','kbb_mandiri','bsi','mandiri_utama_finance','indomobil_finance','adira_finance','bni_finance','maybank','oto_multiartha_finance','niaga_finance','clipan_finance','lain_lain'];
 
@@ -68,9 +66,7 @@ class ActualSalesByLeasingController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        if (!in_array($user->role, ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return redirect()->route('current.actual-sales-by-leasing.index')->with('error', 'Akses dilarang.');
-        }
+        // Role check relaxed for all authenticated users
 
         // Validasi inputan
         $request->validate([

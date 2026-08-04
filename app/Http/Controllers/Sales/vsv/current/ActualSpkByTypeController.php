@@ -57,9 +57,7 @@ class ActualSpkByTypeController extends Controller
         $user = Auth::user();
         
         // 1. Proteksi Role
-        if (!in_array($user->role, ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return redirect()->route('current.actual-spk-by-type.index')->with('error', 'Akses dilarang.');
-        }
+        // Role check relaxed for all authenticated users
 
         // 2. Validasi Input Dasar
         $request->validate([

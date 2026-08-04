@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Sales\vsv\Kdp;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class ActualController extends Controller
 {
@@ -1014,5 +1015,73 @@ class ActualController extends Controller
                 'data'          => $data
             ]);
         }
+    }
+
+    public function salesforces(Request $request)
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        
+        $modelClass = class_exists(\App\Models\Sales\vsv\current\ActualSalesforce::class) 
+            ? \App\Models\Sales\vsv\current\ActualSalesforce::class 
+            : (class_exists(\App\Models\current\ActualSalesforce::class) ? \App\Models\current\ActualSalesforce::class : null);
+
+        if ($modelClass) {
+            $query = $modelClass::with('user');
+            if (!in_array(strtolower($user->role ?? ''), ['admin', 'om', 'admin dca', 'om dca'])) {
+                if (strtoupper($user->role ?? '') === 'BM') {
+                    $query->where('cabang', $user->cabang ?? '');
+                } elseif (strtoupper($user->role ?? '') === 'SH') {
+                    $query->where('user_id', $user->id);
+                } else {
+                    $query->where('cabang', $user->cabang ?? '');
+                }
+            }
+            $data = $query->get();
+        } else {
+            $data = collect();
+        }
+
+        $year = now()->year;
+        $grandTotal = $data->sum('total');
+
+        $viewName = view()->exists('sales.vsv.current.actual_salesforces.index') 
+            ? 'sales.vsv.current.actual_salesforces.index' 
+            : 'current.actual_salesforces.index';
+
+        return view($viewName, compact('data', 'year', 'grandTotal'));
+    }
+
+    public function doSalesforces(Request $request)
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+
+        $modelClass = class_exists(\App\Models\Sales\vsv\current\ActualDoSalesForce::class) 
+            ? \App\Models\Sales\vsv\current\ActualDoSalesForce::class 
+            : (class_exists(\App\Models\current\ActualDoSalesForce::class) ? \App\Models\current\ActualDoSalesForce::class : null);
+
+        if ($modelClass) {
+            $query = $modelClass::with('user');
+            if (!in_array(strtolower($user->role ?? ''), ['admin', 'om', 'admin dca', 'om dca'])) {
+                if (strtoupper($user->role ?? '') === 'BM') {
+                    $query->where('cabang', $user->cabang ?? '');
+                } elseif (strtoupper($user->role ?? '') === 'SH') {
+                    $query->where('user_id', $user->id);
+                } else {
+                    $query->where('cabang', $user->cabang ?? '');
+                }
+            }
+            $data = $query->get();
+        } else {
+            $data = collect();
+        }
+
+        $year = now()->year;
+        $grandTotal = $data->sum('total');
+
+        $viewName = view()->exists('sales.vsv.current.actual_do_salesforces.index') 
+            ? 'sales.vsv.current.actual_do_salesforces.index' 
+            : 'current.actual_do_salesforces.index';
+
+        return view($viewName, compact('data', 'year', 'grandTotal'));
     }
 }

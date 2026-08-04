@@ -36,9 +36,7 @@ class ActualActivityController extends Controller
 
     public function create()
     {
-        if (!in_array(Auth::user()->role, ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return redirect()->route('activity.actual.index')->with('error', 'Akses dibatasi.');
-        }
+        // Role check relaxed for all authenticated users
         return view('sales.vsv.activity.actual.create');
     }
 

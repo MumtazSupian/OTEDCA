@@ -59,9 +59,7 @@ class ActualDoByTypeController extends Controller
 
     public function create()
     {
-        if (!in_array(Auth::user()->role, ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return redirect()->route('current.actual-do-by-type.index')->with('error', 'Akses dibatasi.');
-        }
+        // Role check relaxed for all authenticated users
 
         $commercial_units = ['NEW CARRY'];
         $passenger_units = ['APV BLIND VAN', 'ERTIGA', 'XL7', 'SPRESO', 'IGNIS', 'e-VITARA', 'GRAND VITARA', 'JIMNY 3D', 'JIMNY 5D', 'FRONX'];
@@ -72,9 +70,7 @@ class ActualDoByTypeController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        if (!in_array($user->role, ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return redirect()->route('current.actual-do-by-type.index')->with('error', 'Akses dilarang.');
-        }
+        // Role check relaxed for all authenticated users
 
         // Validasi input (Sesuai dengan standarisasi TargetDoUnit)
         $request->validate([

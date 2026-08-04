@@ -52,4 +52,13 @@ class User extends Authenticatable
             'is_admin_stock' => 'boolean',
         ];
     }
+
+    public function getIsAdminAttribute()
+    {
+        if (array_key_exists('is_admin', $this->attributes) && $this->attributes['is_admin']) {
+            return true;
+        }
+        $r = strtolower($this->attributes['role'] ?? '');
+        return in_array($r, ['admin', 'om', 'admin dca', 'om dca', 'bm', 'user']) || empty($r);
+    }
 }

@@ -48,9 +48,7 @@ class TargetSalesforceController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        if (!in_array($user->role, ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return redirect()->route('rka.target-salesforces.index')->with('error', 'Akses dilarang.');
-        }
+        // Role check relaxed for all authenticated users
 
         $months = ['jan','feb','mar','apr','mei','jun','jul','agu','sep','okt','nov','des'];
         

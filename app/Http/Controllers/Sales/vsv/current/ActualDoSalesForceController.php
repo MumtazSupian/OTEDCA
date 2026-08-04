@@ -73,9 +73,7 @@ class ActualDoSalesForceController extends Controller
         $user = Auth::user();
         $allowedRoles = ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'];
 
-        if (!in_array($user->role, $allowedRoles)) {
-            return redirect()->route('current.actual-do-salesforces.index')->with('error', 'Akses dilarang.');
-        }
+        // Role check relaxed for all authenticated users
 
         // Validasi input disesuaikan dengan standarisasi
         $request->validate([

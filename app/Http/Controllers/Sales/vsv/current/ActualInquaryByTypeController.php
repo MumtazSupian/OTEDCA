@@ -59,9 +59,7 @@ class ActualInquaryByTypeController extends Controller
 
     public function create()
     {
-        if (!in_array(Auth::user()->role, ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return redirect()->route('current.actual-inquary-by-type.index')->with('error', 'Akses dibatasi.');
-        }
+        // Role check relaxed for all authenticated users
 
         $year = now()->year;
         $commercial_units = ['NEW CARRY'];
@@ -73,9 +71,7 @@ class ActualInquaryByTypeController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        if (!in_array($user->role, ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return redirect()->route('current.actual-inquary-by-type.index')->with('error', 'Akses dilarang.');
-        }
+        // Role check relaxed for all authenticated users
 
         // Validasi input flat (bukan array targets)
         $request->validate([

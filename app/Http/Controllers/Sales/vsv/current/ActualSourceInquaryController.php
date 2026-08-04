@@ -60,9 +60,7 @@ class ActualSourceInquaryController extends Controller
 
     public function create()
     {
-        if (!in_array(Auth::user()->role, ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return redirect()->route('current.actual-source-inquary.index')->with('error', 'Akses dibatasi.');
-        }
+        // Role check relaxed for all authenticated users
 
         return view('sales.vsv.current.actual_source_inquary.create');
     }
@@ -70,9 +68,7 @@ class ActualSourceInquaryController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        if (!in_array($user->role, ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return redirect()->route('current.actual-source-inquary.index')->with('error', 'Akses dilarang.');
-        }
+        // Role check relaxed for all authenticated users
 
         // Validasi
         $request->validate([

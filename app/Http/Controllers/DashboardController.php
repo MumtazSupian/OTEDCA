@@ -26,7 +26,7 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        return $this->v1($request);
+        return (new \App\Http\Controllers\Finance\DashboardController())->index();
     }
 
     public function v1(Request $request)

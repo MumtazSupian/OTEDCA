@@ -56,9 +56,7 @@ class TargetInquiryController extends Controller
 
     public function create()
     {
-        if (!in_array(Auth::user()->role, ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return redirect()->route('rka.target-inquiries.index')->with('error', 'Akses dibatasi.');
-        }
+        // Role check relaxed for all authenticated users
 
         $sources = [
             'Call In (dari Iklan)', 'Canvasing', 'Data Base', 'Digital Hyperlocal',
