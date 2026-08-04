@@ -644,7 +644,7 @@
                 <a href="{{ url('summary/dashboard') }}">
                     <span class="menu-icon">📋</span> <span>Summary</span>
                 </a>
-                @if(Auth::user() && Auth::user()->role == 'Admin')
+                @if(Auth::user() && in_array(strtolower(Auth::user()->role ?? ''), ['admin', 'admin dca', 'om', 'om dca']))
                     <a href="{{ route('users.index') }}" class="nav-link">
                         <span class="menu-icon">👥</span> <span>Tambah User</span>
                     </a>

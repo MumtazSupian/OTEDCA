@@ -137,7 +137,7 @@ Route::middleware(['auth', 'no-direct'])->group(function () {
 
     Route::prefix('rka')->name('rka.')->group(function () {
         Route::get('/dashboard', function () {
-            return view('rka.dashboard_rka');
+            return view(view()->exists('Sales.vsv.rka.dashboard_rka') ? 'Sales.vsv.rka.dashboard_rka' : 'rka.dashboard_rka');
         });
         Route::get('target-do-unit/export-pdf', [TargetDoUnitController::class, 'exportPdf'])->name('target-do-unit.pdf');
         Route::get('target-do-unit/export-excel', [TargetDoUnitController::class, 'exportExcel'])->name('target-do-unit.excel');
@@ -155,7 +155,7 @@ Route::middleware(['auth', 'no-direct'])->group(function () {
 
     Route::prefix('leasing')->name('leasing.')->group(function () {
         Route::get('/dashboard', function () {
-            return view('leasing.dashboard_leasing');
+            return view(view()->exists('Sales.vsv.leasing.dashboard_leasing') ? 'Sales.vsv.leasing.dashboard_leasing' : 'leasing.dashboard_leasing');
         });
         Route::get('aktual-aplikasi-in/export-pdf', [AktualAplikasiInController::class, 'exportPdf'])->name('aktual-aplikasi-in.pdf');
         Route::get('aktual-aplikasi-in/export-excel', [AktualAplikasiInController::class, 'exportExcel'])->name('aktual-aplikasi-in.excel');
@@ -171,7 +171,7 @@ Route::middleware(['auth', 'no-direct'])->group(function () {
 
     Route::prefix('activity')->name('activity.')->group(function () {
         Route::get('/dashboard', function () {
-            return view('activity.dashboard_activity');
+            return view(view()->exists('Sales.vsv.activity.dashboard_activity') ? 'Sales.vsv.activity.dashboard_activity' : 'activity.dashboard_activity');
         });
         Route::get('plan/export-excel', [PlanActivityController::class, 'exportExcel'])->name('plan.excel');
         Route::get('plan/export-pdf', [PlanActivityController::class, 'exportPdf'])->name('plan.pdf');
@@ -186,7 +186,7 @@ Route::middleware(['auth', 'no-direct'])->group(function () {
 
     Route::prefix('current')->name('current.')->group(function () {
         Route::get('/dashboard', function () {
-            return view('current.dashboard_current');
+            return view(view()->exists('Sales.vsv.current.dashboard_current') ? 'Sales.vsv.current.dashboard_current' : 'current.dashboard_current');
         });
         Route::get('/actual-do-by-type/export-excel', [ActualDoByTypeController::class, 'exportExcel'])->name('actual-do-by-type.excel');
         Route::get('/actual-do-by-type/export-pdf', [ActualDoByTypeController::class, 'exportPdf'])->name('actual-do-by-type.pdf');
@@ -229,7 +229,7 @@ Route::middleware(['auth', 'no-direct'])->group(function () {
 
     Route::prefix('summary')->name('summary.')->group(function () {
         Route::get('/dashboard', function () {
-            return view('summary.dashboard_summary');
+            return view(view()->exists('Sales.vsv.summary.dashboard_summary') ? 'Sales.vsv.summary.dashboard_summary' : 'summary.dashboard_summary');
         });
         Route::get('/summary/export/excel', [SummaryController::class, 'exportExcel'])->name('summary.excel');
         Route::get('/summary/export/pdf', [SummaryController::class, 'exportPdf'])->name('summary.pdf');

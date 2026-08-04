@@ -40,6 +40,8 @@
 
         /* Sidebar Putih Bergaris Merah Kanan */
         .sidebar {
+            overflow-y: auto;
+            max-height: 100vh;
             width: 200px;
             position: fixed;
             top: 0;
