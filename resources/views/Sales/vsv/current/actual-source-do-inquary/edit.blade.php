@@ -13,23 +13,23 @@
             <p style="color: #64748b; font-size: 14px;">Perbarui data aktual delivery order untuk sumber: <strong style="color: #1e293b; font-weight:800;">{{ $actualSourceDoInquary->source_inquary }}</strong></p>
         </div>
 
-        <div style="background: white; width: 100%; max-width: 800px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
+        <div style="background: white; width: 100%; box-sizing: border-box; max-width: 800px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
             <form id="editForm" action="{{ route('current.actual-source-do-inquary.update', $actualSourceDoInquary->id) }}" method="POST">
                 @csrf
                 @method('PUT')
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div style="display: grid; width: 100%; box-sizing: border-box; box-sizing: border-box;  grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                     <div>
                         <label style="display: block; font-weight: 700; color: #a0aec0; margin-bottom: 8px; font-size: 12px; text-transform: uppercase;">Source DO Inquiry</label>
                         <input type="text" value="{{ $actualSourceDoInquary->source_inquary }}" disabled 
-                            style="width: 100%; padding: 12px; background: #edf2f7; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #718096; cursor: not-allowed; font-weight: bold;">
+                            style="width: 100%; box-sizing: border-box; padding: 12px; background: #edf2f7; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #718096; cursor: not-allowed; font-weight: bold;">
                         <input type="hidden" name="source_inquary" value="{{ $actualSourceDoInquary->source_inquary }}">
                     </div>
 
                     <div>
                         <label style="display: block; font-weight: 700; color: #a0aec0; margin-bottom: 8px; font-size: 12px; text-transform: uppercase;">Tahun</label>
                         <input type="text" value="{{ $actualSourceDoInquary->tahun }}" disabled 
-                            style="width: 100%; padding: 12px; background: #edf2f7; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #718096; cursor: not-allowed; font-weight: bold;">
+                            style="width: 100%; box-sizing: border-box; padding: 12px; background: #edf2f7; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #718096; cursor: not-allowed; font-weight: bold;">
                         <input type="hidden" name="tahun" value="{{ $actualSourceDoInquary->tahun }}">
                     </div>
                 </div>
@@ -40,7 +40,7 @@
                     Mengupdate data untuk Cabang: <strong style="color: #2d3748;">{{ Auth::user()->cabang }}</strong>
                 </p>
 
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+                <div style="display: grid; width: 100%; box-sizing: border-box; box-sizing: border-box;  grid-template-columns: repeat(4, 1fr); gap: 15px;">
                     @php
                         $months = [
                             'jan' => 'JAN', 'feb' => 'FEB', 'mar' => 'MAR', 'apr' => 'APR',
@@ -53,7 +53,7 @@
                         <div style="background: #f7fafc; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center;">
                             <label style="display: block; font-weight: 700; color: #dc2626; margin-bottom: 8px; font-size: 13px;">{{ $label }}</label>
                             <input type="number" name="{{ $key }}" value="{{ $actualSourceDoInquary->$key }}" min="0" 
-                                style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 14px; text-align: center; color: #2d3748; background: white; outline: none;">
+                                style="width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 14px; text-align: center; color: #2d3748; background: white; outline: none;">
                         </div>
                     @endforeach
                 </div>

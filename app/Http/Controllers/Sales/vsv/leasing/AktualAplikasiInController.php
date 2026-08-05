@@ -35,9 +35,7 @@ class AktualAplikasiInController extends Controller
     }
 
     public function create() {
-        if (!in_array(Auth::user()->role, ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return redirect()->back()->with('error', 'Akses terbatas.');
-        }
+        // Role check relaxed for all authenticated users
         return view('sales.vsv.leasing.aktual_aplikasi_in.create');
     }
 

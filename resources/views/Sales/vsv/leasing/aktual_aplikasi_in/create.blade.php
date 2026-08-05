@@ -14,16 +14,16 @@
         <p style="color: #64748b; font-size: 14px;">Input data aplikasi masuk per leasing per bulan</p>
     </div>
 
-    <div style="background: white; width: 100%; max-width: 1200px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
+    <div style="background: white; width: 100%; box-sizing: border-box; max-width: 1200px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
         
         <form id="createAppInForm" action="{{ route('leasing.aktual-aplikasi-in.store') }}" method="POST" x-data="appInForm()">
             @csrf
             
-            <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 10px;">
+            <div style="display: grid; width: 100%; box-sizing: border-box; box-sizing: border-box;  grid-template-columns: 1fr; gap: 20px; margin-bottom: 10px;">
                 <div>
                     <label style="display: block; font-weight: 700; color: #2d3748; margin-bottom: 8px; font-size: 13px; text-transform: uppercase;">Tahun</label>
                     <input type="number" name="tahun" value="{{ date('Y') }}" required
-                        style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #4a5568;">
+                        style="width: 100%; box-sizing: border-box; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #4a5568;">
                 </div>
             </div>
 
@@ -32,7 +32,7 @@
                 Menginput data untuk Cabang: <strong style="color: #2d3748;">{{ Auth::user()->cabang }}</strong>
             </p>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px;">
+            <div style="display: grid; width: 100%; box-sizing: border-box; box-sizing: border-box;  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px;">
                 <template x-for="month in months" :key="month">
                     
                     <div style="background: #ffff; padding: 20px; border-radius: 15px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
@@ -51,11 +51,11 @@
                             <template x-for="(item, index) in data[month]" :key="item.id">
                                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                                     
-                                    <div style="flex: 1;">
+                                    <div style="flex: 1; min-width: 0; box-sizing: border-box;">
                                         <select x-model="item.leasing" 
                                                 :name="'items[' + month + '][' + index + '][leasing]'"
                                                 class="form-control" required
-                                                style="width: 100%; border-radius: 6px; border: 1px solid #e2e8f0; height: 35px; font-size: 12px; color: #2d3748;">
+                                                style="width: 100%; box-sizing: border-box; border-radius: 6px; border: 1px solid #e2e8f0; height: 35px; font-size: 12px; color: #2d3748;">
                                             <option value="" disabled selected>Pilih Leasing</option>
                                             @foreach(['Suzuki Finance','BCA Finance','KKB BCA','Mandiri Tunas Finance','KKB MANDIRI','BSI','Mandiri Utama Finance','Indomobil Finance','Adira Finance','BNI Finance','MAYBANK','Oto Multiartha Finance','NIAGA Finance','Clipan Finance','Lain - Lain'] as $l)
                                                 <option value="{{ $l }}">{{ $l }}</option>
@@ -67,7 +67,7 @@
                                         <input type="number" x-model="item.amount" 
                                                :name="'items[' + month + '][' + index + '][amount]'"
                                                placeholder="Qty" min="0" required
-                                               style="width: 100%; border-radius: 6px; border: 1px solid #e2e8f0; height: 35px; font-size: 13px; padding: 0 5px; text-align: center;">
+                                               style="width: 100%; box-sizing: border-box; border-radius: 6px; border: 1px solid #e2e8f0; height: 35px; font-size: 13px; padding: 0 5px; text-align: center;">
                                     </div>
 
                                     <div style="flex-shrink: 0;">

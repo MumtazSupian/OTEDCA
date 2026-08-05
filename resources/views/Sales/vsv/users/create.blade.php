@@ -12,12 +12,12 @@
         <div style="width: 50px; height: 4px; background: #319795; margin: 10px auto; border-radius: 10px;"></div>
     </div>
 
-    <div style="background: white; width: 100%; max-width: 700px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
+    <div style="background: white; width: 100%; box-sizing: border-box; max-width: 700px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
         
         <form action="{{ route('users.store') }}" method="POST">
             @csrf
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="display: grid; width: 100%; box-sizing: border-box; box-sizing: border-box;  grid-template-columns: 1fr 1fr; gap: 20px;">
                 <div style="grid-column: span 2;">
                     <label class="form-label">Nama Lengkap</label>
                     <input type="text" name="name" class="form-input" required placeholder="Contoh: Budi Santoso">

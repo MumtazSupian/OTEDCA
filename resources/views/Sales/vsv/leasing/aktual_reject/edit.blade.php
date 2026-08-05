@@ -14,20 +14,20 @@
         </div>
 
         <div
-            style="background: white; width: 100%; max-width: 700px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
+            style="background: white; width: 100%; box-sizing: border-box; max-width: 700px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
             
             <form id="editRejectForm" action="{{ route('leasing.aktual-reject.update', $data->id) }}" method="POST">
                 @csrf
                 @method('PUT')
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 10px;">
+                <div style="display: grid; width: 100%; box-sizing: border-box; box-sizing: border-box;  grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 10px;">
                     <div>
                         <label
                             style="display: block; font-weight: 700; color: #2d3748; margin-bottom: 8px; font-size: 13px; text-transform: uppercase;">
                             Leasing Partner
                         </label>
                         <select name="leasing" required
-                            style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #4a5568; outline: none; transition: 0.3s; cursor: pointer;">
+                            style="width: 100%; box-sizing: border-box; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #4a5568; outline: none; transition: 0.3s; cursor: pointer;">
                             @foreach(['Suzuki Finance','BCA Finance','KKB BCA','Mandiri Tunas Finance','KKB MANDIRI','BSI','Mandiri Utama Finance','Indomobil Finance','Adira Finance','BNI Finance','MAYBANK','Oto Multiartha Finance','NIAGA Finance','Clipan Finance','Lain - Lain'] as $l)
                                 <option value="{{ $l }}" {{ $data->leasing == $l ? 'selected' : '' }}>{{ $l }}</option>
                             @endforeach
@@ -39,7 +39,7 @@
                             Tahun
                         </label>
                         <input type="number" name="tahun" value="{{ $data->tahun }}" required
-                            style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #4a5568; outline: none; transition: 0.3s;">
+                            style="width: 100%; box-sizing: border-box; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #4a5568; outline: none; transition: 0.3s;">
                     </div>
                 </div>
 
@@ -56,7 +56,7 @@
                     $months = ['jan', 'feb', 'mar', 'apr', 'mei', 'jun', 'jul', 'agu', 'sep', 'okt', 'nov', 'des'];
                 @endphp
 
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+                <div style="display: grid; width: 100%; box-sizing: border-box; box-sizing: border-box;  grid-template-columns: repeat(4, 1fr); gap: 15px;">
                     @foreach ($months as $m)
                         <div style="background: #fff5f5; padding: 10px; border-radius: 12px; border: 1px solid #fed7d7;">
                             <label
@@ -64,7 +64,7 @@
                                 {{ strtoupper($m) }}
                             </label>
                             <input type="number" name="{{ $m }}" value="{{ $data->$m }}" min="0"
-                                style="width: 100%; padding: 8px; border: 1px solid #feb2b2; border-radius: 8px; font-size: 14px; text-align: center; color: #2d3748; outline: none;">
+                                style="width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #feb2b2; border-radius: 8px; font-size: 14px; text-align: center; color: #2d3748; outline: none;">
                         </div>
                     @endforeach
                 </div>

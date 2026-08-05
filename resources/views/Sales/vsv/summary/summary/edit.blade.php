@@ -17,7 +17,7 @@
         </div>
 
         <div
-            style="background: white; width: 100%; max-width: 750px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
+            style="background: white; width: 100%; box-sizing: border-box; max-width: 750px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
 
             <form id="editForm" action="{{ route('summary.summary.update', $summary->id) }}" method="POST">
                 @csrf
@@ -34,7 +34,7 @@
                     ];
                 @endphp
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <div style="display: grid; width: 100%; box-sizing: border-box; box-sizing: border-box;  grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
                     {{-- Operasional --}}
                     <div>
                         <label
@@ -42,7 +42,7 @@
                             Kategori Operasional
                         </label>
                         <select name="operasional"
-                            style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #4a5568; outline: none; transition: 0.3s; cursor: pointer;">
+                            style="width: 100%; box-sizing: border-box; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #4a5568; outline: none; transition: 0.3s; cursor: pointer;">
                             @foreach ($ops as $op)
                                 <option value="{{ $op }}" {{ $summary->operasional == $op ? 'selected' : '' }}>
                                     {{ $op }}
@@ -58,7 +58,7 @@
                             Status (Do / Don't)
                         </label>
                         <select name="do_dont"
-                            style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #4a5568; outline: none; transition: 0.3s; cursor: pointer;">
+                            style="width: 100%; box-sizing: border-box; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #4a5568; outline: none; transition: 0.3s; cursor: pointer;">
                             <option value="">-- Pilih Status --</option>
                             <option value="V" {{ $summary->do_dont == 'V' ? 'selected' : '' }}>✔ Do</option>
                             <option value="X" {{ $summary->do_dont == 'X' ? 'selected' : '' }}>✖ Don't</option>
@@ -73,7 +73,7 @@
                         📌 Plan Rencana Perbaikan
                     </label>
                     <textarea name="plan_perbaikan" rows="4"
-                        style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #4a5568; outline: none; transition: 0.3s; resize: none;"
+                        style="width: 100%; box-sizing: border-box; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #4a5568; outline: none; transition: 0.3s; resize: none;"
                         placeholder="Tuliskan rencana perbaikan...">{{ $summary->plan_perbaikan }}</textarea>
                 </div>
 
@@ -84,7 +84,7 @@
                         ✅ Aktual Pelaksanaan
                     </label>
                     <textarea name="aktual_perbaikan" rows="4"
-                        style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #4a5568; outline: none; transition: 0.3s; resize: none;"
+                        style="width: 100%; box-sizing: border-box; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #4a5568; outline: none; transition: 0.3s; resize: none;"
                         placeholder="Tuliskan aktual pelaksanaan...">{{ $summary->aktual_perbaikan }}</textarea>
                 </div>
 
@@ -96,7 +96,7 @@
                         Batal
                     </a>
                     <button type="button" onclick="confirmUpdate()"
-                        style="flex: 2; padding: 14px; background:#dc2626; color:#ffffff; color: #1e293b; font-weight:800; border: none; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3);"
+                        style="flex: 2; padding: 14px; background:#dc2626; color: #dc2626; font-weight: 800; color: #1e293b; font-weight:800; border: none; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3);"
                         onmouseover="this.style.background='#1565c0'; this.style.transform='translateY(-2px)'"
                         onmouseout="this.style.background='#1e88e5'; this.style.transform='translateY(0)'">
                         Simpan Perubahan

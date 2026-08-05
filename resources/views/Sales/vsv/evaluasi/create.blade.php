@@ -20,12 +20,12 @@
             <form method="POST" action="{{ route('evaluasi.store') }}">
                 @csrf
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <div style="display: grid; width: 100%; box-sizing: border-box; box-sizing: border-box;  grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
                     <div>
                         <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">SALES
                             HEAD</label>
                         <input type="text" name="nama_sales_head" required
-                            style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;"
+                            style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;"
                             placeholder="Nama Sales Head...">
                     </div>
 
@@ -33,7 +33,7 @@
                         <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">NAMA
                             SALES</label>
                         <input type="text" name="nama_sales" required
-                            style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;"
+                            style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;"
                             placeholder="Nama Sales...">
                     </div>
 
@@ -42,7 +42,7 @@
                             style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">TANGGAL
                             MASUK</label>
                         <input type="date" name="tanggal_masuk" required
-                            style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;">
+                            style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;">
                     </div>
 
                     <div>
@@ -50,7 +50,7 @@
                             style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">TANGGAL
                             EVALUASI</label>
                         <input type="date" name="tanggal_evaluasi" required
-                            style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;">
+                            style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;">
                     </div>
 
                     {{-- TAMBAHAN INPUT GRADING PERLU PERBAIKAN --}}
@@ -61,7 +61,7 @@
                         {{-- perbaikan --}}
                         <div style="grid-column: span 2;">
                             <input type="text" id="grading_display" name="grading" readonly
-                                style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; background-color: #f1f1f1; font-weight: 800; color: #333;"
+                                style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; background-color: #f1f1f1; font-weight: 800; color: #333;"
                                 value="FREELANCE">
                             <small style="color: #666;">*Terhitung otomatis</small>
                         </div>
@@ -75,13 +75,13 @@
                     📊 NILAI PENJUALAN BULANAN
                 </h3>
 
-                <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 30px;">
+                <div style="display: grid; width: 100%; box-sizing: border-box; box-sizing: border-box;  grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 30px;">
                     @foreach (['jan', 'feb', 'mar', 'apr', 'mei', 'jun'] as $m)
                         <div style="text-align: center;">
                             <label
                                 style="display:block; font-weight:700; color:#555; margin-bottom:5px; font-size:11px;">{{ strtoupper($m) }}</label>
                             <input type="number" name="{{ $m }}" value="0" min="0"
-                                style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; text-align:center; font-weight:600; color:#991b1b;">
+                                style="width:100%; box-sizing: border-box; padding:8px; border:1px solid #ddd; border-radius:6px; text-align:center; font-weight:600; color:#991b1b;">
                         </div>
                     @endforeach
                 </div>
@@ -90,14 +90,14 @@
                     <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">HASIL
                         EVALUASI</label>
                     <textarea name="evaluasi" rows="3" placeholder="Tulis hasil evaluasi di sini..."
-                        style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none; resize: none;"></textarea>
+                        style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none; resize: none;"></textarea>
                 </div>
 
                 <div style="margin-bottom: 35px; width: 50%;">
                     <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">TANGGAL
                         KELUAR (Optional)</label>
                     <input type="date" name="tanggal_keluar"
-                        style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;">
+                        style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;">
                 </div>
 
                 <div
@@ -108,7 +108,7 @@
                     </a>
 
                     <button type="submit"
-                        style="background:#dc2626; color:#ffffff; color:#1e293b; font-weight:800; border:none; padding:12px 30px; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; transition:0.3s; box-shadow:0 4px 10px rgba(30,136,229,0.3);"
+                        style="background:#dc2626; color: #dc2626; font-weight: 800; color:#1e293b; font-weight:800; border:none; padding:12px 30px; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; transition:0.3s; box-shadow:0 4px 10px rgba(30,136,229,0.3);"
                         onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
                         💾 SIMPAN DATA EVALUASI
                     </button>

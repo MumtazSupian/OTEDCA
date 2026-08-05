@@ -36,9 +36,7 @@ class AktualRejectController extends Controller
 
     public function create() {
         // PERUBAHAN DI SINI: Menambahkan role pusat agar bisa akses form tambah
-        if (!in_array(Auth::user()->role, ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return redirect()->back()->with('error', 'Akses terbatas.');
-        }
+        // Role check relaxed for all authenticated users
         return view('sales.vsv.leasing.aktual_reject.create');
     }
 

@@ -20,31 +20,31 @@
                 @csrf
                 @method('PUT')
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <div style="display: grid; width: 100%; box-sizing: border-box; box-sizing: border-box;  grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
                     <div>
                         <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">SALES HEAD</label>
                         <input type="text" name="nama_sales_head" required value="{{ $row->nama_sales_head }}"
-                            style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;"
+                            style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;"
                             placeholder="Nama Sales Head...">
                     </div>
 
                     <div>
                         <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">NAMA SALES</label>
                         <input type="text" name="nama_sales" required value="{{ $row->nama_sales }}"
-                            style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;"
+                            style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;"
                             placeholder="Nama Sales...">
                     </div>
 
                     <div>
                         <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">TANGGAL MASUK</label>
                         <input type="date" name="tanggal_masuk" required value="{{ $row->tanggal_masuk }}"
-                            style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;">
+                            style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;">
                     </div>
 
                     <div>
                         <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">TANGGAL EVALUASI</label>
                         <input type="date" name="tanggal_evaluasi" required value="{{ $row->tanggal_evaluasi }}"
-                            style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;">
+                            style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;">
                     </div>
 
                     {{-- BAGIAN GRADING OTOMATIS --}}
@@ -53,7 +53,7 @@
                             GRADING PERFORMA (Otomatis)
                         </label>
                         <input type="text" id="grading_display" name="grading" readonly
-                            style="width:100%; padding:15px; border:none; border-radius:8px; font-weight: 800; text-align: center; text-transform: uppercase; font-size: 16px; transition: all 0.3s ease;"
+                            style="width:100%; box-sizing: border-box; padding:15px; border:none; border-radius:8px; font-weight: 800; text-align: center; text-transform: uppercase; font-size: 16px; transition: all 0.3s ease;"
                             value="{{ $row->grading }}">
                         <small style="color: #666; font-style: italic; display: block; margin-top: 5px;">
                             *Peringkat dihitung berdasarkan performa 3 bulan awal atau kenaikan di 3 bulan terakhir.
@@ -67,13 +67,13 @@
                     📊 PERBARUI NILAI BULANAN
                 </h3>
 
-                <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 30px;">
+                <div style="display: grid; width: 100%; box-sizing: border-box; box-sizing: border-box;  grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 30px;">
                     @foreach (['jan', 'feb', 'mar', 'apr', 'mei', 'jun'] as $m)
                         <div style="text-align: center;">
                             <label style="display:block; font-weight:700; color:#555; margin-bottom:5px; font-size:11px;">{{ strtoupper($m) }}</label>
                             <input type="number" name="{{ $m }}" value="{{ $row->$m }}" min="0"
                                 class="input-bulan"
-                                style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; text-align:center; font-weight:600; color:#991b1b;">
+                                style="width:100%; box-sizing: border-box; padding:8px; border:1px solid #ddd; border-radius:6px; text-align:center; font-weight:600; color:#991b1b;">
                         </div>
                     @endforeach
                 </div>
@@ -81,13 +81,13 @@
                 <div style="margin-bottom: 20px;">
                     <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">HASIL EVALUASI</label>
                     <textarea name="evaluasi" rows="3" placeholder="Tulis catatan evaluasi..."
-                        style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none; resize: none;">{{ $row->evaluasi }}</textarea>
+                        style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none; resize: none;">{{ $row->evaluasi }}</textarea>
                 </div>
 
                 <div style="margin-bottom: 35px; width: 50%;">
                     <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">TANGGAL KELUAR</label>
                     <input type="date" name="tanggal_keluar" value="{{ $row->tanggal_keluar }}"
-                        style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;">
+                        style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;">
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 20px;">

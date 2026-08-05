@@ -176,6 +176,34 @@
                 padding: 16px;
             }
         }
+    
+        /* Global Form Fixes */
+        *, *::before, *::after {
+            box-sizing: border-box !important;
+        }
+        input, select, textarea, button {
+            box-sizing: border-box !important;
+            max-width: 100% !important;
+        }
+        div {
+            box-sizing: border-box;
+        }
+        .form-card-container {
+            width: 100% !important;
+            max-width: 1000px !important;
+            box-sizing: border-box !important;
+            padding: 35px !important;
+            overflow: hidden !important;
+        }
+            select, input, textarea {
+            min-width: 0 !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        .form-card-container, form {
+            box-sizing: border-box !important;
+            max-width: 100% !important;
+        }
     </style>
 </head>
 
