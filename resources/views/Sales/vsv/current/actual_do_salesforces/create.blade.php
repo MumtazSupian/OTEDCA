@@ -6,7 +6,7 @@
     <div style="padding: 40px 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh;">
         
         <div style="text-align: center; margin-bottom: 30px;">
-            <h2 style="font-weight:800; color:#1e293b; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:0;">
+            <h2 style="font-weight: 800; color: #1e293b !important; text-transform: uppercase; margin: 0;">
                 TAMBAH ACTUAL DO SALESFORCE
             </h2>
             <div style="width: 50px; height: 4px; background: #dc2626; margin: 10px auto; border-radius: 10px;"></div>
@@ -45,7 +45,7 @@
                 <div style="margin: 25px 0; border-bottom: 2px dashed #edf2f7;"></div>
                 
                 <p style="text-align:center; color: #718096; font-size: 13px; margin-bottom: 10px;">
-                    Menginput data untuk Cabang: <strong style="color: #2d3748;">{{ Auth::user()->cabang }}</strong>
+                    Menginput data untuk Cabang: <strong style="color: #2d3748;">{{ Auth::user()->cabang ?: (Auth::user()->name ?: "Pusat") }}</strong>
                 </p>
 
                 <div style="display: grid; width: 100%; box-sizing: border-box; box-sizing: border-box;  grid-template-columns: repeat(4, 1fr); gap: 15px;">
@@ -72,8 +72,8 @@
                         onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#edf2f7'">
                         Batal
                     </a>
-                    <button type="button" onclick="confirmStore()"
-                        style="flex: 2; padding: 14px; background: #1a202c; color: #1e293b; font-weight:800; border: none; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.2);"
+                    <button <button type="button" onclick="confirmStore()"
+                        style="flex: 2; padding: 14px; background: #1a202c; color: #ffffff !important; font-weight: 800; border: none; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.2); background: #dc2626; color: #ffffff !important; font-weight: 800;"
                         onmouseover="this.style.background='#2d3748'; this.style.transform='translateY(-2px)'"
                         onmouseout="this.style.background='#1a202c'; this.style.transform='translateY(0)'">
                         Simpan Data

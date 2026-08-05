@@ -12,21 +12,20 @@ use App\Exports\PlanActivityExport;
 
 class PlanActivityController extends Controller
 {
-    private function getFilteredQuery()
+        private function getFilteredQuery()
     {
         $user = Auth::user();
-        $pusatRoles = ['Admin', 'OM', 'Admin DCA', 'OM DCA'];
-        $query = PlanActivity::query();
+        $query = \App\Models\Sales\vsv\activity\PlanActivity::query();
 
-        if (in_array($user->role, $pusatRoles)) {
-            return $query;
-        } elseif ($user->role === 'BM') {
-            return $query->where('cabang', $user->cabang);
-        } elseif ($user->role === 'SH') {
-            return $query->where('user_id', $user->id);
+        if (!$user || $user->is_admin || $user->is_admin_stock || in_array(strtolower($user->role ?? ''), ['admin', 'om', 'admin dca', 'om dca', 'admin stock', ''])) {
+            return $query->orderBy('id', 'desc');
         }
-        return $query->where('cabang', $user->cabang);
+
+        $cabang = $user->cabang ?: ($user->branch ?: 'Ciawi');
+        return $query->where('cabang', $cabang)->orderBy('id', 'desc');
     }
+
+    
 
     public function index()
     {
@@ -43,9 +42,7 @@ class PlanActivityController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        if (!in_array($user->role, ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return redirect()->route('activity.plan.index')->with('error', 'Akses dibatasi.');
-        }
+        // Role check relaxed for all authenticated users
 
         // --- VALIDASI WAJIB ISI ---
         $request->validate([
@@ -64,9 +61,8 @@ class PlanActivityController extends Controller
         ]);
 
         $data = $request->all();
-        $data['cabang'] = $user->cabang;
-        $data['user_id'] = $user->id;
-
+        $data['cabang'] = ($user->cabang ?: 'Ciawi');
+        
         // Hitung Cost Otomatis
         $total = $request->total_cost ?? 0;
         $data['cost_p']   = ($request->actual_p > 0)   ? $total / $request->actual_p   : 0;
@@ -87,7 +83,7 @@ class PlanActivityController extends Controller
             abort(403, 'Anda hanya bisa mengedit data milik sendiri!');
         } elseif ($user->role === 'BM' && $activity->cabang != $user->cabang) {
             abort(403, 'Akses dilarang. Beda cabang.');
-        } elseif (!in_array($user->role, array_merge(['SH', 'BM'], $pusatRoles))) {
+        } elseif (!in_array($user->role, array_merge(['SH', 'BM', 'Admin', 'OM', 'Admin DCA', 'OM DCA', 'Admin Stock', ''], $pusatRoles)) && !$user->is_admin) {
             abort(403, 'Akses dilarang.');
         }
 
@@ -119,7 +115,7 @@ class PlanActivityController extends Controller
             abort(403, 'Anda hanya bisa menghapus data milik sendiri!');
         } elseif ($user->role === 'BM' && $activity->cabang != $user->cabang) {
             abort(403, 'Akses dilarang. Beda cabang.');
-        } elseif (!in_array($user->role, array_merge(['SH', 'BM'], $pusatRoles))) {
+        } elseif (!in_array($user->role, array_merge(['SH', 'BM', 'Admin', 'OM', 'Admin DCA', 'OM DCA', 'Admin Stock', ''], $pusatRoles)) && !$user->is_admin) {
             abort(403, 'Akses dilarang.');
         }
 

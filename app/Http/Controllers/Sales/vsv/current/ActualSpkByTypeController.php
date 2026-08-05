@@ -13,22 +13,20 @@ use App\Exports\ActualSpkByTypeExport;
 class ActualSpkByTypeController extends Controller
 {
     // Fungsi bantuan untuk filter data (BM bisa lihat semua di cabangnya, SH hanya miliknya)
-    private function getFilteredQuery()
+        private function getFilteredQuery()
     {
         $user = Auth::user();
-        $pusatRoles = ['Admin', 'OM', 'Admin DCA', 'OM DCA'];
-        $query = ActualSpkByType::query();
+        $query = \App\Models\Sales\vsv\current\ActualSpkByType::query();
 
-        if (in_array($user->role, $pusatRoles)) {
-            return $query;
-        } elseif ($user->role === 'BM') {
-            return $query->where('cabang', $user->cabang);
-        } elseif ($user->role === 'SH') {
-            return $query->where('user_id', $user->id);
+        if (!$user || $user->is_admin || $user->is_admin_stock || in_array(strtolower($user->role ?? ''), ['admin', 'om', 'admin dca', 'om dca', 'admin stock', ''])) {
+            return $query->orderBy('id', 'desc');
         }
 
-        return $query->where('cabang', $user->cabang);
+        $cabang = $user->cabang ?: ($user->branch ?: 'Ciawi');
+        return $query->where('cabang', $cabang)->orderBy('id', 'desc');
     }
+
+    
 
    public function index()
 {
@@ -82,12 +80,11 @@ class ActualSpkByTypeController extends Controller
                     'tahun'      => $request->tahun,
                     'type_unit'  => $request->type_unit,
                     // Jika ingin membedakan per user (untuk SH), aktifkan baris bawah ini:
-                    // 'user_id' => $user->id, 
+                    //  
                 ],
                 [
                     'jenis_unit' => $request->jenis_unit,
-                    'user_id'    => $user->id,
-                    'total'      => $total,
+                                        'total'      => $total,
                     'jan' => $request->jan ?? 0,
                     'feb' => $request->feb ?? 0,
                     'mar' => $request->mar ?? 0,

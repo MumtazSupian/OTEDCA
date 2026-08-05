@@ -13,21 +13,20 @@ use App\Exports\AktualRejectExport;
 
 class AktualRejectController extends Controller
 {
-    private function getFilteredQuery()
+        private function getFilteredQuery()
     {
         $user = Auth::user();
-        $pusatRoles = ['Admin', 'OM', 'Admin DCA', 'OM DCA'];
-        $query = AktualReject::query();
+        $query = \App\Models\Sales\vsv\leasing\AktualReject::query();
 
-        if (in_array($user->role, $pusatRoles)) {
-            return $query;
-        } elseif ($user->role === 'BM') {
-            return $query->where('cabang', $user->cabang);
-        } elseif ($user->role === 'SH') {
-            return $query->where('user_id', $user->id);
+        if (!$user || $user->is_admin || $user->is_admin_stock || in_array(strtolower($user->role ?? ''), ['admin', 'om', 'admin dca', 'om dca', 'admin stock', ''])) {
+            return $query->orderBy('id', 'desc');
         }
-        return $query->where('cabang', $user->cabang);
+
+        $cabang = $user->cabang ?: ($user->branch ?: 'Ciawi');
+        return $query->where('cabang', $cabang)->orderBy('id', 'desc');
     }
+
+    
 
     public function index() {
         $data = $this->getFilteredQuery()->get();
@@ -64,11 +63,10 @@ class AktualRejectController extends Controller
                 foreach ($preparedData as $leasing => $monthlyData) {
                     AktualReject::updateOrCreate(
                         [
-                            'cabang' => $user->cabang,
+                            'cabang' => ($user->cabang ?: 'Ciawi'),
                             'tahun' => $request->tahun,
                             'leasing' => $leasing,
-                            'user_id' => $user->id
-                        ],
+                                                    ],
                         array_merge($monthlyData, ['total' => array_sum($monthlyData)])
                     );
                 }

@@ -101,11 +101,11 @@
                 </tbody>
                 <tfoot style="background:#c2185b;  font-weight:bold;">
                     <tr>
-                        <td colspan="3" style="border: 1px solid #cbd5e1; padding: 10px;">GRAND TOTAL</td>
+                        <td colspan="3" style="border: 1px solid #cbd5e1; color: #ffffff; padding: 10px;">GRAND TOTAL</td>
                         @foreach ($months as $m)
-                            <td style="border: 1px solid #cbd5e1;">{{ number_format($grandTotals[$m], 0, ',', '.') }}</td>
+                            <td style="border: 1px solid #cbd5e1; color: #ffffff;">{{ number_format($grandTotals[$m], 0, ',', '.') }}</td>
                         @endforeach
-                        <td style="border: 1px solid #cbd5e1; background:#ad1457;">
+                        <td style="border: 1px solid #cbd5e1; color: #ffffff; background:#ad1457;">
                             {{ number_format($grandTotalAll, 0, ',', '.') }}</td>
                         <td style="border: 1px solid #cbd5e1;">-</td>
                     </tr>

@@ -6,7 +6,7 @@
 <div style="padding: 40px 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; background-color: #0f172a;">
 
     <div style="text-align: center; margin-bottom: 30px;">
-        <h2 style="font-weight:800; color:#1e293b; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:0;">
+        <h2 style="font-weight: 800; color: #1e293b !important; text-transform: uppercase; margin: 0;">
             TAMBAH USER BARU
         </h2>
         <div style="width: 50px; height: 4px; background: #319795; margin: 10px auto; border-radius: 10px;"></div>
@@ -73,10 +73,10 @@
 
 <style>
     .form-label { display: block; font-weight: 700; color: #2d3748; margin-bottom: 8px; font-size: 12px; text-transform: uppercase; }
-    .form-input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; outline: none; transition: 0.3s; color: #4a5568; background-color: #1e293b; font-weight:800; }
+    .form-input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; outline: none; transition: 0.3s; color: #4a5568; background-color: #ffffff !important; font-weight: 800; }
     .form-input:focus { border-color: #319795; box-shadow: 0 0 0 3px rgba(49, 151, 149, 0.2); }
     
-    .btn-save { flex: 2; padding: 14px; background: #319795; color: #1e293b; font-weight:800; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+    .btn-save { flex: 2; padding: 14px; background: #319795; color: #ffffff !important; font-weight: 800; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; }
     .btn-save:hover { background: #285e61; }
     
     .btn-cancel { flex: 1; padding: 14px; background: #edf2f7; color: #4a5568; text-align: center; border-radius: 10px; text-decoration: none; font-weight: 700; transition: 0.3s; }

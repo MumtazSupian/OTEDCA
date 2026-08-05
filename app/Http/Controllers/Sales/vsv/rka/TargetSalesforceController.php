@@ -12,24 +12,20 @@ use App\Exports\TargetSalesforceExport;
 
 class TargetSalesforceController extends Controller
 {
-    private function getFilteredQuery()
+        private function getFilteredQuery()
     {
         $user = Auth::user();
-        $pusatRoles = ['Admin', 'OM', 'Admin DCA', 'OM DCA'];
-        
-        // Tambahkan with('user') untuk optimasi pemanggilan nama penginput
-        $query = TargetSalesforce::with('user');
+        $query = \App\Models\Sales\vsv\rka\TargetSalesforce::query();
 
-        if (in_array($user->role, $pusatRoles)) {
-            return $query;
-        } elseif ($user->role === 'BM') {
-            return $query->where('cabang', $user->cabang);
-        } elseif ($user->role === 'SH') {
-            return $query->where('user_id', $user->id);
+        if (!$user || $user->is_admin || $user->is_admin_stock || in_array(strtolower($user->role ?? ''), ['admin', 'om', 'admin dca', 'om dca', 'admin stock', ''])) {
+            return $query->orderBy('id', 'desc');
         }
 
-        return $query->where('cabang', $user->cabang);
+        $cabang = $user->cabang ?: ($user->branch ?: 'Ciawi');
+        return $query->where('cabang', $cabang)->orderBy('id', 'desc');
     }
+
+    
 
     public function index()
     {
@@ -56,8 +52,7 @@ class TargetSalesforceController extends Controller
             'grading' => $request->grading, 
             'tahun'   => $request->tahun, 
             'cabang'  => $user->cabang,
-            'user_id' => $user->id 
-        ];
+                    ];
 
         $total = 0;
         foreach ($months as $m) {

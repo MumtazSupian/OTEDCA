@@ -14,38 +14,20 @@ class ActualSalesByLeasingController extends Controller
 {
     // --- PRIVATE METHODS (HELPER) ---
 
-    private function getFilteredQuery()
+        private function getFilteredQuery()
     {
         $user = Auth::user();
-        $pusatRoles = ['Admin', 'OM', 'Admin DCA', 'OM DCA'];
-        
-        // Tambahkan with('user') agar proses load data selalu cepat (Eager Loading)
-        $query = ActualSalesByLeasing::with('user');
+        $query = \App\Models\Sales\vsv\current\ActualSalesByLeasing::query();
 
-        if (in_array($user->role, $pusatRoles)) {
-            return $query->orderBy('tahun', 'desc');
-        } elseif ($user->role === 'BM') {
-            return $query->where('cabang', $user->cabang)->orderBy('tahun', 'desc');
-        } elseif ($user->role === 'SH') {
-            return $query->where('user_id', $user->id)->orderBy('tahun', 'desc'); 
+        if (!$user || $user->is_admin || $user->is_admin_stock || in_array(strtolower($user->role ?? ''), ['admin', 'om', 'admin dca', 'om dca', 'admin stock', ''])) {
+            return $query->orderBy('id', 'desc');
         }
 
-        return $query->where('cabang', $user->cabang)->orderBy('tahun', 'desc');
+        $cabang = $user->cabang ?: ($user->branch ?: 'Ciawi');
+        return $query->where('cabang', $cabang)->orderBy('id', 'desc');
     }
 
-    // Fungsi helper agar tidak mengulang kode pengecekan hak akses
-    private function checkAccess($data, $user)
-    {
-        if ($user->role === 'SH' && $data->user_id != $user->id) {
-            return false;
-        }
-        if ($data->cabang != $user->cabang && !in_array($user->role, ['Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return false;
-        }
-        return true;
-    }
-
-    // --- PUBLIC METHODS (CRUD & EXPORT) ---
+    
 
     public function index()
     {
@@ -104,8 +86,7 @@ class ActualSalesByLeasingController extends Controller
             'leasing_name' => $request->leasing_name,
             'tahun'        => $request->tahun,
             'cabang'       => $user->cabang,
-            'user_id'      => $user->id,
-            'total'        => $total,
+                        'total'        => $total,
         ], $monthData));
 
         return redirect()->route('current.actual-sales-by-leasing.index')->with('success', 'Data berhasil disimpan.');

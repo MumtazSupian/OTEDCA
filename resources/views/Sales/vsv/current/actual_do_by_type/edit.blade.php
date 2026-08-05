@@ -3,11 +3,11 @@
 @section('content')
     <div style="padding: 40px 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh;">
         <div style="text-align: center; margin-bottom: 30px;">
-            <h2 style="font-weight:800; color:#1e293b; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:0;">
+            <h2 style="font-weight: 800; color: #1e293b !important; text-transform: uppercase; margin: 0;">
                 EDIT ACTUAL DO BY TYPE
             </h2>
             <div style="width: 50px; height: 4px; background: #dc2626; margin: 10px auto; border-radius: 10px;"></div>
-            <p style="color: #64748b; font-size: 14px;">Perbarui angka aktual untuk unit <strong style="color: #1e293b; font-weight:800;">{{ $actualDoByType->type_unit }}</strong></p>
+            <p style="color: #64748b; font-size: 14px;">Perbarui angka aktual untuk unit <strong style="color: #ffffff !important; font-weight: 800;">{{ $actualDoByType->type_unit }}</strong></p>
         </div>
 
         <div style="background: white; width: 100%; box-sizing: border-box; max-width: 800px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
@@ -65,7 +65,7 @@
                     <a href="{{ route('current.actual-do-by-type.index') }}"
                         style="flex: 1; padding: 14px; background: #edf2f7; color: #4a5568; text-align: center; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 14px;">Batal</a>
                     <button type="button" onclick="confirmUpdate()"
-                        style="flex: 2; padding: 14px; background: #2d3748; color: #1e293b; font-weight:800; border: none; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">Update Perubahan</button>
+                        style="flex: 2; padding: 14px; background: #2d3748; color: #ffffff !important; font-weight: 800; border: none; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">Update Perubahan</button>
                 </div>
             </form>
         </div>

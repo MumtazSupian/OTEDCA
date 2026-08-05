@@ -5,12 +5,12 @@
 @section('content')
     <div style="padding: 40px 20px; min-height: 100vh;">
         <div style="text-align: center; margin-bottom: 30px;">
-            <h2 style="font-weight:800; color:#1e293b; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:5px;">
+            <h2 style="font-weight: 800; color: #1e293b !important; text-transform: uppercase; margin: 0;">
                 ✏️ EDIT DATA EVALUASI
             </h2>
             <p style="color: #64748b;">Perbarui informasi kinerja untuk <strong>{{ $row->nama_sales }}</strong></p>
             <p style="text-align:center; color: #718096; font-size: 12px; margin-bottom: 15px;">
-                Menginput data untuk Cabang: <strong style="color: #2d3748;">{{ Auth::user()->cabang }}</strong>
+                Menginput data untuk Cabang: <strong style="color: #2d3748;">{{ Auth::user()->cabang ?: (Auth::user()->name ?: "Pusat") }}</strong>
             </p>
         </div>
 
@@ -92,7 +92,7 @@
 
                 <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 20px;">
                     <a href="{{ route('evaluasi.index') }}" style="text-decoration:none; color:#666; font-weight:600; font-size:14px;">← Batal</a>
-                    <button type="submit" style="background:#fb8c00; color:#1e293b; font-weight:800; border:none; padding:12px 35px; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; transition:0.3s; box-shadow:0 4px 10px rgba(251,140,0,0.3);">
+                    <button type="submit" style="background:#fb8c00; color: #ffffff !important; font-weight: 800; font-weight:800; border:none; padding:12px 35px; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; transition:0.3s; box-shadow:0 4px 10px rgba(251,140,0,0.3);">
                         💾 SIMPAN PERUBAHAN
                     </button>
                 </div>

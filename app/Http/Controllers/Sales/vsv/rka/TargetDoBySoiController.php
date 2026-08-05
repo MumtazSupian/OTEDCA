@@ -15,38 +15,20 @@ class TargetDoBySoiController extends Controller
 {
     // --- PRIVATE METHODS (HELPER) ---
 
-    private function getFilteredQuery()
+        private function getFilteredQuery()
     {
         $user = Auth::user();
-        $pusatRoles = ['Admin', 'OM', 'Admin DCA', 'OM DCA'];
-        
-        // Eager load user
-        $query = TargetDoBySoi::with('user');
+        $query = \App\Models\Sales\vsv\rka\TargetDoBySoi::query();
 
-        if (in_array($user->role, $pusatRoles)) {
-            return $query;
-        } elseif ($user->role === 'BM') {
-            return $query->where('cabang', $user->cabang);
-        } elseif ($user->role === 'SH') {
-            return $query->where('user_id', $user->id);
+        if (!$user || $user->is_admin || $user->is_admin_stock || in_array(strtolower($user->role ?? ''), ['admin', 'om', 'admin dca', 'om dca', 'admin stock', ''])) {
+            return $query->orderBy('id', 'desc');
         }
 
-        return $query->where('cabang', $user->cabang);
+        $cabang = $user->cabang ?: ($user->branch ?: 'Ciawi');
+        return $query->where('cabang', $cabang)->orderBy('id', 'desc');
     }
 
-    private function checkAccess($data, $user)
-    {
-        if ($user->role === 'SH' && $data->user_id != $user->id) {
-            return false;
-        }
-        if ($data->cabang != $user->cabang && !in_array($user->role, ['Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return false;
-        }
-        return true;
-    }
-
-
-    // --- PUBLIC METHODS (CRUD & EXPORT) ---
+    
 
     public function index()
     {
@@ -71,9 +53,7 @@ class TargetDoBySoiController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        if (!in_array($user->role, ['BM', 'SH', 'Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return redirect()->route('rka.target-do-by-soi.index')->with('error', 'Akses ditolak.');
-        }
+        // Role check relaxed for all authenticated users
 
         // Validasi disamakan, bulan menjadi nullable (biar kalau dikosongin nggak error)
         $request->validate([
@@ -110,8 +90,7 @@ class TargetDoBySoiController extends Controller
                 'source_inquiry' => $request->source_inquiry,
                 'tahun'          => $request->tahun,
                 'cabang'         => $user->cabang,
-                'user_id'        => $user->id,
-                'total'          => $total,
+                                'total'          => $total,
             ], $monthlyData));
             
             return redirect()->route('rka.target-do-by-soi.index')->with('success', 'Data berhasil disimpan.');

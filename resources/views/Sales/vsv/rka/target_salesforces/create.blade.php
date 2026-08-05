@@ -3,7 +3,7 @@
 @section('content')
     <div style="padding: 40px 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh;">
         <div style="text-align: center; margin-bottom: 30px;">
-            <h2 style="font-weight:800; color:#1e293b; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:0;">
+            <h2 style="font-weight: 800; color: #1e293b !important; text-transform: uppercase; margin: 0;">
                 TAMBAH TARGET SALESFORCE
             </h2>
             <div style="width: 50px; height: 4px; background: #dc2626; margin: 10px auto; border-radius: 10px;"></div>
@@ -31,7 +31,7 @@
 
                 <div style="margin: 25px 0 15px 0; border-bottom: 2px dashed #edf2f7;"></div>
                 <p style="text-align:center; color: #718096; font-size: 12px; margin-bottom: 15px;">
-                    Menginput data untuk Cabang: <strong style="color: #2d3748;">{{ Auth::user()->cabang }}</strong>
+                    Menginput data untuk Cabang: <strong style="color: #2d3748;">{{ Auth::user()->cabang ?: (Auth::user()->name ?: "Pusat") }}</strong>
                 </p>
 
                 <div style="display: grid; width: 100%; box-sizing: border-box; box-sizing: border-box;  grid-template-columns: repeat(4, 1fr); gap: 15px;">
@@ -45,7 +45,7 @@
 
                 <div style="margin-top: 35px; display: flex; gap: 15px;">
                     <a href="{{ route('rka.target-salesforces.index') }}" style="flex: 1; padding: 14px; background: #edf2f7; color: #4a5568; text-align: center; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 14px;">Batal</a>
-                    <button type="button" onclick="confirmSubmit()" style="flex: 2; padding: 14px; background: #1a202c; color: #1e293b; font-weight:800; border: none; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">Simpan Data</button>
+                    <button <button type="button" onclick="confirmSubmit()" style="flex: 2; padding: 14px; background: #1a202c; color: #ffffff !important; font-weight: 800; border: none; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); background: #dc2626; color: #ffffff !important; font-weight: 800;">Simpan Data</button>
                 </div>
             </form>
         </div>

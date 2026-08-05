@@ -6,13 +6,13 @@
     <div style="padding: 40px 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh;">
 
         <div style="text-align: center; margin-bottom: 30px;">
-            <h2 style="font-weight:800; color:#1e293b; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:0;">
+            <h2 style="font-weight: 800; color: #1e293b !important; text-transform: uppercase; margin: 0;">
                 TAMBAH SUMMARY OPERASIONAL
             </h2>
             <div style="width: 50px; height: 4px; background: #dc2626; margin: 10px auto; border-radius: 10px;"></div>
             <p style="color: #64748b; font-size: 14px;">Input rencana dan aktual perbaikan operasional baru</p>
             <p style="text-align:center; color: #718096; font-size: 12px; margin-bottom: 15px;">
-                Menginput data untuk Cabang: <strong style="color: #2d3748;">{{ Auth::user()->cabang }}</strong>
+                Menginput data untuk Cabang: <strong style="color: #2d3748;">{{ Auth::user()->cabang ?: (Auth::user()->name ?: "Pusat") }}</strong>
             </p>
         </div>
 
@@ -86,7 +86,7 @@
                         Batal
                     </a>
                     <button type="button" onclick="confirmSubmit()"
-                        style="flex: 2; padding: 14px; background:#dc2626; color: #dc2626; font-weight: 800; color: #1e293b; font-weight:800; border: none; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3);"
+                        style="flex: 2; padding: 14px; background:#dc2626; color: #dc2626; font-weight: 800; color: #ffffff !important; font-weight: 800; border: none; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3);"
                         onmouseover="this.style.background='#1565c0'; this.style.transform='translateY(-2px)'"
                         onmouseout="this.style.background='#1e88e5'; this.style.transform='translateY(0)'">
                         Simpan Data

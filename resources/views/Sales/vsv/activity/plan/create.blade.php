@@ -2,13 +2,13 @@
 @section('content')
     <div style="padding: 40px 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh;">
         <div style="text-align: center; margin-bottom: 30px;">
-            <h2 style="color: #1e293b; font-weight:800; margin: 0; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">TAMBAH
+            <h2 style="font-weight: 800; color: #1e293b !important; text-transform: uppercase; margin: 0;">TAMBAH
                 ACTIVITY PLAN</h2>
             <div style="width: 50px; height: 4px; background: #dc2626; margin: 10px auto; border-radius: 10px;"></div>
             <p style="color: #64748b; margin: 5px 0 0 0; font-size: 14px;">Silakan isi formulir di bawah dengan lengkap dan teliti</p>
             <br>
             <p style="text-align:center; color: #475569; font-weight: 600; font-size: 13px; margin-bottom: 15px;">
-                Menginput data untuk Cabang: <strong style="color: #dc2626; font-weight: 800;">{{ Auth::user()->cabang }}</strong>
+                Menginput data untuk Cabang: <strong style="color: #dc2626 !important;; font-weight: 800;">{{ Auth::user()->cabang ?: (Auth::user()->name ?: "Pusat") }}</strong>
             </p>
         </div>
         <div
@@ -151,8 +151,8 @@
                         style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px; border-top: 2px solid #f7fafc; padding-top: 30px;">
                         <a href="{{ route('activity.plan.index') }}"
                             style="padding: 14px 30px; background: #e2e8f0; color: #4a5568; border-radius: 10px; text-decoration: none; font-weight: 700;">BATAL</a>
-                        <button type="button" onclick="confirmSimpan()"
-                            style="padding: 14px 45px; background: #1a202c; color: #1e293b; font-weight:800; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">SIMPAN
+                        <button <button type="button" onclick="confirmSimpan()"
+                            style="padding: 14px 45px; background: #1a202c; color: #ffffff !important; font-weight: 800; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); background: #dc2626; color: #ffffff !important; font-weight: 800;">SIMPAN
                             AKTIVITAS</button>
                     </div>
                 </div>

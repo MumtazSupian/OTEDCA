@@ -14,39 +14,20 @@ class TargetDoUnitController extends Controller
 {
     // --- PRIVATE METHODS (HELPER) ---
 
-    private function getFilteredQuery()
+        private function getFilteredQuery()
     {
         $user = Auth::user();
-        $pusatRoles = ['Admin', 'OM', 'Admin DCA', 'OM DCA'];
-        
-        // Tambahkan with('user') di sini agar proses load data selalu cepat (Eager Loading)
-        $query = TargetDoUnit::with('user');
+        $query = \App\Models\Sales\vsv\rka\TargetDoUnit::query();
 
-        if (in_array($user->role, $pusatRoles)) {
-            return $query;
-        } elseif ($user->role === 'BM') {
-            return $query->where('cabang', $user->cabang);
-        } elseif ($user->role === 'SH') {
-            return $query->where('user_id', $user->id); 
+        if (!$user || $user->is_admin || $user->is_admin_stock || in_array(strtolower($user->role ?? ''), ['admin', 'om', 'admin dca', 'om dca', 'admin stock', ''])) {
+            return $query->orderBy('id', 'desc');
         }
 
-        return $query->where('cabang', $user->cabang);
+        $cabang = $user->cabang ?: ($user->branch ?: 'Ciawi');
+        return $query->where('cabang', $cabang)->orderBy('id', 'desc');
     }
 
-    // Fungsi baru agar tidak mengulang kode pengecekan hak akses di edit, update, dan destroy
-    private function checkAccess($data, $user)
-    {
-        if ($user->role === 'SH' && $data->user_id != $user->id) {
-            return false;
-        }
-        if ($data->cabang != $user->cabang && !in_array($user->role, ['Admin', 'OM', 'Admin DCA', 'OM DCA'])) {
-            return false;
-        }
-        return true;
-    }
-
-
-    // --- PUBLIC METHODS (CRUD & EXPORT) ---
+    
 
     public function index()
     {
@@ -108,8 +89,7 @@ class TargetDoUnitController extends Controller
             'type_unit'  => $request->type_unit,
             'tahun'      => $request->tahun,
             'cabang'     => $user->cabang,
-            'user_id'    => $user->id,
-            'total'      => $total,
+                        'total'      => $total,
         ], $monthData));
 
         return redirect()->route('rka.target-do-units.index')->with('success', 'Data berhasil disimpan.');

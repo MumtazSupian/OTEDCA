@@ -6,7 +6,7 @@
 <div style="padding: 40px 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; background-color: #0f172a;">
 
     <div style="text-align: center; margin-bottom: 30px;">
-        <h2 style="font-weight:800; color:#1e293b; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin:0;">
+        <h2 style="font-weight: 800; color: #1e293b !important; text-transform: uppercase; margin: 0;">
             EDIT USER
         </h2>
         <div style="width: 50px; height: 4px; background: #d69e2e; margin: 10px auto; border-radius: 10px;"></div>
@@ -82,7 +82,7 @@
     .form-input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; outline: none; transition: 0.3s; color: #4a5568; }
     .form-input:focus { border-color: #d69e2e; box-shadow: 0 0 0 3px rgba(214, 158, 46, 0.2); }
     
-    .btn-save { flex: 2; padding: 14px; color: #1e293b; font-weight:800; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+    .btn-save { flex: 2; padding: 14px; color: #ffffff !important; font-weight: 800; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; }
     .btn-save:hover { opacity: 0.9; }
     
     .btn-cancel { flex: 1; padding: 14px; background: #edf2f7; color: #4a5568; text-align: center; border-radius: 10px; text-decoration: none; font-weight: 700; transition: 0.3s; }

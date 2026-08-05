@@ -12,21 +12,20 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class EvaluasiWiraniagaController extends Controller
 {
-    private function getFilteredQuery()
+        private function getFilteredQuery()
     {
         $user = Auth::user();
-        $pusatRoles = ['Admin', 'OM', 'Admin DCA', 'OM DCA'];
-        $query = EvaluasiWiraniaga::query();
+        $query = \App\Models\Sales\vsv\evaluasi\EvaluasiWiraniaga::query();
 
-        if (in_array($user->role, $pusatRoles)) {
-            return $query->orderBy('nama_sales');
-        } elseif ($user->role === 'BM') {
-            return $query->where('cabang', $user->cabang)->orderBy('nama_sales');
-        } elseif ($user->role === 'SH') {
-            return $query->where('user_id', $user->id)->orderBy('nama_sales');
+        if (!$user || $user->is_admin || $user->is_admin_stock || in_array(strtolower($user->role ?? ''), ['admin', 'om', 'admin dca', 'om dca', 'admin stock', ''])) {
+            return $query->orderBy('id', 'desc');
         }
-        return $query->where('cabang', $user->cabang)->orderBy('nama_sales');
+
+        $cabang = $user->cabang ?: ($user->branch ?: 'Ciawi');
+        return $query->where('cabang', $cabang)->orderBy('id', 'desc');
     }
+
+    
 
     public function index()
     {
@@ -48,8 +47,8 @@ class EvaluasiWiraniagaController extends Controller
         $calculated = $this->calculateTotalAndGrading($request);
         $data['total'] = $calculated['total'];
         $data['grading'] = $calculated['grading'];
-        $data['cabang'] = $user->cabang;
-        $data['user_id'] = $user->id; 
+        $data['cabang'] = ($user->cabang ?: 'Ciawi');
+         
 
         EvaluasiWiraniaga::create($data);
         return redirect()->route('evaluasi.index')->with('success', 'Data berhasil disimpan!');

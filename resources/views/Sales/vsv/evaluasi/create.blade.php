@@ -5,12 +5,12 @@
 @section('content')
     <div style="padding: 40px 20px; min-height: 100vh;">
         <div style="text-align: center; margin-bottom: 30px;">
-            <h2 style="font-weight:800; color:#1e293b; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:5px;">
+            <h2 style="font-weight: 800; color: #1e293b !important; text-transform: uppercase; margin: 0;">
                 📝 INPUT DATA EVALUASI
             </h2>
             <p style="color: #64748b;">Lengkapi formulir di bawah untuk menambah data kinerja wiraniaga</p>
             <p style="text-align:center; color: #718096; font-size: 12px; margin-bottom: 15px;">
-                Menginput data untuk Cabang: <strong style="color: #e2e2e2;">{{ Auth::user()->cabang }}</strong>
+                Menginput data untuk Cabang: <strong style="color: #e2e2e2;">{{ Auth::user()->cabang ?: (Auth::user()->name ?: "Pusat") }}</strong>
             </p>
         </div>
 
@@ -108,7 +108,7 @@
                     </a>
 
                     <button type="submit"
-                        style="background:#dc2626; color: #dc2626; font-weight: 800; color:#1e293b; font-weight:800; border:none; padding:12px 30px; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; transition:0.3s; box-shadow:0 4px 10px rgba(30,136,229,0.3);"
+                        style="background:#dc2626; color: #dc2626; font-weight: 800; color: #ffffff !important; font-weight: 800; font-weight:800; border:none; padding:12px 30px; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; transition:0.3s; box-shadow:0 4px 10px rgba(30,136,229,0.3);"
                         onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
                         💾 SIMPAN DATA EVALUASI
                     </button>
