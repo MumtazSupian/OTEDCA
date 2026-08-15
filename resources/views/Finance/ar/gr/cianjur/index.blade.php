@@ -4,6 +4,15 @@
 
 @section('content')
     <div style="width: 100%; box-sizing: border-box; overflow-x: hidden;">
+        <div style="margin-bottom: 16px;">
+            <a href="{{ Route::has('finance.dashboard') ? route('finance.dashboard') : url('/dashboard') }}" class="btn-back-dashboard" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 13.5px; font-weight: 600; border: 2px solid #ef4444; transition: all 0.2s; box-shadow: 0 2px 4px rgba(37,99,235,0.2);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Kembali ke Dashboard
+            </a>
+        </div>
+
         <div class="page-header" style="margin-bottom: 20px;">
             <div>
                 <h1 class="page-title">Rekapitulasi Piutang - GR Cianjur</h1>
@@ -29,32 +38,65 @@
                     <option value="100">100 Baris</option>
                     <option value="200">200 Baris</option>
                 </select>
-                @if(optional(Auth::user())->is_admin)
-                        <button class="btn-primary" onclick="openModal()" id="btnTambahData"
-                        style="background-color: var(--accent-red); border-color: var(--accent-red); color: #ffffff;">Tambah Data</button>
-                    @endif
+                {{-- @if(optional(Auth::user())->is_admin)
+            <button class="btn-primary" onclick="openModal()" id="btnTambahData"
+                style="background-color: var(--accent-red); border-color: var(--accent-red); color: #ffffff;">Tambah Data</button>
+        @endif --}}
             </div>
         </div>
 
         {{-- Style Khusus: Tabel (Merah-Putih) & Modal (Putih-Merah) --}}
         <style>
             /* 1. TEMA TABEL */
+            #piutangTable {
+                width: max-content !important;
+                min-width: 100% !important;
+                table-layout: auto !important;
+                border-collapse: collapse !important;
+            }
+
             #piutangTable th,
             #piutangTable td {
                 border: 1px solid #1e3a8a !important;
-                /* Garis merah elegan antar kolom */
+                white-space: nowrap !important;
+                text-overflow: clip !important;
+                overflow: visible !important;
+                min-width: 0 !important;
+                padding: 8px 12px !important;
+                vertical-align: middle !important;
             }
 
             #piutangTable thead th {
                 color: #ffffff !important;
-                /* Warna font judul putih */
                 background-color: #111a36 !important;
-                /* Background judul gelap agar font putih jelas */
+                text-align: center !important;
+                white-space: nowrap !important;
+                text-overflow: clip !important;
+                overflow: visible !important;
+                font-weight: 700 !important;
+                font-size: 11.5px !important;
+                letter-spacing: 0.5px !important;
             }
 
             #piutangTable tbody td {
                 color: #111827 !important;
-                /* Warna font isi tabel gelap pekat agar jelas */
+                white-space: nowrap !important;
+                text-overflow: clip !important;
+                overflow: visible !important;
+                font-size: 12px !important;
+            }
+
+            /* Kolom NO Kecil & Ramping Persis Foto 2 */
+            #piutangTable th.col-no,
+            #piutangTable td.col-no,
+            #piutangTable th:first-child,
+            #piutangTable td:first-child {
+                width: 1% !important;
+                min-width: 0 !important;
+                max-width: 32px !important;
+                text-align: center !important;
+                padding: 6px 4px !important;
+                box-sizing: border-box !important;
             }
 
             /* 2. TEMA MODAL / FORM CREATE (PUTIH & MERAH) */
@@ -176,11 +218,11 @@
         {{-- Kontainer Utama Tabel --}}
         <div class="table-container"
             style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; background: #ffffff;">
-            <div class="table-scroll" style="width: 100%; min-width: 1300px;">
+            <div class="table-scroll" style="width: 100%; width: max-content; min-width: 100%;">
                 <table class="data-table" id="piutangTable" style="width: 100%; border-collapse: collapse;">
                     <thead>
                         <tr>
-                            <th rowspan="2">NO</th>
+                            <th rowspan="2" class="col-no" style="width: 1% !important; min-width: 0 !important; max-width: 32px !important; padding: 6px 4px !important; text-align: center !important;">NO</th>
                             <th rowspan="2">NO SPK</th>
                             <th rowspan="2">TIPE KONSUMEN</th>
                             <th rowspan="2">PERUSAHAAN</th>
@@ -196,7 +238,7 @@
                             <th rowspan="2">KETERANGAN TAHAP 2</th>
                             <th rowspan="2">SALDO AKHIR</th>
                             <th rowspan="2" class="col-no-polisi">NO POLISI</th>
-                            <th rowspan="2" class="col-action">AKSI</th>
+                            {{-- <th rowspan="2" class="col-action">AKSI</th> --}}
                         </tr>
                         <tr>
                             <th>DEBET</th>
@@ -307,13 +349,13 @@
                             @endphp
 
                             <tr style="{{ $rowStyle }}">
-                                <td style="text-align: center;">{{ $loop->iteration }}.</td>
+                                <td class="col-no" style="width: 1% !important; min-width: 0 !important; max-width: 32px !important; padding: 6px 4px !important; text-align: center !important;">{{ $loop->iteration }}.</td>
                                 <td>{{ $row->no_spk ?? ($row['no_spk'] ?? '-') }}</td>
                                 <td style="text-align: center;">
                                     {{ $row->tipe_konsumen ? ucfirst($row->tipe_konsumen) : '-' }}
                                 </td>
                                 <td>
-                                    {{ $row->perusahaan ? $row->perusahaan->nama : '-' }}
+                                    {{ $row->perusahaan ? $row->perusahaan->nama : ($row->nama_asuransi ?? ($row->perusahaan_name ?? '-')) }}
                                 </td>
                                 <td>{{ $row->nama_konsumen ?? ($row['nama_konsumen'] ?? '-') }}</td>
                                 <td>{{ $tglBukti }}</td>
@@ -334,13 +376,13 @@
                                 <td class="text-bold">
                                     {{ is_numeric($saldoAkhir) ? number_format($saldoAkhir, 0, '.', ',') : '-' }}</td>
                                 <td class="col-no-polisi">{{ $row->no_polisi ?? ($row['no_polisi'] ?? '-') }}</td>
-                                <td class="col-action"
+                                {{-- <td class="col-action"
                                     style="background-color: #ffffff !important; border-left: 1px solid #e5e7eb;">
                                     <div
                                         style="display:flex; gap:12px; justify-content: center; align-items: center; height: 100%;">
                                         <a href="{{ url('/gr/cianjur/' . ($row->id ?? ($row['id'] ?? '')) . '/edit') }}"
                                             class="action-btn edit" title="Edit"
-                                            style="text-decoration: none; color: #b91c1c !important; font-size: 16px; font-weight: bold;">✎</a>
+                                            style="text-decoration: none; color: #1d4ed8 !important; font-size: 16px; font-weight: bold;">✎</a>
                                         @if(optional(Auth::user())->is_admin)
                                             <form method="POST"
                                                 action="{{ url('/gr/cianjur/' . ($row->id ?? ($row['id'] ?? ''))) }}"
@@ -351,7 +393,7 @@
                                             </form>
                                         @endif
                                     </div>
-                                </td>
+                                </td> --}}
                             </tr>
                         @empty
                             <tr class="no-data-row" style="background-color: #ffffff;">

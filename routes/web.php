@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Sales\vsv\DashboardController;
 use App\Http\Controllers\AuthController;
 // Finance Controllers
 use App\Http\Controllers\Finance\PiutangController;
@@ -71,18 +71,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/sales/vsv/dashboard/v1/export-pdf', [\App\Http\Controllers\Sales\vsv\DashboardController::class, 'exportPdfV1'])->name('sales.vsv.dashboard.v1.export_pdf');
     Route::get('/sales/vsv/dashboard/v2', [\App\Http\Controllers\Sales\vsv\DashboardController::class, 'v2'])->name('sales.vsv.dashboard.v2');
 
-    Route::get('/bp', [PiutangController::class, 'indexBp']);
-    Route::post('/bp', [PiutangController::class, 'storeBp']);
-    Route::get('/bp/{id}/edit', [PiutangController::class, 'editBp'])->whereNumber('id');
-    Route::put('/bp/{id}', [PiutangController::class, 'updateBp'])->whereNumber('id');
-    Route::delete('/bp/{id}', [PiutangController::class, 'destroyBp'])->whereNumber('id');
+    Route::get('/bp', [PiutangController::class, 'indexBp'])->name('bp.index');
+    Route::post('/bp', [PiutangController::class, 'storeBp'])->name('bp.store');
+    Route::get('/bp/{id}/edit', [PiutangController::class, 'editBp'])->whereNumber('id')->name('bp.edit');
+    Route::put('/bp/{id}', [PiutangController::class, 'updateBp'])->whereNumber('id')->name('bp.update');
+    Route::delete('/bp/{id}', [PiutangController::class, 'destroyBp'])->whereNumber('id')->name('bp.destroy');
 
     Route::prefix('gr/{branch}')->whereIn('branch', ['cinere', 'jatiasih', 'cianjur', 'ciawi'])->group(function () {
-        Route::get('/', [PiutangController::class, 'indexGr']);
-        Route::post('/', [PiutangController::class, 'storeGr']);
-        Route::get('/{id}/edit', [PiutangController::class, 'editGr'])->whereNumber('id');
-        Route::put('/{id}', [PiutangController::class, 'updateGr'])->whereNumber('id');
-        Route::delete('/{id}', [PiutangController::class, 'destroyGr'])->whereNumber('id');
+        Route::get('/', [PiutangController::class, 'indexGr'])->name('gr.index');
+        Route::post('/', [PiutangController::class, 'storeGr'])->name('gr.store');
+        Route::get('/{id}/edit', [PiutangController::class, 'editGr'])->whereNumber('id')->name('gr.edit');
+        Route::put('/{id}', [PiutangController::class, 'updateGr'])->whereNumber('id')->name('gr.update');
+        Route::delete('/{id}', [PiutangController::class, 'destroyGr'])->whereNumber('id')->name('gr.destroy');
     });
 
     Route::get('/asuransi/list', function () {
