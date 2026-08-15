@@ -50,46 +50,74 @@
     </div>
 
     {{-- Mobil Cards Grid --}}
-    <h2 style="font-size:18px;font-weight:600;margin:24px 0 16px;">Ringkasan Stok Kendaraan per Model</h2>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;">
+    @php
+        $cardGradients = [
+            'NEW CARRY' => 'linear-gradient(135deg, #6366f1, #a855f7)',
+            'NEW XL-7' => 'linear-gradient(135deg, #10b981, #34d399)',
+            'FRONX' => 'linear-gradient(135deg, #fbcfe8, #fecdd3)',
+            'JIMMY' => 'linear-gradient(135deg, #d8b4fe, #f0abfc)',
+            'GRAND-VITARA' => 'linear-gradient(135deg, #f87171, #fb923c)',
+            'APV' => 'linear-gradient(135deg, #be123c, #fb7185)',
+            'S-PRESSO' => 'linear-gradient(135deg, #f59e0b, #fbbf24)',
+            'ERTIGA-HYBRID' => 'linear-gradient(135deg, #0ea5e9, #38bdf8)',
+        ];
+    @endphp
+    
+    <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:20px;margin-top:20px;">
         @forelse($stockByMobil as $mobil)
-            <div style="background:var(--bg-primary);border:1px solid var(--border-color);border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.05);display:flex;flex-direction:column;justify-content:space-between;">
-                <div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                        <h3 style="font-size:15px;font-weight:700;color:var(--text-primary);margin:0;">{{ $mobil->nama_mobil }}</h3>
-                        <span style="background:rgba(59,130,246,.1);color:#dc2626;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;">
-                            {{ $mobil->total }} Unit
-                        </span>
-                    </div>
+            @php
+                $bgGradient = $cardGradients[$mobil->nama_mobil] ?? 'linear-gradient(135deg, #9ca3af, #d1d5db)';
+            @endphp
+            <div style="background:#fff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.05);display:flex;flex-direction:column;border:1px solid #f3f4f6;overflow:hidden;">
+                
+                {{-- Card Header --}}
+                <div style="position:relative;height:150px;background:{{ $bgGradient }};display:flex;justify-content:center;align-items:center;">
+                    <!-- Decor Circles -->
+                    <div style="position:absolute;width:150px;height:150px;background:rgba(255,255,255,0.1);border-radius:50%;bottom:-50px;left:-50px;"></div>
+                    <div style="position:absolute;width:80px;height:80px;background:rgba(255,255,255,0.15);border-radius:50%;top:-20px;right:-20px;"></div>
+                    
+                    <!-- Unit Badge -->
+                    <span style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.3);color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;z-index:2;backdrop-filter:blur(4px);">
+                        {{ $mobil->total }} Unit
+                    </span>
+
+                    <!-- Car Image -->
                     @if(!empty($mobil->image))
-                        <div style="text-align:center;margin:12px 0;">
-                            <img src="{{ asset('assets/images/cars/' . $mobil->image) }}" alt="{{ $mobil->nama_mobil }}" style="max-height:100px;object-fit:contain;">
-                        </div>
+                        <img src="{{ asset('assets/' . $mobil->image) }}" alt="{{ $mobil->nama_mobil }}" style="max-height:110px;object-fit:contain;z-index:2;filter:drop-shadow(0 10px 8px rgba(0,0,0,0.3));">
                     @endif
+                </div>
+
+                {{-- Card Body --}}
+                <div style="padding:16px;">
+                    <h3 style="font-size:15px;font-weight:700;color:#1f2937;margin:0 0 16px 0;">{{ $mobil->nama_mobil }}</h3>
+                    
                     @if(count($mobil->varian_counts) > 0)
-                        <div style="margin-top:10px;font-size:11px;color:var(--text-muted);">
-                            <strong>Varian:</strong>
-                            <ul style="margin:4px 0 0 16px;padding:0;">
+                        <div style="margin-bottom:12px;">
+                            <div style="font-size:10px;font-weight:700;color:#9ca3af;margin-bottom:6px;letter-spacing:0.5px;">VARIAN</div>
+                            <div style="display:flex;flex-wrap:wrap;gap:6px;">
                                 @foreach($mobil->varian_counts as $varian => $count)
-                                    <li>{{ $varian }}: <strong>{{ $count }}</strong></li>
+                                    <span style="background:#f8fafc;color:#475569;font-size:9.5px;font-weight:600;padding:4px 8px;border-radius:4px;border:1px solid #e2e8f0;">
+                                        {{ $varian }} ({{ $count }})
+                                    </span>
                                 @endforeach
-                            </ul>
+                            </div>
                         </div>
                     @endif
+                    
                     @if(count($mobil->warna_counts) > 0)
-                        <div style="margin-top:8px;font-size:11px;color:var(--text-muted);">
-                            <strong>Warna:</strong>
-                            <ul style="margin:4px 0 0 16px;padding:0;">
+                        <div>
+                            <div style="font-size:10px;font-weight:700;color:#9ca3af;margin-bottom:6px;letter-spacing:0.5px;">WARNA</div>
+                            <div style="display:flex;flex-wrap:wrap;gap:6px;">
                                 @foreach($mobil->warna_counts as $warna => $count)
-                                    <li>{{ $warna }}: <strong>{{ $count }}</strong></li>
+                                    <span style="background:#f8fafc;color:#475569;font-size:9.5px;font-weight:600;padding:4px 8px;border-radius:4px;border:1px solid #e2e8f0;">
+                                        {{ $warna }} ({{ $count }})
+                                    </span>
                                 @endforeach
-                            </ul>
+                            </div>
                         </div>
                     @endif
                 </div>
-                <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color);text-align:right;">
-                    <a href="{{ url('/admin/stocks?nama_mobil=' . urlencode($mobil->nama_mobil)) }}" style="color:#dc2626;font-weight:600;font-size:12px;text-decoration:none;">Lihat Stok &rarr;</a>
-                </div>
+                
             </div>
         @empty
             <div style="grid-column:1/-1;padding:24px;text-align:center;color:var(--text-muted);">

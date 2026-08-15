@@ -26,7 +26,16 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "classmap": [
+            "app/"
+        ],
+        "exclude-from-classmap": [
+            "app/Http/Controllers/Sales/stock/",
+            "app/Http/Controllers/Sales/vsv/",
+            "app/Models/Sales/stock/",
+            "app/Models/Sales/vsv/"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

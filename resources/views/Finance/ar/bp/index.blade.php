@@ -12,7 +12,6 @@
                 Kembali ke Dashboard
             </a>
         </div>
-
         <div class="page-header" style="margin-bottom: 20px;">
             <div>
                 <h1 class="page-title">Rekapitulasi Piutang - BP</h1>
@@ -244,6 +243,21 @@
                 justify-content: space-between;
                 align-items: center;
                 margin-bottom: 10px;
+            }
+
+            /* 3. MENCEGAH TEKS TERPOTONG (TRUNCATE) DAN WRAPPING PADA TABEL */
+            #piutangTable {
+                table-layout: auto !important;
+                width: max-content !important;
+            }
+
+            #piutangTable th,
+            #piutangTable td {
+                white-space: nowrap !important;
+                word-break: normal !important;
+                overflow: visible !important;
+                text-overflow: clip !important;
+                padding: 6px 10px !important;
             }
         </style>
 
