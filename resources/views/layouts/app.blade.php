@@ -242,42 +242,20 @@
                 </a>
                 @endif
 
-                @if(auth()->check() && in_array(auth()->user()->branch, ['cinere', 'jatiasih', 'cianjur', 'ciawi']))
-                <div class="nav-group {{ request()->is('gr/*') ? 'open' : '' }}" id="grMenu">
-                    <button class="nav-link nav-toggle" onclick="toggleSubmenu('grMenu')" style="width: 100.2%; text-align: left; background: none; border: none; cursor: pointer;">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;">
-                            <circle cx="12" cy="12" r="10"></circle>
-                        </svg>
-                        <span>GR</span>
-                    </button>
-                    <div class="nav-submenu">
-                        @if(auth()->user()->branch === 'cinere')
-                        <a href="{{ url('/gr/cinere') }}" class="nav-sublink {{ request()->is('gr/cinere*') ? 'active' : '' }}">CINERE</a>
-                        @endif
-                        @if(auth()->user()->branch === 'jatiasih')
-                        <a href="{{ url('/gr/jatiasih') }}" class="nav-sublink {{ request()->is('gr/jatiasih*') ? 'active' : '' }}">JATIASIH</a>
-                        @endif
-                        @if(auth()->user()->branch === 'cianjur')
-                        <a href="{{ url('/gr/cianjur') }}" class="nav-sublink {{ request()->is('gr/cianjur*') ? 'active' : '' }}">CIANJUR</a>
-                        @endif
-                        @if(auth()->user()->branch === 'ciawi')
-                        <a href="{{ url('/gr/ciawi') }}" class="nav-sublink {{ request()->is('gr/ciawi*') ? 'active' : '' }}">CIAWI</a>
-                        @endif
-                    </div>
-                </div>
-                @endif
+                
 
-                @if(auth()->check() && (strtolower(auth()->user()->email) === 'adminarstock@gmail.com' || (auth()->user()->is_admin && auth()->user()->is_admin_stock)))
+                @if(in_array(auth()->user()->role, ['om', 'bm_sh', 'adh', 'ho_unit']) || auth()->user()->is_admin)
                     @php
                         $isVsvActive = request()->is('sales/vsv*') || request()->is('target*') || request()->is('actual*') || request()->is('rka*') || request()->is('leasing*') || request()->is('activity*') || request()->is('current*') || request()->is('evaluasi*') || request()->is('summary*');
                         $isSalesActive = request()->is('admin/stocks*') || request()->is('admin/units*') || request()->is('admin/warnas*') || request()->is('admin/varians*') || request()->is('admin/in-units*') || request()->is('admin/gudangs*') || request()->is('admin/cabangs*') || request()->is('sales/*') || $isVsvActive;
                         $isStockGroupActive = request()->is('admin/stocks*') || request()->is('admin/units*') || request()->is('admin/warnas*') || request()->is('admin/varians*') || request()->is('admin/in-units*') || request()->is('admin/gudangs*') || request()->is('admin/cabangs*') || request()->is('sales/dashboard');
                         $isUnitGroupActive = request()->is('admin/units*') || request()->is('admin/warnas*') || request()->is('admin/varians*');
-                        $isFinanceActive = request()->is('admin/users*') || request()->is('admin/asuransi*') || request()->is('admin/perusahaan*') || request()->is('finance/*');
-                        $isArGroupActive = request()->is('admin/users*') || request()->is('admin/asuransi*') || request()->is('admin/perusahaan*') || request()->is('finance/*');
+                        $isFinanceActive = request()->is('admin/users*') || request()->is('admin/asuransi*') || request()->is('admin/perusahaan*') || request()->is('finance/*') || request()->is('gr/*');
+                        $isArGroupActive = request()->is('admin/users*') || request()->is('admin/asuransi*') || request()->is('admin/perusahaan*') || request()->is('finance/*') || request()->is('gr/*');
                     @endphp
 
                     <!-- SALES (menu beranak) -->
+                    @if(in_array(auth()->user()->role, ['om', 'bm_sh']))
                     <div class="nav-group {{ $isSalesActive ? 'open' : '' }}" id="salesMenu">
                         <button class="nav-link nav-toggle" onclick="toggleSubmenu('salesMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;">
@@ -577,7 +555,10 @@
                         </div>
                     </div>
 
+                    @endif
+
                     <!-- FINANCE (menu beranak) -->
+                    @if(in_array(auth()->user()->role, ['om', 'adh']))
                     <div class="nav-group {{ $isFinanceActive ? 'open' : '' }}" id="financeMenu">
                         <button class="nav-link nav-toggle" onclick="toggleSubmenu('financeMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;">
@@ -603,10 +584,28 @@
                                     <a href="{{ url('/admin/users') }}" class="nav-sublink {{ request()->is('admin/users*') ? 'active' : '' }}">Users</a>
                                     <a href="{{ url('/admin/asuransi') }}" class="nav-sublink {{ request()->is('admin/asuransi*') ? 'active' : '' }}">Asuransi</a>
                                     <a href="{{ url('/admin/perusahaan') }}" class="nav-sublink {{ request()->is('admin/perusahaan*') ? 'active' : '' }}">Perusahaan</a>
-                                </div>
+                                
+                                    <!-- GR Menu inside AR -->
+                                    <div class="nav-group {{ request()->is('gr/*') ? 'open' : '' }}" id="grMenu">
+                                        <button class="nav-link nav-toggle nav-sublink-toggle" onclick="toggleSubmenu('grMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 6px 12px; font-size: 12px;">
+                                            <span>GR</span>
+                                            <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-left: auto;">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </button>
+                                        <div class="nav-submenu">
+                                            <a href="{{ url('/gr/cinere') }}" class="nav-sublink {{ request()->is('gr/cinere*') ? 'active' : '' }}">CINERE</a>
+                                            <a href="{{ url('/gr/jatiasih') }}" class="nav-sublink {{ request()->is('gr/jatiasih*') ? 'active' : '' }}">JATIASIH</a>
+                                            <a href="{{ url('/gr/cianjur') }}" class="nav-sublink {{ request()->is('gr/cianjur*') ? 'active' : '' }}">CIANJUR</a>
+                                            <a href="{{ url('/gr/ciawi') }}" class="nav-sublink {{ request()->is('gr/ciawi*') ? 'active' : '' }}">CIAWI</a>
+                                        </div>
+                                    </div>
+</div>
                             </div>
                         </div>
                     </div>
+
+                    @endif
 
                     <!-- SERVICE (menu beranak) -->
                     <div class="nav-group {{ request()->is('service/*') ? 'open' : '' }}" id="serviceMenu">
@@ -653,7 +652,23 @@
                             <a href="{{ url('/admin/users') }}" class="nav-sublink {{ request()->is('admin/users*') ? 'active' : '' }}">Users</a>
                             <a href="{{ url('/admin/asuransi') }}" class="nav-sublink {{ request()->is('admin/asuransi*') ? 'active' : '' }}">Asuransi</a>
                             <a href="{{ url('/admin/perusahaan') }}" class="nav-sublink {{ request()->is('admin/perusahaan*') ? 'active' : '' }}">Perusahaan</a>
-                        </div>
+                        
+                                    <!-- GR Menu inside AR -->
+                                    <div class="nav-group {{ request()->is('gr/*') ? 'open' : '' }}" id="grMenu">
+                                        <button class="nav-link nav-toggle nav-sublink-toggle" onclick="toggleSubmenu('grMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 6px 12px; font-size: 12px;">
+                                            <span>GR</span>
+                                            <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-left: auto;">
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </button>
+                                        <div class="nav-submenu">
+                                            <a href="{{ url('/gr/cinere') }}" class="nav-sublink {{ request()->is('gr/cinere*') ? 'active' : '' }}">CINERE</a>
+                                            <a href="{{ url('/gr/jatiasih') }}" class="nav-sublink {{ request()->is('gr/jatiasih*') ? 'active' : '' }}">JATIASIH</a>
+                                            <a href="{{ url('/gr/cianjur') }}" class="nav-sublink {{ request()->is('gr/cianjur*') ? 'active' : '' }}">CIANJUR</a>
+                                            <a href="{{ url('/gr/ciawi') }}" class="nav-sublink {{ request()->is('gr/ciawi*') ? 'active' : '' }}">CIAWI</a>
+                                        </div>
+                                    </div>
+</div>
                     </div>
                     @endif
 
@@ -744,7 +759,7 @@
                                 <polyline points="16 17 21 12 16 7"></polyline>
                                 <line x1="21" y1="12" x2="9" y2="12"></line>
                             </svg>
-                            <span>Logout ({{ strtoupper(auth()->user()->branch) }})</span>
+                            <span>Logout ({{ auth()->user()->role === 'om' ? 'HEAD OFFICE' : 'DCA ' . strtoupper(auth()->user()->branch) }})</span>
                         </button>
                     </form>
                 </div>

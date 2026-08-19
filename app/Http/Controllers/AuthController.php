@@ -14,15 +14,27 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
+        $request->validate([
+            'email' => ['required'],
             'password' => ['required'],
         ]);
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            $request->session()->regenerate();
+        $user = \App\Models\User::where('email', $request->email)->first();
 
-            return redirect()->intended('dashboard');
+        if ($user) {
+            $isPasswordValid = false;
+
+            if (\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
+                $isPasswordValid = true;
+            } elseif (\Illuminate\Support\Facades\Hash::check(strtoupper(md5($request->password)), $user->password)) {
+                $isPasswordValid = true;
+            }
+
+            if ($isPasswordValid) {
+                Auth::login($user, $request->boolean('remember'));
+                $request->session()->regenerate();
+                return redirect()->intended('dashboard');
+            }
         }
 
         return back()->withErrors([

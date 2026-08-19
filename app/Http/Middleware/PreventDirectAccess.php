@@ -17,10 +17,12 @@ class PreventDirectAccess
     {
         // Ambil data referer (halaman asal user sebelum masuk ke URL ini)
         $referer = $request->header('referer');
-
         // Jika referer kosong (artinya user ngetik manual di URL bar atau copas link di tab baru)
         // Dan route yang dituju saat ini BUKAN dashboard (biar gak error looping)
-        if (empty($referer) && !in_array($request->route()?->getName(), ['dashboard', 'dashboard.v1', 'dashboard.v2'])) {
+         if (empty($referer) && 
+            !in_array($request->route()?->getName(), ['dashboard', 'dashboard.v1', 'dashboard.v2', 'sales.leads.dashboard']) &&
+            !$request->is('sales/leads/*')
+        ) {
             return redirect()->route('dashboard');
         }
 

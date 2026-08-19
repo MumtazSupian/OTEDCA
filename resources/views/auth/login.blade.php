@@ -143,8 +143,8 @@
             @csrf
 
             <div class="form-group">
-                <label for="email" class="form-label">Email</label>
-                <input id="email" type="email" class="form-control" name="email" value="{{ old('email') }}" required autofocus>
+                <label for="email" class="form-label">Username / Email</label>
+                <input id="email" type="text" class="form-control" name="email" value="{{ old('email') }}" required autofocus>
                 @error('email')
                     <div class="error-message">{{ $message }}</div>
                 @enderror
