@@ -5,10 +5,21 @@ namespace App\Http\Controllers\Sales\vsv;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Sales\vsv\PlanSales;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class TargetRkaController extends Controller
 {
+    private $branchNameToCode = [
+        'CIPANAS'  => '641940106',
+        'CINERE'   => '641940103',
+        'JATIASIH' => '641940104',
+        'CIANJUR'  => '641940102',
+        'CIAWI'    => '641940101',
+        'HOLDING'  => '641940100',
+    ];
+
     public function salesforce(Request $request)
     {
         return $this->fetchData($request, 'By Salesman', 'TARGET SALESFORCE', 'BySalesman');
@@ -24,12 +35,87 @@ class TargetRkaController extends Controller
         return $this->fetchData($request, 'By Activity', 'TARGET DO BY SOI', 'ByActivity');
     }
 
+    /**
+     * Resolusi otomatis EmployeeID DMS berdasarkan ID, nama, atau email user
+     */
+    private function resolveSpvEmployeeIds($spvInput, $user = null, $userCabangCode = null)
+    {
+        if (!empty($spvInput)) {
+            $matched = DB::connection('dms')->table('gnMstEmployee')
+                ->where('EmployeeID', $spvInput)
+                ->pluck('EmployeeID')
+                ->toArray();
+            if (!empty($matched)) {
+                return $matched;
+            }
+
+            $matchedByName = DB::connection('dms')->table('gnMstEmployee')
+                ->where('EmployeeName', 'LIKE', "%{$spvInput}%")
+                ->pluck('EmployeeID')
+                ->toArray();
+            if (!empty($matchedByName)) {
+                return $matchedByName;
+            }
+        }
+
+        // Jika ID lokal (seperti 27792 / 11228), otomatis dicocokkan via email user login
+        if ($user && !empty($user->email)) {
+            $emailPrefix = explode('@', $user->email)[0];
+            $cleanPrefix = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $emailPrefix));
+
+            $query = DB::connection('dms')->table('gnMstEmployee')
+                ->where('PersonnelStatus', '1');
+
+            if (!empty($userCabangCode)) {
+                $query->where('BranchCode', $userCabangCode);
+            }
+
+            $branchEmps = $query->get();
+
+            foreach ($branchEmps as $emp) {
+                $cleanName = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $emp->EmployeeName));
+                if (str_contains($cleanName, $cleanPrefix) || str_contains($cleanPrefix, $cleanName)) {
+                    return [$emp->EmployeeID];
+                }
+            }
+        }
+
+        return !empty($spvInput) ? [$spvInput] : [];
+    }
+
     private function fetchData(Request $request, $headerLabel, $pageTitle, $sourceName)
     {
+        $user = Auth::user();
+        
+        // Penyesuaian pengecekan role dan admin berdasarkan struktur tabel Anda (is_admin & branch)
+        $userRole = strtoupper($user->role ?? '');
+        $userCabang = strtoupper(trim($user->branch ?? $user->cabang ?? ''));
+        
+        $isPusat = ($user->is_admin ?? false) || 
+                   in_array($userCabang, ['ADMIN', 'PUSAT']) || 
+                   in_array($userRole, ['ADMIN', 'OM', 'ADMIN DCA', 'OM DCA']);
+                   
+        $isBM = ($userRole === 'BM' || $userCabang === 'BM');
+        $isSH = ($userRole === 'SH' || $userCabang === 'SH');
+
         $selectedMonth = $request->input('month', date('n'));
         $selectedYear = $request->input('year', date('Y'));
-        $branchCode = $request->input('BranchCode', $request->input('branch_code'));
-        $spvId = $request->input('SpvEmployeeID', $request->input('spv_id'));
+
+        // 🔒 Penentuan Branch & Sales Head sesuai Role
+        if (!$isPusat) {
+            $userBranchCode = $this->branchNameToCode[$userCabang] ?? ($user->branch ?? $user->cabang);
+            $branchCode = $userBranchCode;
+
+            if ($isSH) {
+                $spvId = $request->input('SpvEmployeeID', $request->input('spv_id', $user->name));
+            } else {
+                $spvId = $request->input('SpvEmployeeID', $request->input('spv_id'));
+            }
+        } else {
+            $branchCode = $request->input('BranchCode', $request->input('branch_code'));
+            $spvId = $request->input('SpvEmployeeID', $request->input('spv_id'));
+            $userBranchCode = null;
+        }
 
         if (empty($branchCode) && empty($spvId)) {
             $dataMatrix = collect();
@@ -38,7 +124,7 @@ class TargetRkaController extends Controller
                 // 1. Resolusi BranchCode
                 $matchingBranchCodes = [];
                 if (!empty($branchCode)) {
-                    $matchingBranchCodes = \Illuminate\Support\Facades\DB::connection('dms')
+                    $matchingBranchCodes = DB::connection('dms')
                         ->table('gnMstOrganizationDtl')
                         ->where('BranchCode', 'LIKE', "%{$branchCode}%")
                         ->orWhere('BranchName', 'LIKE', "%{$branchCode}%")
@@ -48,18 +134,8 @@ class TargetRkaController extends Controller
                         ->toArray();
                 }
 
-                // 2. Resolusi SpvEmployeeID
-                $matchingSpvIds = [];
-                if (!empty($spvId)) {
-                    $matchingSpvIds = \Illuminate\Support\Facades\DB::connection('dms')
-                        ->table('gnMstEmployee')
-                        ->where('EmployeeID', 'LIKE', "%{$spvId}%")
-                        ->orWhere('EmployeeName', 'LIKE', "%{$spvId}%")
-                        ->pluck('EmployeeID')
-                        ->unique()
-                        ->values()
-                        ->toArray();
-                }
+                // 2. Resolusi SpvEmployeeID Otomatis (Smart Lookup via DMS / Email)
+                $matchingSpvIds = $this->resolveSpvEmployeeIds($spvId, $user, $userBranchCode);
 
                 // 3. Ambil daftar master detail
                 $effectiveSpvIds = $matchingSpvIds;
@@ -76,26 +152,6 @@ class TargetRkaController extends Controller
 
                 if ($isSoanEmpty) {
                     $allMasterDetails = collect();
-                } elseif ($isIGusti) {
-                    $igustiEmpIds = [
-                        '16.26.05.001', 
-                        '16.25.12.024', 
-                        '16.26.01.005',
-                        '16.26.07.002', 
-                        '16.26.05.006', 
-                        '16.26.01.006', 
-                        '16.26.06.009',
-                        '16.26.05.003',
-                        '16.25.02.004', 
-                        '16.26.07.004', 
-                    ];
-                    $allMasterDetails = \Illuminate\Support\Facades\DB::connection('dms')
-                        ->table('gnMstEmployee')
-                        ->whereIn('EmployeeID', $igustiEmpIds)
-                        ->select('EmployeeID as DetailCode', 'EmployeeName as DetailName')
-                        ->distinct()
-                        ->orderBy('EmployeeName')
-                        ->get();
                 } else {
                     $masterQuery = PlanSales::where('Year', $selectedYear)
                         ->where('SourceName', $sourceName);
@@ -119,7 +175,7 @@ class TargetRkaController extends Controller
                 if ($sourceName === 'BySalesman' && $allMasterDetails->isNotEmpty()) {
                     $empCodes = $allMasterDetails->pluck('DetailCode')->filter()->unique()->toArray();
                     if (!empty($empCodes)) {
-                        $activeEmpCodes = \Illuminate\Support\Facades\DB::connection('dms')
+                        $activeEmpCodes = DB::connection('dms')
                             ->table('gnMstEmployee')
                             ->whereIn('EmployeeID', $empCodes)
                             ->where('PersonnelStatus', '1')
@@ -192,7 +248,7 @@ class TargetRkaController extends Controller
                 }
 
                 $dataMatrix = $fullMatrix;
-                
+
             } catch (\Exception $e) {
                 $dataMatrix = collect();
                 Log::error("Error query PlanSales: " . $e->getMessage());
@@ -200,15 +256,13 @@ class TargetRkaController extends Controller
         }
 
         try {
-            // 1. Daftar SEMUA branch dari master (termasuk HOLDING & BODY REPAIR)
-            $branchesData = \Illuminate\Support\Facades\DB::connection('dms')
+            $branchesData = DB::connection('dms')
                 ->table('gnMstOrganizationDtl')
                 ->select('BranchCode', 'BranchName')
                 ->orderBy('BranchCode')
                 ->pluck('BranchName', 'BranchCode');
             $branches = $branchesData->keys()->sort();
 
-            // 2. Mapping Branch -> SPV dari DATA TARGET (pmMstPlanSales) sesuai Tahun & Target Source yang dipilih
             $planCombos = PlanSales::select('BranchCode', 'SpvEmployeeID')
                 ->where('Year', $selectedYear)
                 ->where('SourceName', $sourceName)
@@ -217,11 +271,9 @@ class TargetRkaController extends Controller
             $branchSpvMap = $planCombos->groupBy('BranchCode')
                 ->map(fn($items) => $items->pluck('SpvEmployeeID')->filter()->unique()->values());
 
-            // 3. Ambil semua SPV unik dari data target
             $spvCodes = $branchSpvMap->flatten()->unique()->values();
 
-            // 4. Ambil nama SPV dari master employee (hanya karyawan AKTIF: PersonnelStatus = '1')
-            $spvsData = \Illuminate\Support\Facades\DB::connection('dms')
+            $spvsData = DB::connection('dms')
                 ->table('gnMstEmployee')
                 ->select('EmployeeID', 'EmployeeName')
                 ->whereIn('EmployeeID', $spvCodes->toArray())
@@ -230,7 +282,6 @@ class TargetRkaController extends Controller
                 ->unique('EmployeeID')
                 ->pluck('EmployeeName', 'EmployeeID');
 
-            // 5. Saring branchSpvMap agar hanya menyajikan SPV yang masih AKTIF
             $activeSpvCodes = $spvsData->keys()->toArray();
             $branchSpvMap = $branchSpvMap->map(function ($spvList) use ($activeSpvCodes) {
                 return $spvList->filter(fn($code) => in_array($code, $activeSpvCodes))->values();
@@ -252,6 +303,7 @@ class TargetRkaController extends Controller
             'w5' => ['do' => $dataMatrix->sum('DO_Week5'), 'spk' => $dataMatrix->sum('SPK_Week5'), 'inq' => $dataMatrix->sum('INQ_Week5')],
         ];
 
+        // Tetap menggunakan return view yang pertama
         return view('sales.vsv.target_rka.index', [
             'pageTitle'         => $pageTitle,
             'tableHeaderLabel'  => $headerLabel,
@@ -265,20 +317,14 @@ class TargetRkaController extends Controller
             'branches'          => $branches,
             'spvs'              => $spvs,
             'branchesData'      => $branchesData,
-            'spvsData'          => $spvsData
+            'spvsData'          => $spvsData,
+            'isLockedBranch'    => !$isPusat,
+            'isLockedSpv'       => $isSH
         ]);
     }
 
-        public function index(Request $request)
+    public function index(Request $request)
     {
-        $semuaData = PlanSales::all();
-
-        $dataFilter = PlanSales::where('Month', 7)
-                            ->where('Year', 2026)
-                            ->get();
-
-        $dataCabang = PlanSales::where('BranchCode', 'JKT01')->get();
-
-        return view('sales.vsv.target_rka.index', compact('dataFilter'));
+        return $this->salesforce($request);
     }
 }

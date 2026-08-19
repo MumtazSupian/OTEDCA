@@ -20,6 +20,7 @@
                 <th>NAMA SALES</th>
                 <th>GRADING</th>
                 <th>JAN</th><th>FEB</th><th>MAR</th><th>APR</th><th>MEI</th><th>JUN</th>
+                <th>JUL</th><th>AGU</th><th>SEP</th><th>OKT</th><th>NOV</th><th>DES</th>
                 <th>TOTAL</th>
             </tr>
         </thead>
@@ -36,6 +37,12 @@
                 <td>{{ $d->apr }}</td>
                 <td>{{ $d->mei }}</td>
                 <td>{{ $d->jun }}</td>
+                <td>{{ $d->jul }}</td>
+                <td>{{ $d->agu }}</td>
+                <td>{{ $d->sep }}</td>
+                <td>{{ $d->okt }}</td>
+                <td>{{ $d->nov }}</td>
+                <td>{{ $d->des }}</td>
                 <td>{{ $d->total }}</td>
             </tr>
             @endforeach

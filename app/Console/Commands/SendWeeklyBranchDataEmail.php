@@ -15,7 +15,8 @@ class SendWeeklyBranchDataEmail extends Command
 
     public function handle()
     {
-        ini_set('memory_limit', '1024M');
+        // ini_set('memory_limit', '1024M');
+        ini_set('memory_limit', '-1');
         
         $this->info('Mulai memproses data piutang mingguan...');
 
@@ -80,35 +81,55 @@ class SendWeeklyBranchDataEmail extends Command
 
         $daftarEmailCabang = [
             'Ciawi' => [
-                'admsvc.cwi.dca@gmail.com',
-                'sm.cwi.dca@gmail.com',
-                'adh.cwi@suzukidutacendana.com',
-                'bm.cwi@suzukidutacendana.com',
-                'heru.dca2023@gmail.com'
+                'sender' => 'adh.cwi@suzukidutacendana.com',
+                'password' => 'xzuogjornldtedra', 
+                'recipients' => [
+                    'admsvc.cwi.dca@gmail.com',
+                    'sm.cwi.dca@gmail.com',
+                    'adh.cwi@suzukidutacendana.com',
+                    'bm.cwi@suzukidutacendana.com',
+                    'heru.dca2023@gmail.com'
+                ]
             ],
             'Cianjur' => [
-                'admsvc.cjr.dca@gmail.com',
-                'adh.cjr@suzukidutacendana.com',
-                'bm.cjr@suzukidutacendana.com',
-                'sm.cjr.dca@gmail.com'
+                'sender' => 'adh.cjr@suzukidutacendana.com',
+                'password' => 'lghzhfbkavsuwwxi',
+                'recipients' => [
+                    'admsvc.cjr.dca@gmail.com',
+                    'adh.cjr@suzukidutacendana.com',
+                    'bm.cjr@suzukidutacendana.com',
+                    'sm.cjr.dca@gmail.com'
+                ]
             ],
             'Cinere' => [
-                'adh.cnr@suzukidutacendana.com',
-                'admsvc.cnr.dca@gmail.com',
-                'sm.cnr.dca@gmail.com',
-                'bm.cnr@suzukidutacendana.com'
+                'sender' => 'adh.cnr@suzukidutacendana.com', 
+                // 'password' => 'lxupzvinvkxvjlxr', // Dimatikan sementara agar pakai akun AR
+                'recipients' => [
+                    'adh.cnr@suzukidutacendana.com',
+                    'admsvc.cnr.dca@gmail.com',
+                    'sm.cnr.dca@gmail.com',
+                    'bm.cnr@suzukidutacendana.com',
+                ]
             ],
             'Jatiasih' => [
-                'adh.jts@suzukidutacendana.com',
-                'admsvc.jts.dca@gmail.com',
-                'sm.jts.dca@gmail.com',
-                'bm.jts@suzukidutacendana.com'
+                'sender' => 'adh.jts@suzukidutacendana.com',
+                'password' => 'jgaobrfuqkeollam',
+                'recipients' => [
+                    'adh.jts@suzukidutacendana.com',
+                    'admsvc.jts.dca@gmail.com',
+                    'sm.jts.dca@gmail.com',
+                    'bm.jts@suzukidutacendana.com',
+                ]
             ],
             'BP' => [
-                'adh.jts@suzukidutacendana.com',
-                'bp.dca@suzukidutacendana.com',
-                'admbp.dcajts@gmail.com',
-                'bm.jts@suzukidutacendana.com'
+                'sender' => 'adh.jts@suzukidutacendana.com', 
+                'password' => 'jgaobrfuqkeollam',
+                'recipients' => [
+                    'adh.jts@suzukidutacendana.com',
+                    'bp.dca@suzukidutacendana.com',
+                    'admbp.dcajts@gmail.com',
+                    'bm.jts@suzukidutacendana.com',
+                ]
             ],
         ];
 
@@ -119,25 +140,43 @@ class SendWeeklyBranchDataEmail extends Command
             'it@dutacendana.com',
             'finance@suzukidutacendana.com',
             'fineke99@gmail.com',
-            'om@suzukidutacendana.com',
-            'ahmadmad122131@gmail.com'
+            'om@suzukidutacendana.com'
         ];
         
-        foreach ($daftarEmailCabang as $namaCabang => $paraPenerima) {
+        foreach ($daftarEmailCabang as $namaCabang => $konfigurasi) {
+            $senderEmail = $konfigurasi['sender'] ?? null;
+            $senderPassword = $konfigurasi['password'] ?? null;
+            $paraPenerima = $konfigurasi['recipients'] ?? [];
 
             $dataKhususCabang = $branchDataGrouped->get($namaCabang);
 
-            if ($dataKhususCabang && $dataKhususCabang->isNotEmpty()) {
+            if (!empty($paraPenerima) && $dataKhususCabang && $dataKhususCabang->isNotEmpty()) {
                 $this->info("Mengirim email rekap ke Cabang: {$namaCabang}...");
 
                 $sendToBranchData = collect([$namaCabang => $dataKhususCabang]);
+                $mailable = new WeeklyBranchDataMail($sendToBranchData, "Cabang {$namaCabang}", $senderEmail);
 
-                Mail::to($paraPenerima)->send(new WeeklyBranchDataMail($sendToBranchData, "Cabang {$namaCabang}"));
+                // Menggunakan login SMTP khusus untuk cabang jika password tersedia
+                if ($senderEmail && $senderPassword) {
+                    $mailer = Mail::build([
+                        'transport' => 'smtp',
+                        'host' => config('mail.mailers.smtp.host'),
+                        'port' => config('mail.mailers.smtp.port'),
+                        'encryption' => config('mail.mailers.smtp.encryption'),
+                        'username' => $senderEmail,
+                        'password' => $senderPassword,
+                    ]);
+                    // $mailer->to($paraPenerima)->send($mailable);
+                    $mailer->to($paraPenerima)->cc($emailAdminPusat)->send($mailable);
+                } else {
+                    // Mail::to($paraPenerima)->send($mailable);
+                    Mail::to($paraPenerima)->cc($emailAdminPusat)->send($mailable);
+                }
             }
         }
 
-        $this->info('Mengirim email rekap ALL CABANG ke jajaran Admin Pusat...');
-        Mail::to($emailAdminPusat)->send(new WeeklyBranchDataMail($branchDataGrouped, "Kombinasi Semua Cabang"));
+        // $this->info('Mengirim email rekap ALL CABANG ke jajaran Admin Pusat...');
+        // Mail::to($emailAdminPusat)->send(new WeeklyBranchDataMail($branchDataGrouped, "Kombinasi Semua Cabang"));
 
         $this->info('Seluruh rangkaian pengiriman email mingguan sukses dilakukan!');
     }

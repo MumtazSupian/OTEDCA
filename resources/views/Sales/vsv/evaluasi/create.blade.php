@@ -20,49 +20,39 @@
             <form method="POST" action="{{ route('evaluasi.store') }}">
                 @csrf
 
-                <div style="display: grid; width: 100%; box-sizing: border-box; box-sizing: border-box;  grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                <div style="display: grid; width: 100%; box-sizing: border-box; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
                     <div>
-                        <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">SALES
-                            HEAD</label>
+                        <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">SALES HEAD</label>
                         <input type="text" name="nama_sales_head" required
                             style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;"
                             placeholder="Nama Sales Head...">
                     </div>
 
                     <div>
-                        <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">NAMA
-                            SALES</label>
+                        <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">NAMA SALES</label>
                         <input type="text" name="nama_sales" required
                             style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;"
                             placeholder="Nama Sales...">
                     </div>
 
                     <div>
-                        <label
-                            style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">TANGGAL
-                            MASUK</label>
+                        <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">TANGGAL MASUK</label>
                         <input type="date" name="tanggal_masuk" required
                             style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;">
                     </div>
 
                     <div>
-                        <label
-                            style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">TANGGAL
-                            EVALUASI</label>
+                        <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">TANGGAL EVALUASI</label>
                         <input type="date" name="tanggal_evaluasi" required
                             style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;">
                     </div>
 
-                    {{-- TAMBAHAN INPUT GRADING PERLU PERBAIKAN --}}
                     <div style="grid-column: span 2;">
-                        <label
-                            style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">GRADING
-                            PERFORMA</label>
-                        {{-- perbaikan --}}
+                        <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">GRADING PERFORMA</label>
                         <div style="grid-column: span 2;">
                             <input type="text" id="grading_display" name="grading" readonly
-                                style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; background-color: #f1f1f1; font-weight: 800; color: #333;"
-                                value="FREELANCE">
+                                style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; background-color: #f44336; font-weight: 800; color: #ffffff;"
+                                value="TRAINEE -> EVALUASI">
                             <small style="color: #666;">*Terhitung otomatis</small>
                         </div>
                     </div>
@@ -70,45 +60,52 @@
 
                 <hr style="border:0; border-top:1px solid #eee; margin:30px 0;">
 
-                <h3
-                    style="font-size:15px; font-weight:800; color:#991b1b; margin-bottom:20px; display:flex; align-items:center; gap:8px;">
-                    📊 NILAI PENJUALAN BULANAN
+                <h3 style="font-size:15px; font-weight:800; color:#991b1b; margin-bottom:20px; display:flex; align-items:center; gap:8px;">
+                    📊 NILAI PENJUALAN BULANAN (12 BULAN)
                 </h3>
 
-                <div style="display: grid; width: 100%; box-sizing: border-box; box-sizing: border-box;  grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 30px;">
+                {{-- Baris 1: JAN - JUN --}}
+                <div style="display: grid; width: 100%; box-sizing: border-box; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 15px;">
                     @foreach (['jan', 'feb', 'mar', 'apr', 'mei', 'jun'] as $m)
                         <div style="text-align: center;">
-                            <label
-                                style="display:block; font-weight:700; color:#555; margin-bottom:5px; font-size:11px;">{{ strtoupper($m) }}</label>
-                            <input type="number" name="{{ $m }}" value="0" min="0"
+                            <label style="display:block; font-weight:700; color:#555; margin-bottom:5px; font-size:11px;">{{ strtoupper($m) }}</label>
+                            <input type="number" name="{{ $m }}" value="0" min="0" class="input-bulan"
+                                style="width:100%; box-sizing: border-box; padding:8px; border:1px solid #ddd; border-radius:6px; text-align:center; font-weight:600; color:#991b1b;">
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Baris 2: JUL - DES --}}
+                <div style="display: grid; width: 100%; box-sizing: border-box; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 30px;">
+                    @foreach (['jul', 'agu', 'sep', 'okt', 'nov', 'des'] as $m)
+                        <div style="text-align: center;">
+                            <label style="display:block; font-weight:700; color:#555; margin-bottom:5px; font-size:11px;">{{ strtoupper($m) }}</label>
+                            <input type="number" name="{{ $m }}" value="0" min="0" class="input-bulan"
                                 style="width:100%; box-sizing: border-box; padding:8px; border:1px solid #ddd; border-radius:6px; text-align:center; font-weight:600; color:#991b1b;">
                         </div>
                     @endforeach
                 </div>
 
                 <div style="margin-bottom: 20px;">
-                    <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">HASIL
-                        EVALUASI</label>
+                    <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">HASIL EVALUASI</label>
                     <textarea name="evaluasi" rows="3" placeholder="Tulis hasil evaluasi di sini..."
                         style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none; resize: none;"></textarea>
                 </div>
 
                 <div style="margin-bottom: 35px; width: 50%;">
-                    <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">TANGGAL
-                        KELUAR (Optional)</label>
+                    <label style="display:block; font-weight:700; color:#333; margin-bottom:8px; font-size:13px;">TANGGAL KELUAR (Optional)</label>
                     <input type="date" name="tanggal_keluar"
                         style="width:100%; box-sizing: border-box; padding:10px; border:1px solid #ccc; border-radius:6px; outline:none;">
                 </div>
 
-                <div
-                    style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 20px;">
                     <a href="{{ route('evaluasi.index') }}"
                         style="text-decoration:none; color:#666; font-weight:600; font-size:14px; display:flex; align-items:center; gap:5px;">
                         ← Batal & Kembali
                     </a>
 
                     <button type="submit"
-                        style="background:#dc2626; color: #dc2626; font-weight: 800; color: #ffffff !important; font-weight: 800; font-weight:800; border:none; padding:12px 30px; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; transition:0.3s; box-shadow:0 4px 10px rgba(30,136,229,0.3);"
+                        style="background:#dc2626; color: #ffffff !important; font-weight: 800; border:none; padding:12px 30px; border-radius:8px; cursor:pointer; font-size:14px; transition:0.3s; box-shadow:0 4px 10px rgba(220,38,38,0.3);"
                         onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
                         💾 SIMPAN DATA EVALUASI
                     </button>
@@ -118,66 +115,73 @@
     </div>
 
     <script>
-        const inputs = ['jan', 'feb', 'mar'];
-        inputs.forEach(id => {
-            document.getElementsByName(id)[0].addEventListener('input', calculateGrade);
+        document.querySelectorAll('.input-bulan').forEach(input => {
+            input.addEventListener('input', updateGrading);
         });
 
         function updateGrading() {
-            // Ambil nilai unit bulanan
-            let jan = parseFloat(document.querySelector('input[name="jan"]').value) || 0;
-            let feb = parseFloat(document.querySelector('input[name="feb"]').value) || 0;
-            let mar = parseFloat(document.querySelector('input[name="mar"]').value) || 0;
-            let apr = parseFloat(document.querySelector('input[name="apr"]').value) || 0;
-            let mei = parseFloat(document.querySelector('input[name="mei"]').value) || 0;
-            let jun = parseFloat(document.querySelector('input[name="jun"]').value) || 0;
+            const months = [
+                parseFloat(document.querySelector('input[name="jan"]').value) || 0,
+                parseFloat(document.querySelector('input[name="feb"]').value) || 0,
+                parseFloat(document.querySelector('input[name="mar"]').value) || 0,
+                parseFloat(document.querySelector('input[name="apr"]').value) || 0,
+                parseFloat(document.querySelector('input[name="mei"]').value) || 0,
+                parseFloat(document.querySelector('input[name="jun"]').value) || 0,
+                parseFloat(document.querySelector('input[name="jul"]').value) || 0,
+                parseFloat(document.querySelector('input[name="agu"]').value) || 0,
+                parseFloat(document.querySelector('input[name="sep"]').value) || 0,
+                parseFloat(document.querySelector('input[name="okt"]').value) || 0,
+                parseFloat(document.querySelector('input[name="nov"]').value) || 0,
+                parseFloat(document.querySelector('input[name="des"]').value) || 0
+            ];
 
-            let total3Bulan = jan + feb + mar;
-            let total6Bulan = jan + feb + mar + apr + mei + jun;
-            let rataRata3Bulan = total3Bulan / 3;
-            let rataRata6Bulan = total6Bulan / 6;
+            const total12Bulan = months.reduce((a, b) => a + b, 0);
 
-            let grade = "TRAINEE";
-            let status = "";
-            let bgColor = "#4caf50"; // Default Trainee (Hijau)
+            let firstIdx = months.findIndex(val => val > 0);
+            if (firstIdx === -1) firstIdx = 0;
 
-            // LOGIKA PERINGKAT
+            const data3Awal = months.slice(firstIdx, firstIdx + 3);
+            const total3Awal = data3Awal.reduce((a, b) => a + b, 0);
+            const avg3Awal = data3Awal.length > 0 ? (total3Awal / data3Awal.length) : 0;
 
-            // 1. Cek dari yang tertinggi (PLATINUM)
-            if (rataRata6Bulan >= 5 && total6Bulan >= 31) {
-                grade = "PLATINUM";
-                bgColor = "#1a237e";
-            }
-            // 2. GOLD ke PLATINUM
-            else if (rataRata6Bulan >= 4 && total6Bulan >= 25) {
-                grade = "GOLD";
-                bgColor = "#ff9800";
-                status = (rataRata6Bulan >= 5 && total6Bulan >= 31) ? "" : " -> KADAR PLATINUM";
-            }
-            // 3. SILVER ke GOLD
-            else if (rataRata3Bulan >= 2 && total3Bulan >= 7) {
-                grade = "SILVER";
-                bgColor = "#9e9e9e";
-                // Cek jika hampir naik ke Gold (Syarat Gold: 4 unit/bln & 25 total/6bln)
-                status = " -> KADAR GOLD";
-            }
-            // 4. TRAINEE ke SILVER atau EVALUASI
-            else {
-                grade = "TRAINEE";
-                bgColor = "#4caf50";
-                if (rataRata3Bulan >= 1) { // 1 unit per bulan (seperti kasus 1,1,1 kamu)
-                    status = " -> KADAR SILVER";
-                } else if (total3Bulan < 3) {
-                    status = " -> EVALUASI";
-                    bgColor = "#f44336"; // Merah jika evaluasi
+            let lastIdx = 11;
+            for (let i = 11; i >= 0; i--) {
+                if (months[i] > 0) {
+                    lastIdx = i;
+                    break;
                 }
+            }
+            const startLast3 = Math.max(0, lastIdx - 2);
+            const data3Akhir = months.slice(startLast3, startLast3 + 3);
+            const total3Akhir = data3Akhir.reduce((a, b) => a + b, 0);
+            const avg3Akhir = data3Akhir.length > 0 ? (total3Akhir / data3Akhir.length) : 0;
+
+            const activeMonths = Math.max(1, 12 - firstIdx);
+            const avgTotal = total12Bulan / activeMonths;
+
+            let gradeText = "TRAINEE -> EVALUASI";
+            let bgColor = "#f44336"; // Default merah
+
+            if (avgTotal >= 5 && total12Bulan >= 31) {
+                gradeText = "PLATINUM";
+                bgColor = "#1a237e";
+            } else if (avgTotal >= 4 && total12Bulan >= 25) {
+                gradeText = "GOLD -> KADAR PLATINUM";
+                bgColor = "#ff9800";
+            } else if (avg3Awal >= 2 || total3Awal >= 7 || avg3Akhir >= 2 || total3Akhir >= 6) {
+                gradeText = "SILVER -> KADAR GOLD";
+                bgColor = "#78909c";
+            } else if (avg3Awal >= 1) {
+                gradeText = "TRAINEE -> KADAR SILVER";
+                bgColor = "#4caf50";
             }
 
             let display = document.getElementById('grading_display');
-            display.value = grade + status;
-            display.style.backgroundColor = bgColor;
-            display.style.color = "#ffffff";
+            if (display) {
+                display.value = gradeText;
+                display.style.backgroundColor = bgColor;
+                display.style.color = "#ffffff";
+            }
         }
     </script>
-
 @endsection

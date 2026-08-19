@@ -8,6 +8,8 @@ use App\Models\User;
 
 class ActualDoSalesForce extends Model
 {
+    use HasFactory;
+
     protected $table = 'actual_do_salesforces';
 
     protected $fillable = [
@@ -27,6 +29,7 @@ class ActualDoSalesForce extends Model
         'des',
         'total',
         'cabang',
+        'user_id',
     ];
 
     public function user()

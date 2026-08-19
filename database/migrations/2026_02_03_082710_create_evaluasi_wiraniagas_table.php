@@ -25,11 +25,19 @@ return new class extends Migration
         $table->integer('apr')->default(0);
         $table->integer('mei')->default(0);
         $table->integer('jun')->default(0);
+        $table->integer('jul')->default(0);
+        $table->integer('agu')->default(0);
+        $table->integer('sep')->default(0);
+        $table->integer('okt')->default(0);
+        $table->integer('nov')->default(0);
+        $table->integer('des')->default(0);
+
         $table->integer('total')->default(0);
         $table->text('evaluasi')->nullable();
         $table->date('tanggal_keluar')->nullable();
 
         $table->string('cabang');
+        $table->unsignedBigInteger('user_id')->nullable();
         $table->timestamps();
     });
     }

@@ -163,22 +163,36 @@
                     </div>
                 </div>
             </div>
+            
+            {{-- CABANG / BRANCH MANAGER --}}
             <div class="filter-row">
                 <span class="filter-label">Cabang (Branch)</span>
                 <div class="input-with-icon">
-                    <input type="text" id="branch_manager_input" name="branch_manager" placeholder="Pilih Cabang..." value="{{ request('branch_manager') }}" readonly style="background:#f8fafc; color:#0f172a; font-weight:600; cursor:pointer;">
-                    <button type="button" id="btnOpenBmModal" class="input-icon-btn">🔍</button>
+                    <input type="text" id="branch_manager_input" name="branch_manager" placeholder="Pilih Cabang..." value="{{ $BranchCode ?? request('branch_manager') }}" readonly style="background:#f8fafc; color:#0f172a; font-weight:600; cursor:pointer;">
+                    @if(empty($isLockedBranch))
+                        <button type="button" id="btnOpenBmModal" class="input-icon-btn">🔍</button>
+                    @else
+                        <span class="input-icon-btn" style="background:#94a3b8; color:#fff; cursor:default;">🔒</span>
+                    @endif
                 </div>
                 <div class="name-display" id="branch_manager_name_display">{{ $branchManagerName ?? 'Pilih Cabang' }}</div>
             </div>
+
+            {{-- SALES HEAD --}}
             <div class="filter-row">
                 <span class="filter-label">Sales Head</span>
                 <div class="input-with-icon">
-                    <input type="text" id="sales_head_input" name="sales_head" placeholder="Pilih Branch Manager dulu..." value="{{ request('sales_head') }}" readonly style="background:#f8fafc; color:#0f172a; font-weight:600;">
-                    <button type="button" id="btnOpenSpvModal" class="input-icon-btn" disabled style="opacity:0.6; cursor:not-allowed;">🔍</button>
+                    <input type="text" id="sales_head_input" name="sales_head" placeholder="{{ !empty($isLockedSpv) ? ($SpvEmployeeID ?? '') : 'Semua Sales Head' }}" value="{{ $SpvEmployeeID ?? request('sales_head') }}" readonly style="background:#f8fafc; color:#0f172a; font-weight:600;">
+                    @if(empty($isLockedSpv))
+                        <button type="button" id="btnOpenSpvModal" class="input-icon-btn" {{ empty($BranchCode) && empty(request('branch_manager')) ? 'disabled style="opacity:0.6; cursor:not-allowed;"' : '' }}>🔍</button>
+                    @else
+                        <span class="input-icon-btn" style="background:#94a3b8; color:#fff; cursor:default;">🔒</span>
+                    @endif
                 </div>
-                <div class="name-display" id="sales_head_name_display">{{ $salesHeadName ?? 'Sales Head Name' }}</div>
+                <div class="name-display" id="sales_head_name_display">{{ $salesHeadName ?? 'Semua Sales Head' }}</div>
             </div>
+
+            {{-- SALESMAN --}}
             <div class="filter-row">
                 <span class="filter-label">Salesman</span>
                 <div class="input-with-icon">
@@ -187,6 +201,7 @@
                 </div>
                 <div class="name-display">{{ request('salesman') ?: 'Salesman (Opsional)' }}</div>
             </div>
+            
             <button type="submit" class="btn-cari">🔍 Cari</button>
         </form>
     </div>
@@ -210,15 +225,13 @@
                 </thead>
                 <tbody>
                     @php 
-                        $grandTotalSpk = 0; 
-                        $grandTotalDo = 0; 
-                        $grandTotalDelivery = 0;
+                        $gSpk = 0; $gDo = 0; $gDeliv = 0;
                     @endphp
                     @forelse($data as $row)
                         @php
-                            $grandTotalSpk      += $row->total_spk      ?? 0;
-                            $grandTotalDo       += $row->total_do       ?? 0;
-                            $grandTotalDelivery += $row->total_delivery ?? 0;
+                            $gSpk   += $row->total_spk      ?? 0;
+                            $gDo    += $row->total_do       ?? 0;
+                            $gDeliv += $row->total_delivery ?? 0;
                         @endphp
                         <tr>
                             <td class="td-type">{{ $row->TipeKendaraan }}</td>
@@ -245,10 +258,10 @@
                     <tr class="tfoot-row">
                         <td style="text-align:right; font-weight:800;">TOTAL KESELURUHAN</td>
                         @if(isset($viewType) && $viewType === 'spk')
-                            <td class="text-center">{{ number_format($grandTotalSpk) }}</td>
+                            <td class="text-center">{{ number_format($gSpk) }}</td>
                         @else
-                            <td class="text-center">{{ number_format($grandTotalDo) }}</td>
-                            <td class="text-center">{{ number_format($grandTotalDelivery) }}</td>
+                            <td class="text-center">{{ number_format($gDo) }}</td>
+                            <td class="text-center">{{ number_format($gDeliv) }}</td>
                         @endif
                     </tr>
                 </tfoot>
@@ -260,6 +273,7 @@
 </div>
 
     {{-- CUSTOM MODAL POP-UP BRANCH MANAGER --}}
+    @if(empty($isLockedBranch))
     <div id="customBmModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
         <div style="background:#fff; width:600px; max-width:90%; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.2); overflow:hidden;">
             <div style="padding:15px 20px; background:#f7fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
@@ -272,9 +286,9 @@
                     <table style="width:100%; border-collapse:collapse; font-size:12px;">
                         <thead style="background:#fee2e2; color:#991b1b;">
                             <tr>
-                                <th style="padding:8px; border:1px solid #90caf9; text-align:left; color:#1a1a2e;">ID</th>
-                                <th style="padding:8px; border:1px solid #90caf9; text-align:left; color:#1a1a2e;">Branch Manager</th>
-                                <th style="padding:8px; border:1px solid #90caf9; text-align:left; color:#1a1a2e;">Jabatan</th>
+                                <th style="padding:8px; border:1px solid #fca5a5; text-align:left; color:#991b1b;">ID</th>
+                                <th style="padding:8px; border:1px solid #fca5a5; text-align:left; color:#991b1b;">Branch Manager</th>
+                                <th style="padding:8px; border:1px solid #fca5a5; text-align:left; color:#991b1b;">Jabatan</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -295,8 +309,10 @@
             </div>
         </div>
     </div>
+    @endif
 
     {{-- CUSTOM MODAL POP-UP SALES HEAD --}}
+    @if(empty($isLockedSpv))
     <div id="customSpvModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
         <div style="background:#fff; width:600px; max-width:90%; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.2); overflow:hidden;">
             <div style="padding:15px 20px; background:#f7fafc; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
@@ -309,12 +325,17 @@
                     <table style="width:100%; border-collapse:collapse; font-size:12px;">
                         <thead style="background:#fee2e2; color:#991b1b;">
                             <tr>
-                                <th style="padding:8px; border:1px solid #90caf9; text-align:left; color:#1a1a2e;">ID</th>
-                                <th style="padding:8px; border:1px solid #90caf9; text-align:left; color:#1a1a2e;">Nama Sales Head</th>
-                                <th style="padding:8px; border:1px solid #90caf9; text-align:left; color:#1a1a2e;">Jabatan</th>
+                                <th style="padding:8px; border:1px solid #fca5a5; text-align:left; color:#991b1b;">ID</th>
+                                <th style="padding:8px; border:1px solid #fca5a5; text-align:left; color:#991b1b;">Nama Sales Head</th>
+                                <th style="padding:8px; border:1px solid #fca5a5; text-align:left; color:#991b1b;">Jabatan</th>
                             </tr>
                         </thead>
                         <tbody>
+                            <tr class="spv-item" data-branch="ALL" style="cursor:pointer; border-bottom:1px solid #eee; background:#fef2f2;" onclick="selectSpv('', 'Semua Sales Head')">
+                                <td style="padding:8px; border-left:1px solid #eee; border-right:1px solid #eee; color:#dc2626; font-weight:700;">ALL</td>
+                                <td style="padding:8px; border-right:1px solid #eee; color:#dc2626; font-weight:700;">[ TAMPILKAN SEMUA SALES HEAD ]</td>
+                                <td style="padding:8px; border-right:1px solid #eee; color:#dc2626; font-weight:700;">TOTAL CABANG</td>
+                            </tr>
                             @forelse($spvsMap ?? [] as $spvId => $spvInfo)
                             <tr class="spv-item" data-branch="{{ $spvInfo['BranchCode'] }}" style="cursor:pointer; border-bottom:1px solid #eee;" onclick="selectSpv('{{ $spvId }}', '{{ addslashes($spvInfo['Name']) }}')">
                                 <td style="padding:8px; border-left:1px solid #eee; border-right:1px solid #eee; color:#1a1a2e;">{{ $spvId }}</td>
@@ -332,8 +353,11 @@
             </div>
         </div>
     </div>
+    @endif
 
     <script>
+        const isLockedBranch = {{ !empty($isLockedBranch) ? 'true' : 'false' }};
+        const isLockedSpv = {{ !empty($isLockedSpv) ? 'true' : 'false' }};
         const bmBranchMap = @json($bmBranchMap ?? []);
         const branchSpvMap = @json($branchSpvMap ?? []);
         
@@ -349,28 +373,27 @@
             const bmInput = document.getElementById('branch_manager_input');
             const spvInput = document.getElementById('sales_head_input');
             
-            if (btnOpenBm) {
+            if (btnOpenBm && bmModal && !isLockedBranch) {
                 btnOpenBm.addEventListener('click', function() { bmModal.style.display = 'flex'; });
             }
-            if (btnCloseBm) {
+            if (btnCloseBm && bmModal) {
                 btnCloseBm.addEventListener('click', function() { bmModal.style.display = 'none'; });
             }
             
-            if (btnOpenSpv) {
+            if (btnOpenSpv && spvModal && !isLockedSpv) {
                 btnOpenSpv.addEventListener('click', function() { 
                     if(!this.disabled) spvModal.style.display = 'flex'; 
                 });
             }
-            if (btnCloseSpv) {
+            if (btnCloseSpv && spvModal) {
                 btnCloseSpv.addEventListener('click', function() { spvModal.style.display = 'none'; });
             }
             
             window.addEventListener('click', function(e) {
-                if(e.target === bmModal) bmModal.style.display = 'none';
-                if(e.target === spvModal) spvModal.style.display = 'none';
+                if(bmModal && e.target === bmModal) bmModal.style.display = 'none';
+                if(spvModal && e.target === spvModal) spvModal.style.display = 'none';
             });
             
-            // Search functions
             const searchBm = document.getElementById('searchBmInput');
             if(searchBm) {
                 searchBm.addEventListener('keyup', function() {
@@ -392,19 +415,17 @@
                 });
             }
             
-            // Initial filter check
             if(bmInput && bmInput.value) {
                 filterSpvs(bmInput.value);
             }
         });
         
         function filterSpvs(bmId) {
-            const branchCode = bmBranchMap[bmId];
+            const branchCode = bmBranchMap[bmId] || bmId;
             
             document.querySelectorAll('.spv-item').forEach(row => {
                 const spvBranch = row.getAttribute('data-branch');
-                // Allow if spv is in the same branch as the BM
-                if (branchCode && spvBranch === branchCode) {
+                if (spvBranch === 'ALL' || (branchCode && spvBranch === branchCode)) {
                     row.style.display = '';
                     row.classList.remove('hidden-by-bm');
                 } else {
@@ -413,15 +434,14 @@
                 }
             });
             
-            // Enable SPV button
             const spvBtn = document.getElementById('btnOpenSpvModal');
-            if(spvBtn) {
+            if(spvBtn && !isLockedSpv) {
                 spvBtn.disabled = false;
                 spvBtn.style.opacity = '1';
                 spvBtn.style.cursor = 'pointer';
             }
             const spvInp = document.getElementById('sales_head_input');
-            if(spvInp) {
+            if(spvInp && !isLockedSpv) {
                 spvInp.placeholder = 'Pilih Sales Head...';
             }
         }
@@ -431,16 +451,15 @@
             document.getElementById('branch_manager_name_display').innerText = name;
             document.getElementById('customBmModal').style.display = 'none';
             
-            // Reset SPV
             document.getElementById('sales_head_input').value = '';
-            document.getElementById('sales_head_name_display').innerText = 'Sales Head Name';
+            document.getElementById('sales_head_name_display').innerText = 'Semua Sales Head';
             
             filterSpvs(id);
         }
         
         function selectSpv(id, name) {
             document.getElementById('sales_head_input').value = id;
-            document.getElementById('sales_head_name_display').innerText = name;
+            document.getElementById('sales_head_name_display').innerText = name || 'Semua Sales Head';
             document.getElementById('customSpvModal').style.display = 'none';
         }
     </script>

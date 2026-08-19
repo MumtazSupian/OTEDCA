@@ -34,6 +34,27 @@ class PiutangController extends Controller
 
         $year = $request->input('year');
 
+        // ========================================================
+        // [SCRIPT SEMENTARA PEMBERSIH DATA DUPLIKAT MASA LALU]
+        // ========================================================
+        try {
+            $duplicates = DB::select("
+                SELECT no_bukti, MIN(id) as keep_id
+                FROM piutangs
+                WHERE branch = ? AND no_bukti IS NOT NULL AND no_bukti != '-'
+                GROUP BY no_bukti
+                HAVING COUNT(*) > 1
+            ", ['bp']);
+            
+            foreach ($duplicates as $dup) {
+                Piutang::where('branch', 'bp')
+                    ->where('no_bukti', $dup->no_bukti)
+                    ->where('id', '!=', $dup->keep_id)
+                    ->delete();
+            }
+        } catch (\Throwable $e) {}
+        // ========================================================
+
         // 1. Bersihkan invoice nyasar selain 05 pada BP
         Piutang::where('branch', 'bp')
             ->where(function ($q) {
@@ -44,14 +65,25 @@ class PiutangController extends Controller
             })
             ->delete();
 
-        // 2. Ambil data BP BELUM LUNAS dari DMS (Semua tahun yang belum lunas)
+        // 2. Ambil data BP BELUM LUNAS dari DMS
         try {
-            $dmsQuery = DB::connection('dms')->table('svTrnService as s')
+            $dmsQuery = DB::connection('dms')->table('svTrnInvoice as s')
+                ->join('svTrnService as srv', 's.InvoiceNo', '=', 'srv.InvoiceNo') // LOGIC BARU
                 ->leftJoin('gnMstCustomer as c', 's.CustomerCode', '=', 'c.CustomerCode')
-                ->leftJoin('arTrnBankKasTerimaInvoice as b', function ($join) {
-                    $join->on('s.InvoiceNo', '=', 'b.InvoiceNo')
-                         ->where('b.ProfitCenterCode', '=', '200');
+                ->leftJoin('svMstAsuransiBDR as asu', 'srv.AsuransiBdr', '=', 'asu.KodeAsuransi')
+                ->leftJoin('gnMstCustomer as asu_cust', 'srv.AsuransiBdr', '=', 'asu_cust.CustomerCode')
+                ->leftJoin(DB::raw('(SELECT InvoiceNo, MIN(ReceivableOutstand) as CurrentOutstand FROM arTrnBankKasTerimaInvoice WHERE BranchCode IN (\'641940101\', \'641940102\', \'641940103\', \'641940104\', \'641940105\') GROUP BY InvoiceNo) as b'), 's.InvoiceNo', '=', 'b.InvoiceNo')
+                ->where(function($q) {
+                    $q->whereNull('b.InvoiceNo')
+                      ->orWhere('b.CurrentOutstand', '>', 0);
                 })
+                // CEGAH INVOICE YANG ADA DI arTrnDbCrNoteDtl DARI DITARIK KE APLIKASI
+                ->whereNotExists(function ($query) {
+                    $query->select(DB::raw(1))
+                          ->from('arTrnDbCrNoteDtl as d')
+                          ->whereColumn('d.InvoiceNo', 's.InvoiceNo');
+                })
+                ->where('s.InvoiceStatus', '2')
                 ->where(function ($q) {
                     $q->where('s.InvoiceNo', 'LIKE', 'IC05%')
                       ->orWhere('s.InvoiceNo', 'LIKE', 'IA05%')
@@ -73,14 +105,13 @@ class PiutangController extends Controller
                 })
                 ->whereNotNull('s.InvoiceNo')
                 ->where('s.InvoiceNo', '!=', '')
-                ->whereNull('b.InvoiceNo') // HANYA TRANSAKSI YANG BELUM LUNAS
                 ->select([
                     's.JobOrderNo as no_spk',
                     's.InvoiceNo as no_bukti',
                     's.JobOrderDate as tgl_bukti',
                     's.PoliceRegNo as no_polisi',
-                    's.TotalSrvAmount as saldo_awal',
-                    's.AsuransiBdr as nama_asuransi',
+                    's.TotalSrvAmt as saldo_awal',
+                    DB::raw("COALESCE(NULLIF(TRIM(asu.NamaAsuransi), ''), NULLIF(TRIM(asu_cust.CustomerName), ''), NULLIF(TRIM(asu_cust.CustomerGovName), ''), srv.AsuransiBdr) as nama_asuransi"),
                     DB::raw("COALESCE(NULLIF(TRIM(c.CustomerName), ''), NULLIF(TRIM(c.CustomerGovName), ''), '-') as nama_konsumen"),
                     'c.CustomerType as cust_type',
                     'c.CustomerGovName as perusahaan_name',
@@ -93,10 +124,10 @@ class PiutangController extends Controller
 
             $dmsRecords = $dmsQuery->get();
 
-            // Sinkronkan data belum lunas, perbaiki nama kosong, & update pelunasan
             $this->syncDmsToLocal($dmsRecords, 'bp');
             $this->syncMissingMasterData('bp');
             $this->syncDmsPayments('bp');
+            $this->cleanupCancelledInvoices('bp');
         } catch (\Throwable $e) {
             Log::error("Gagal sinkronisasi data DMS BP: " . $e->getMessage());
         }
@@ -202,15 +233,47 @@ class PiutangController extends Controller
 
         $year = $request->input('year');
 
-        // 1. Ambil data transaksi BELUM LUNAS dari DMS (Semua tahun yang belum lunas)
+        // ========================================================
+        // [SCRIPT SEMENTARA PEMBERSIH DATA DUPLIKAT MASA LALU]
+        // ========================================================
+        try {
+            $duplicates = DB::select("
+                SELECT no_bukti, MIN(id) as keep_id
+                FROM piutangs
+                WHERE branch = ? AND no_bukti IS NOT NULL AND no_bukti != '-'
+                GROUP BY no_bukti
+                HAVING COUNT(*) > 1
+            ", [$branch]);
+            
+            foreach ($duplicates as $dup) {
+                Piutang::where('branch', $branch)
+                    ->where('no_bukti', $dup->no_bukti)
+                    ->where('id', '!=', $dup->keep_id)
+                    ->delete();
+            }
+        } catch (\Throwable $e) {}
+        // ========================================================
+
+        // 1. Ambil data transaksi BELUM LUNAS dari DMS 
         if ($bCode) {
             try {
-                $dmsQuery = DB::connection('dms')->table('svTrnService as s')
+                $dmsQuery = DB::connection('dms')->table('svTrnInvoice as s')
+                    ->join('svTrnService as srv', 's.InvoiceNo', '=', 'srv.InvoiceNo') // LOGIC BARU
                     ->leftJoin('gnMstCustomer as c', 's.CustomerCode', '=', 'c.CustomerCode')
-                    ->leftJoin('arTrnBankKasTerimaInvoice as b', function ($join) {
-                        $join->on('s.InvoiceNo', '=', 'b.InvoiceNo')
-                             ->where('b.ProfitCenterCode', '=', '200');
+                    ->leftJoin('svMstAsuransiBDR as asu', 'srv.AsuransiBdr', '=', 'asu.KodeAsuransi')
+                    ->leftJoin('gnMstCustomer as asu_cust', 'srv.AsuransiBdr', '=', 'asu_cust.CustomerCode')
+                    // LOGIC BARU: Menggunakan Left Join agar Invoice yang belum dibayar tetap masuk
+                    ->leftJoin(DB::raw('(SELECT InvoiceNo, MIN(ReceivableOutstand) as CurrentOutstand FROM arTrnBankKasTerimaInvoice WHERE BranchCode IN (\'641940101\', \'641940102\', \'641940103\', \'641940104\', \'641940105\') GROUP BY InvoiceNo) as b'), 's.InvoiceNo', '=', 'b.InvoiceNo')
+                    ->where(function($q) {
+                        $q->whereNull('b.InvoiceNo')
+                          ->orWhere('b.CurrentOutstand', '>', 0);
                     })
+                    ->whereNotExists(function ($query) {
+                        $query->select(DB::raw(1))
+                              ->from('arTrnDbCrNoteDtl as d')
+                              ->whereColumn('d.InvoiceNo', 's.InvoiceNo');
+                    })
+                    ->where('s.InvoiceStatus', '2')
                     ->where('s.BranchCode', $bCode)
                     ->whereNotNull('s.InvoiceNo')
                     ->where('s.InvoiceNo', '!=', '')
@@ -219,14 +282,13 @@ class PiutangController extends Controller
                           ->orWhere('s.InvoiceNo', 'LIKE', 'II%')
                           ->orWhere('s.InvoiceNo', 'LIKE', 'IA%');
                     })
-                    ->whereNull('b.InvoiceNo') // HANYA TRANSAKSI YANG BELUM LUNAS
                     ->select([
                         's.JobOrderNo as no_spk',
                         's.InvoiceNo as no_bukti',
                         's.JobOrderDate as tgl_bukti',
                         's.PoliceRegNo as no_polisi',
-                        's.TotalSrvAmount as saldo_awal',
-                        's.AsuransiBdr as nama_asuransi',
+                        's.TotalSrvAmt as saldo_awal', // Menggunakan TotalSrvAmt
+                        DB::raw("COALESCE(NULLIF(TRIM(asu.NamaAsuransi), ''), NULLIF(TRIM(asu_cust.CustomerName), ''), NULLIF(TRIM(asu_cust.CustomerGovName), ''), srv.AsuransiBdr) as nama_asuransi"),
                         DB::raw("COALESCE(NULLIF(TRIM(c.CustomerName), ''), NULLIF(TRIM(c.CustomerGovName), ''), '-') as nama_konsumen"),
                         'c.CustomerType as cust_type',
                         'c.CustomerGovName as perusahaan_name',
@@ -239,12 +301,12 @@ class PiutangController extends Controller
 
                 $dmsRecords = $dmsQuery->get();
 
-                // Sinkronkan data belum lunas, perbaiki nama kosong, & update pelunasan
                 $this->syncDmsToLocal($dmsRecords, $branch);
                 $this->syncMissingMasterData($branch);
                 $this->syncDmsPayments($branch);
+                $this->cleanupCancelledInvoices($branch); 
             } catch (\Throwable $e) {
-                Log::error("Gagal connect / ambil data DMS svTrnService untuk cabang {$branch}: " . $e->getMessage());
+                Log::error("Gagal connect / ambil data DMS svTrnInvoice untuk cabang {$branch}: " . $e->getMessage());
             }
         }
 
@@ -323,9 +385,35 @@ class PiutangController extends Controller
     /* =========================================================================
        HELPER METHODS (LOGIC SINKRONISASI DMS KE DB LOKAL & PERHITUNGAN)
        ========================================================================= */
+
+    private function cleanupCancelledInvoices(string $branch): void
+    {
+        try {
+            $localInvoices = Piutang::where('branch', $branch)
+                ->whereNotNull('no_bukti')
+                ->where('no_bukti', '!=', '-')
+                ->pluck('no_bukti')
+                ->toArray();
+
+            if (empty($localInvoices)) return;
+
+            $cancelled = DB::connection('dms')->table('arTrnDbCrNoteDtl')
+                ->whereIn('InvoiceNo', $localInvoices)
+                ->pluck('InvoiceNo')
+                ->toArray();
+
+            if (!empty($cancelled)) {
+                Piutang::where('branch', $branch)
+                    ->whereIn('no_bukti', $cancelled)
+                    ->delete();
+            }
+        } catch (\Throwable $e) {
+            Log::error("Gagal cleanup arTrnDbCrNoteDtl: " . $e->getMessage());
+        }
+    }
+
     private function syncDmsToLocal($dmsRecords, string $branch): void
     {
-        // 1. Bersihkan invoice selain IC, II, IA dari database lokal
         Piutang::where('branch', $branch)
             ->whereNotNull('no_bukti')
             ->where('no_bukti', '!=', '-')
@@ -336,7 +424,6 @@ class PiutangController extends Controller
             })
             ->delete();
 
-        // 2. Khusus BP: bersihkan invoice selain kode cabang 05
         if ($branch === 'bp') {
             Piutang::where('branch', 'bp')
                 ->where(function ($q) {
@@ -353,15 +440,17 @@ class PiutangController extends Controller
         }
 
         $existing = Piutang::where('branch', $branch)
-            ->whereIn('no_spk', $dmsRecords->pluck('no_spk')->toArray())
+            ->whereIn('no_bukti', $dmsRecords->pluck('no_bukti')->map(fn($v) => trim($v))->filter()->toArray())
             ->get()
-            ->keyBy('no_spk');
+            ->keyBy('no_bukti');
 
         foreach ($dmsRecords as $dms) {
             $spk = trim($dms->no_spk);
             if (empty($spk)) continue;
 
             $inv = trim($dms->no_bukti ?? '');
+            if (empty($inv)) continue; 
+
             $invPrefix = strtoupper(substr($inv, 0, 2));
 
             if (!in_array($invPrefix, ['IC', 'II', 'IA'], true)) {
@@ -386,13 +475,12 @@ class PiutangController extends Controller
                 default => 'REGULER'
             };
 
-            // Nama asuransi hanya jika kategori SPK adalah ASURANSI atau ada data asuransi
             $namaAsuransi = $dms->nama_asuransi ?: ($kategoriSpk === 'ASURANSI' ? $dms->perusahaan_name : null);
 
-            $local = $existing->get($spk);
+            $local = $existing->get($inv);
 
             if (!$local) {
-                Piutang::create([
+                $newLocal = Piutang::create([
                     'branch'          => $branch,
                     'no_spk'          => $spk,
                     'no_bukti'        => $inv ?: '-',
@@ -415,6 +503,10 @@ class PiutangController extends Controller
                     'saldo_akhir'     => $saldoAwal,
                     'no_polisi'       => $dms->no_polisi ?: '-',
                 ]);
+
+                // Menyimpan rekaman yang baru ke dalam array existing agar menghindari insert ganda
+                $existing->put($inv, $newLocal);
+
             } else {
                 $updateMaster = [];
                 if (($local->nama_konsumen === '-' || empty($local->nama_konsumen)) && $namaKonsumen !== '-') {
@@ -436,6 +528,11 @@ class PiutangController extends Controller
                     $updateMaster['nama_asuransi'] = $namaAsuransi;
                 }
 
+                // KOREKSI OTOMATIS: Timpa saldo_awal dengan nilai riil dari DMS jika berbeda
+                if ($saldoAwal > 0 && $local->saldo_awal != $saldoAwal) {
+                    $updateMaster['saldo_awal'] = $saldoAwal;
+                }
+
                 if (!empty($updateMaster)) {
                     $local->update($updateMaster);
                 }
@@ -443,9 +540,6 @@ class PiutangController extends Controller
         }
     }
 
-    /**
-     * Lengkapi nama konsumen, no polisi, dan tipe konsumen yang masih strip (-) dari DMS svTrnService & gnMstCustomer
-     */
     private function syncMissingMasterData(string $branch): void
     {
         try {
@@ -471,13 +565,16 @@ class PiutangController extends Controller
                 return;
             }
 
-            $dmsMasters = DB::connection('dms')->table('svTrnService as s')
+            $dmsMasters = DB::connection('dms')->table('svTrnInvoice as s')
+                ->join('svTrnService as srv', 's.InvoiceNo', '=', 'srv.InvoiceNo') // LOGIC BARU: JOIN UNTUK ASURANSI
                 ->leftJoin('gnMstCustomer as c', 's.CustomerCode', '=', 'c.CustomerCode')
+                ->leftJoin('svMstAsuransiBDR as asu', 'srv.AsuransiBdr', '=', 'asu.KodeAsuransi')
+                ->leftJoin('gnMstCustomer as asu_cust', 'srv.AsuransiBdr', '=', 'asu_cust.CustomerCode')
                 ->whereIn('s.InvoiceNo', $invoices)
                 ->select([
                     's.InvoiceNo as no_bukti',
                     's.PoliceRegNo as no_polisi',
-                    's.AsuransiBdr as nama_asuransi',
+                    DB::raw("COALESCE(NULLIF(TRIM(asu.NamaAsuransi), ''), NULLIF(TRIM(asu_cust.CustomerName), ''), NULLIF(TRIM(asu_cust.CustomerGovName), ''), srv.AsuransiBdr) as nama_asuransi"),
                     DB::raw("COALESCE(NULLIF(TRIM(c.CustomerName), ''), NULLIF(TRIM(c.CustomerGovName), ''), '-') as nama_konsumen"),
                     'c.CustomerType as cust_type',
                     'c.CustomerGovName as perusahaan_name',
@@ -505,9 +602,6 @@ class PiutangController extends Controller
         }
     }
 
-    /**
-     * Sinkronisasi status pelunasan pembayaran dari tabel arTrnBankKasTerimaInvoice di DMS ke Database Lokal
-     */
     private function syncDmsPayments(string $branch): void
     {
         try {
@@ -530,30 +624,57 @@ class PiutangController extends Controller
                 return;
             }
 
-            // Cari bukti pembayaran di DMS arTrnBankKasTerimaInvoice
-            $payments = DB::connection('dms')->table('arTrnBankKasTerimaInvoice')
-                ->where('ProfitCenterCode', '200')
-                ->whereIn('InvoiceNo', $invoices)
-                ->get()
-                ->keyBy('InvoiceNo');
+            // LOGIC BARU: CHUNK per 1000 agar SQL Server tidak error "maximum of 2100 parameters"
+            $payments = collect();
+            foreach (array_chunk($invoices, 1000) as $chunk) {
+                $chunkPayments = DB::connection('dms')->table('arTrnBankKasTerimaInvoice')
+                    ->whereIn('BranchCode', ['641940101', '641940102', '641940103', '641940104', '641940105'])
+                    ->whereIn('InvoiceNo', $chunk)
+                    ->select(
+                        'InvoiceNo',
+                        DB::raw('SUM(PaymentAmt) as TotalPaymentAmt'),
+                        DB::raw('MIN(ReceivableOutstand) as FinalOutstand'), 
+                        DB::raw('MAX(ReceivableAmt) as RealSaldoAwal'), // Untuk fix koreksi DP/Diskon
+                        DB::raw('MAX(CreatedDate) as LastPaymentDate'),
+                        DB::raw('MAX(DocNo) as LastDocNo') // Ambil DocNo pelunasan
+                    )
+                    ->groupBy('InvoiceNo')
+                    ->get();
+                
+                $payments = $payments->merge($chunkPayments);
+            }
+
+            $payments = $payments->keyBy('InvoiceNo');
 
             foreach ($unpaidLocals as $local) {
-                $paid = $payments->get(trim($local->no_bukti));
-                if ($paid) {
-                    $payAmt = (float)($paid->PaymentAmt ?? 0);
-                    $payDate = $paid->CreatedDate 
-                        ? date('Y-m-d', strtotime($paid->CreatedDate)) 
-                        : ($paid->InvoiceDate ? date('Y-m-d', strtotime($paid->InvoiceDate)) : now()->toDateString());
-                    $docNo = $paid->DocNo ?: '-';
-                    $desc = $paid->Description ?: 'Pelunasan DMS';
+                $pay = $payments->get($local->no_bukti);
+                if ($pay) {
+                    $payAmt = (float)$pay->TotalPaymentAmt;
+                    $finalOutstand = (float)$pay->FinalOutstand;
+                    $realSaldoAwal = (float)($pay->RealSaldoAwal ?? 0);
 
-                    $saldoAkhir = max(0, (float)$local->saldo_awal + (float)$local->debet - $payAmt - (float)($local->kredit_2 ?? 0) - (float)($local->kredit_3 ?? 0));
+                    // KOREKSI OTOMATIS: Update Saldo Awal ke nilai Invoice Murni
+                    if ($realSaldoAwal > 0 && $local->saldo_awal != $realSaldoAwal) {
+                        $local->saldo_awal = $realSaldoAwal;
+                    }
+
+                    if ($finalOutstand <= 0) {
+                        $saldoAkhir = 0;
+                    } else {
+                        $saldoAkhir = max(0, (float)$local->saldo_awal + (float)$local->debet - $payAmt - (float)($local->kredit_2 ?? 0) - (float)($local->kredit_3 ?? 0));
+                    }
+
+                    $payDate = $pay->LastPaymentDate 
+                        ? \Carbon\Carbon::parse($pay->LastPaymentDate)->format('Y-m-d')
+                        : ($local->tgl_bukti_rek ?: now()->toDateString());
+                    $docNo = $pay->LastDocNo ?: '-';
 
                     $local->update([
+                        'saldo_awal'    => $local->saldo_awal, // Menyimpan koreksi Saldo Awal
                         'kredit'        => $payAmt,
                         'tgl_bukti_rek' => $payDate,
                         'no_bukti_rek'  => $docNo,
-                        'keterangan'    => $desc,
+                        'keterangan'    => 'Pelunasan DMS',
                         'saldo_akhir'   => $saldoAkhir,
                     ]);
                 }

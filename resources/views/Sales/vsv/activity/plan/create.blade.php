@@ -192,7 +192,7 @@
                     'CARRY_TOWING'
                 ],
                 Passenger: ['APV_MB', 'APV_AMBULANCE', 'ERTIGA', 'ERTIGA_HYBRID', 'XL7', 'XL7_HYBRID',
-                    'S_PRESSO', 'IGNIS', 'BALENO', 'GRAND_VITARA', 'JIMNY'
+                    'S_PRESSO', 'IGNIS', 'BALENO', 'GRAND_VITARA', 'JIMNY', 'FRONX'
                 ]
             };
 

@@ -142,7 +142,7 @@
             const typeSelect = document.getElementById('type_unit');
             const typeUnits = {
                 Commercial: ['CARRY_PU', 'CARRY_BOX', 'CARRY_BV', 'CARRY_MOKO', 'CARRY_AMBULANCE', 'CARRY_TOWING'],
-                Passenger: ['APV_MB', 'APV_AMBULANCE', 'ERTIGA', 'ERTIGA_HYBRID', 'XL7', 'XL7_HYBRID', 'S_PRESSO', 'IGNIS', 'BALENO', 'GRAND_VITARA', 'JIMNY']
+                Passenger: ['APV_MB', 'APV_AMBULANCE', 'ERTIGA', 'ERTIGA_HYBRID', 'XL7', 'XL7_HYBRID', 'S_PRESSO', 'IGNIS', 'BALENO', 'GRAND_VITARA', 'JIMNY', 'FRONX']
             };
 
             function updateTypeUnit() {

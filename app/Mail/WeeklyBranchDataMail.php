@@ -16,17 +16,25 @@ class WeeklyBranchDataMail extends Mailable
 
     public $branchData;
     public $tipePenerima;
-    public function __construct($branchData, $tipePenerima = 'Global')
+    public $senderEmail;
+    public function __construct($branchData, $tipePenerima = 'Global', $senderEmail = null)
     {
         $this->branchData = $branchData;
         $this->tipePenerima = $tipePenerima;
+        $this->senderEmail = $senderEmail;
     }
 
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: 'Weekly Branch Data Mail - ' . $this->tipePenerima,
-        );
+        $envelopeArgs = [
+            'subject' => 'Weekly Branch Data Mail - ' . $this->tipePenerima,
+        ];
+
+        if ($this->senderEmail) {
+            $envelopeArgs['from'] = new \Illuminate\Mail\Mailables\Address($this->senderEmail, 'Admin ' . $this->tipePenerima);
+        }
+
+        return new Envelope(...$envelopeArgs);
     }
 
     public function content(): Content

@@ -14,10 +14,15 @@ class DashboardController extends Controller
         /** @var \App\Models\Finance\User $user */
         $user = Auth::user();
 
+        // 1. TAMBAHKAN FILTER SALDO AKHIR > 0 DI SINI
         if (! empty($user) && ($user->is_admin ?? false)) {
-            $records = Piutang::orderByDesc('id')->get();
+            $records = Piutang::where('saldo_akhir', '>', 0)->orderByDesc('id')->get();
         } else {
-            $records = Piutang::where('branch', $user->branch ?? '')->orderByDesc('id')->get();
+            // Ditambahkan fallback ?? '' agar tidak error jika branch kosong/null
+            $records = Piutang::where('branch', $user->branch ?? '')
+                ->where('saldo_akhir', '>', 0) // Filter belum lunas
+                ->orderByDesc('id')
+                ->get();
         }
 
         $branchFilter = strtolower(request()->query('branch', ''));
@@ -34,7 +39,9 @@ class DashboardController extends Controller
         $totalDebet = $records->sum('debet');
         $totalKredit = $records->sum('kredit');
         
+        // 2. TAMBAHKAN FILTER SALDO AKHIR > 0 DI SINI JUGA
         $bpInsuranceTotals = Piutang::where('branch', 'bp')
+            ->where('saldo_akhir', '>', 0) // Filter belum lunas
             ->where('spk_type', 'ASURANSI')
             ->whereNotNull('nama_asuransi')
             ->where('nama_asuransi', '<>', '')
@@ -65,6 +72,7 @@ class DashboardController extends Controller
 
         if (! empty($user) && (($user->is_admin ?? false) || ($user->is_admin_stock ?? false))) {
             $parseStockDate = function ($value) {
+                // Jika sudah Carbon instance (dari model cast), return langsung
                 if ($value instanceof \Carbon\Carbon) {
                     return $value;
                 }
@@ -179,6 +187,7 @@ class DashboardController extends Controller
                 return $normalizeMobilName($item->nama_mobil);
             });
 
+            // Bangun dari imageMap agar semua mobil selalu tampil (walaupun stok = 0)
             $stockByMobil = collect($imageMap)->map(function ($imageFile, $namaMobil) use ($groupedByMobil) {
                 $group = $groupedByMobil->get($namaMobil, collect());
 

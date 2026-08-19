@@ -5,12 +5,30 @@ namespace App\Http\Controllers\Sales\vsv;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Sales\vsv\Kdp;
+use App\Models\Sales\vsv\PlanSales;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 class ActualController extends Controller
 {
+    private $bmBranchCodeMapping = [
+        '14.26.01.549' => '641940106', // EDI SUMARDI -> DCA Cipanas
+        '03.24.02.001' => '641940103', // Subagja -> DCA Cinere
+        '06.25.11.001' => '641940104', // JOHN EDUWARD SIMATUPANG -> DCA Jatiasih
+        '06.24.11.005' => '641940102', // ANGGARINI AMITHAWARDHANI -> DCA Cianjur
+        '01.19.08.102' => '641940101', // RONALD NOVEMBRI W -> DCA Ciawi
+    ];
+
+    private $branchNameToCode = [
+        'CIPANAS'  => '641940106',
+        'CINERE'   => '641940103',
+        'JATIASIH' => '641940104',
+        'CIANJUR'  => '641940102',
+        'CIAWI'    => '641940101',
+        'HOLDING'  => '641940100',
+    ];
+
     public function doByType(Request $request)
     {
         return $this->processActual($request, 'do', 'ACTUAL DO BY TYPE', 'By Type Mobil');
@@ -23,7 +41,7 @@ class ActualController extends Controller
 
     public function inquiryByType(Request $request)
     {
-        return $this->processActualInquiry($request, 'ACTUAL INQUIRY BY TYPE', 'By Type Mobil');
+        return $this->processActual($request, 'inquiry', 'ACTUAL INQUIRY BY TYPE', 'By Type Mobil');
     }
 
     public function sourceInquiry(Request $request)
@@ -41,149 +59,506 @@ class ActualController extends Controller
         return $this->processActualSalesByLeasing($request, 'ACTUAL SALES BY LEASING', 'By Leasing');
     }
 
+    /**
+     * Helper Resolusi Otomatis EmployeeID DMS (Smart Lookup via DMS / Email User Login)
+     */
+    private function resolveSpvEmployeeIds($spvInput, $user = null, $userCabangCode = null)
+    {
+        if (!empty($spvInput)) {
+            $matched = DB::connection('dms')->table('gnMstEmployee')
+                ->where('EmployeeID', $spvInput)
+                ->pluck('EmployeeID')
+                ->toArray();
+            if (!empty($matched)) {
+                return $matched;
+            }
+
+            $matchedByName = DB::connection('dms')->table('gnMstEmployee')
+                ->where('EmployeeName', 'LIKE', "%{$spvInput}%")
+                ->pluck('EmployeeID')
+                ->toArray();
+            if (!empty($matchedByName)) {
+                return $matchedByName;
+            }
+        }
+
+        // Jika ID berupa angka lokal (misal 27792 / 11228), otomatis dicocokkan via prefix email user login
+        if ($user && !empty($user->email)) {
+            $emailPrefix = explode('@', $user->email)[0];
+            $cleanPrefix = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $emailPrefix));
+
+            $query = DB::connection('dms')->table('gnMstEmployee')
+                ->where('PersonnelStatus', '1');
+
+            if (!empty($userCabangCode)) {
+                $query->where('BranchCode', $userCabangCode);
+            }
+
+            $branchEmps = $query->get();
+
+            foreach ($branchEmps as $emp) {
+                $cleanName = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $emp->EmployeeName));
+                if (str_contains($cleanName, $cleanPrefix) || str_contains($cleanPrefix, $cleanName)) {
+                    return [$emp->EmployeeID];
+                }
+            }
+        }
+
+        return !empty($spvInput) ? [$spvInput] : [];
+    }
+
+    /**
+     * Helper Konversi Kode Model Teknis DMS ke Nama Kendaraan yang Rapi dan Mudah Dibaca
+     */
+    private function formatSalesModelName($modelCode, $kdpName = null)
+    {
+        if (!empty($kdpName) && trim($kdpName) !== '') {
+            return trim($kdpName);
+        }
+
+        $c = strtoupper(trim($modelCode ?? ''));
+        if (empty($c) || $c === 'UNKNOWN') return 'LAIN-LAIN';
+
+        if (str_contains($c, '36FD') || str_contains($c, 'FDMT')) return 'NEW CARRY PU FD';
+        if (str_contains($c, '46FD') || str_contains($c, 'FD AC')) return 'NEW CARRY PU FD AC PS';
+        if (str_contains($c, '46WD') || str_contains($c, 'WD')) return 'NEW CARRY PU WD AC PS';
+        if (str_starts_with($c, 'AEV') || str_contains($c, 'CARRY')) return 'NEW CARRY';
+
+        if (str_contains($c, '54HB') || str_contains($c, 'ALPHA')) return 'NEW XL-7 ALPHA HYBRID';
+        if (str_contains($c, '35GS') || str_contains($c, 'BETA')) return 'NEW XL-7 BETA';
+        if (str_contains($c, '34GS') || str_contains($c, 'ZETA')) return 'NEW XL-7 ZETA';
+        if (str_starts_with($c, 'XL7') || str_contains($c, 'XL-7')) return 'NEW XL-7';
+
+        if (str_starts_with($c, 'BU4') || str_contains($c, 'FRONX')) return 'FRONX';
+        if (str_starts_with($c, 'GC4') || str_contains($c, 'APV')) return 'APV BLIND VAN';
+        if (str_starts_with($c, 'ARK') || str_starts_with($c, 'NC4') || str_contains($c, 'ERTIGA') || str_contains($c, 'A3L')) return 'ALL NEW ERTIGA';
+        if (str_starts_with($c, 'DN4') || str_contains($c, 'SPRESO') || str_contains($c, 'S-PRESSO')) return 'S-PRESSO';
+        if (str_contains($c, 'VITARA') || str_contains($c, 'GV')) return 'GRAND VITARA';
+        if (str_contains($c, 'JIMNY') || str_contains($c, 'JB74') || str_contains($c, 'JB674')) return 'JIMNY';
+        if (str_contains($c, 'BALENO')) return 'BALENO';
+        if (str_contains($c, 'IGNIS')) return 'IGNIS';
+
+        return $c;
+    }
+
+    /**
+     * Helper Mengambil 32 Master Tipe Kendaraan
+     */
+    private function getAllMasterVehicleTypes()
+    {
+        return collect([
+            'ALL NEW ERTIGA 05 GA MT',
+            'ALL NEW ERTIGA 05 GL AT',
+            'APV FE GL AB MT',
+            'FRONX GL AT',
+            'FRONX GX AT',
+            'FRONX GX MT',
+            'FRONX SGX AT',
+            'FRONX SGX AT 2TONE',
+            'GRAND VITARA GX MC',
+            'GRAND VITARA GX MC 2TONE',
+            'NEW CARRY 03 PU WD',
+            'NEW CARRY CH AC PS-COMMERCIAL 0126',
+            'NEW CARRY PU FD 0125',
+            'NEW CARRY PU FD 0126',
+            'NEW CARRY PU FD AC PS 0125',
+            'NEW CARRY PU FD AC PS 0126',
+            'NEW CARRY PU WD 0126',
+            'NEW CARRY PU WD AC PS 0125',
+            'NEW CARRY PU WD AC PS 0126',
+            'NEW JIMNY FE MT 5D (2TONE)',
+            'NEW XL-7 ALPHA AT HYBRID 2TONE',
+            'NEW XL-7 ALPHA KURO 2TONE',
+            'NEW XL-7 BETA AT HYBRID',
+            'NEW XL-7 ZETA AT',
+            'NEW XL-7 ZETA MT',
+            'S-PRESSO 02 AT',
+            'S-PRESSO 02 MT',
+            'XL-7 NEW ALPHA AT HYBRID',
+            'XL-7 NEW ALPHA AT HYBRID 2 TONE',
+            'XL-7 NEW BETA AT HYBRID',
+            'XL-7 NEW BETA MT HYBRID',
+            'XL-7 NEW ZETA AT',
+        ])->sort()->values();
+    }
+
     private function processActual(Request $request, $viewType, $pageTitle, $headerLabel)
     {
+        $user = Auth::user();
+        
+        // Pengecekan role sesuai is_admin dan branch di DB Anda
+        $userRole = strtoupper($user->role ?? '');
+        $userCabang = strtoupper(trim($user->branch ?? $user->cabang ?? ''));
+        
+        $isPusat = ($user->is_admin ?? false) || 
+                   in_array($userCabang, ['ADMIN', 'PUSAT']) || 
+                   in_array($userRole, ['ADMIN', 'OM', 'ADMIN DCA', 'OM DCA']);
+                   
+        $isBM = ($userRole === 'BM' || $userCabang === 'BM');
+        $isSH = ($userRole === 'SH' || $userCabang === 'SH');
+
         $selectedMonth = $request->input('month', date('n'));
         $selectedYear = $request->input('year', date('Y'));
 
-        $branchCode = $request->input('BranchCode', $request->input('branch_code', $request->input('branch_manager')));
-        $spvId = $request->input('SpvEmployeeID', $request->input('spv_id', $request->input('sales_head')));
-        $salesman = $request->input('salesman');
+        // 🔒 Penentuan Branch & Sales Head sesuai Role
+        if (!$isPusat) {
+            $userBranchCode = $this->branchNameToCode[$userCabang] ?? ($user->branch ?? $user->cabang);
+            $branchCode = $userBranchCode;
+            
+            if ($isSH) {
+                $spvId = $user->name;
+            } else {
+                $spvId = $request->input('sales_head', $request->input('SpvEmployeeID', $request->input('spv_id')));
+            }
+        } else {
+            $branchCode = $request->input('branch_manager', $request->input('BranchCode', $request->input('branch_code')));
+            $spvId = $request->input('sales_head', $request->input('SpvEmployeeID', $request->input('spv_id')));
+            $userBranchCode = null;
+        }
 
+        $salesman = $request->input('salesman');
         $fromDate = $request->input('from_date', "{$selectedYear}-" . str_pad($selectedMonth, 2, '0', STR_PAD_LEFT) . "-01");
         $toDate = $request->input('to_date', date('Y-m-t', mktime(0, 0, 0, $selectedMonth, 1, $selectedYear)));
 
         try {
-            // 1. Resolusi BranchCode
-            $bmBranchCodeMapping = [
-                '14.26.01.549' => '641940106', // EDI SUMARDI -> DCA Cipanas
-                '03.24.02.001' => '641940103', // Subagja -> DCA Cinere
-                '06.25.11.001' => '641940104', // JOHN EDUWARD SIMATUPANG -> DCA Jatiasih
-                '06.24.11.005' => '641940102', // ANGGARINI AMITHAWARDHANI -> DCA Cianjur
-                '01.19.08.102' => '641940101', // RONALD NOVEMBRI W -> DCA Ciawi
-            ];
-
-            $matchingBranchCodes = [];
+            // 1. Resolusi BranchCode Resmi
+            $targetBranchCode = null;
             if (!empty($branchCode)) {
-                // Cek apakah input adalah EmployeeID dari BM
-                if (isset($bmBranchCodeMapping[$branchCode])) {
-                    $matchingBranchCodes = [$bmBranchCodeMapping[$branchCode]];
+                $targetBranchCode = $this->bmBranchCodeMapping[$branchCode] 
+                    ?? ($this->branchNameToCode[strtoupper(trim($branchCode))] ?? $branchCode);
+            }
+
+            // 2. Resolusi SpvEmployeeID Otomatis 
+            $matchingSpvIds = $this->resolveSpvEmployeeIds($spvId, $user, $userBranchCode ?? null);
+
+            $masterTypes = $this->getAllMasterVehicleTypes();
+
+            if ($viewType === 'spk') {
+                // 🔒 SPK Murni dari omTrSalesSO & omTrSalesSOModel
+                $qSpk = DB::connection('dms')->table('omTrSalesSO');
+
+                if (!empty($fromDate) && !empty($toDate)) {
+                    $qSpk->whereBetween('SODate', ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"]);
                 } else {
-                    $empBranch = DB::connection('dms')
-                        ->table('gnMstEmployee')
-                        ->where('EmployeeID', $branchCode)
-                        ->value('BranchCode');
-                    
-                    if ($empBranch) {
-                        $matchingBranchCodes = [$empBranch];
-                    } else {
-                        $matchingBranchCodes = DB::connection('dms')
-                            ->table('gnMstOrganizationDtl')
-                            ->where('BranchCode', 'LIKE', "%{$branchCode}%")
-                            ->orWhere('BranchName', 'LIKE', "%{$branchCode}%")
-                            ->pluck('BranchCode')
-                            ->unique()
-                            ->values()
-                            ->toArray();
+                    $qSpk->whereMonth('SODate', $selectedMonth)
+                         ->whereYear('SODate', $selectedYear);
+                }
+
+                if (!empty($targetBranchCode)) {
+                    $qSpk->where('BranchCode', $targetBranchCode);
+                }
+
+                if (!empty($matchingSpvIds)) {
+                    $qSpk->whereIn('SpvEmployeeID', $matchingSpvIds);
+                } elseif (!empty($spvId)) {
+                    $qSpk->where('SpvEmployeeID', 'LIKE', "%{$spvId}%");
+                }
+
+                if (!empty($salesman)) {
+                    $qSpk->where(function($q) use ($salesman) {
+                        $q->where('EmployeeID', 'LIKE', "%{$salesman}%")
+                          ->orWhere('CreatedBy', 'LIKE', "%{$salesman}%");
+                    });
+                }
+
+                $spkRecords = $qSpk->select(['BranchCode', 'SONo', 'SODate'])->get();
+                $soNos = $spkRecords->pluck('SONo')->filter()->unique()->toArray();
+
+                $soModelMap = [];
+                if (!empty($soNos)) {
+                    $soModelRecords = DB::connection('dms')->table('omTrSalesSOModel')
+                        ->whereIn('SONo', $soNos)
+                        ->get(['SONo', 'SalesModelCode']);
+                    foreach ($soModelRecords as $sm) {
+                        $sKey = trim($sm->SONo);
+                        if (!isset($soModelMap[$sKey])) {
+                            $soModelMap[$sKey] = trim($sm->SalesModelCode);
+                        }
                     }
                 }
-            }
 
-            // 2. Resolusi SpvEmployeeID
-            $matchingSpvIds = [];
-            if (!empty($spvId)) {
-                $matchingSpvIds = DB::connection('dms')
-                    ->table('gnMstEmployee')
-                    ->where('EmployeeID', 'LIKE', "%{$spvId}%")
-                    ->orWhere('EmployeeName', 'LIKE', "%{$spvId}%")
-                    ->pluck('EmployeeID')
-                    ->unique()
-                    ->values()
-                    ->toArray();
-            }
+                $countsByModel = [];
+                foreach ($spkRecords as $rec) {
+                    $sKey = trim($rec->SONo ?? '');
+                    $modelCode = $soModelMap[$sKey] ?? 'UNKNOWN';
+                    $displayName = $this->formatSalesModelName($modelCode);
 
-            // 3. Query data dari model Kdp (koneksi dms -> tabel pmKDP)
-            $query = Kdp::query();
-
-            // Filter tanggal berdasarkan from_date & to_date jika diisi, atau bulan & tahun
-            if (!empty($fromDate) && !empty($toDate)) {
-                $query->whereBetween('InquiryDate', ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"]);
-            } else {
-                $query->whereMonth('InquiryDate', $selectedMonth)
-                      ->whereYear('InquiryDate', $selectedYear);
-            }
-
-            // Filter BranchCode
-            if (!empty($matchingBranchCodes)) {
-                $query->whereIn('BranchCode', $matchingBranchCodes);
-            } elseif (!empty($branchCode)) {
-                $query->where('BranchCode', 'LIKE', "%{$branchCode}%");
-            }
-
-            // Filter SPV / Sales Head
-            if (!empty($matchingSpvIds)) {
-                $query->whereIn('SpvEmployeeID', $matchingSpvIds);
-            } elseif (!empty($spvId)) {
-                $query->where('SpvEmployeeID', 'LIKE', "%{$spvId}%");
-            }
-
-            // Filter Salesman
-            if (!empty($salesman)) {
-                $query->where(function($q) use ($salesman) {
-                    $q->where('EmployeeID', 'LIKE', "%{$salesman}%")
-                      ->orWhere('CreatedBy', 'LIKE', "%{$salesman}%");
-                });
-            }
-
-            // Tanpa filter branch_manager & sales_head, query akan mengambil seluruh data untuk rentang tanggal from_date s/d to_date
-            $rawResults = $query->selectRaw("
-                TipeKendaraan,
-                Variant,
-                SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'SPK' THEN 1 ELSE 0 END) as total_spk,
-                SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'DO' THEN 1 ELSE 0 END) as total_do,
-                SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'DELIVERY' THEN 1 ELSE 0 END) as total_delivery
-            ")
-            ->whereNotNull('TipeKendaraan')
-            ->where('TipeKendaraan', '!=', '')
-            ->groupBy('TipeKendaraan', 'Variant')
-            ->orderBy('TipeKendaraan')
-            ->orderBy('Variant')
-            ->get();
-
-            // Gabungkan TipeKendaraan & Variant untuk tampilan
-            $data = $rawResults->map(function ($row) {
-                $tipe = trim($row->TipeKendaraan);
-                $variant = trim($row->Variant ?? '');
-                if (!empty($variant)) {
-                    $row->TipeKendaraan = "{$tipe} {$variant}";
-                } else {
-                    $row->TipeKendaraan = $tipe;
+                    if (!isset($countsByModel[$displayName])) {
+                        $countsByModel[$displayName] = 0;
+                    }
+                    $countsByModel[$displayName]++;
                 }
-                return $row;
-            });
 
-            $bmBranchCodeMapping = [
-                '14.26.01.549' => '641940106', // EDI SUMARDI -> DCA Cipanas
-                '03.24.02.001' => '641940103', // Subagja -> DCA Cinere
-                '06.25.11.001' => '641940104', // JOHN EDUWARD SIMATUPANG -> DCA Jatiasih
-                '06.24.11.005' => '641940102', // ANGGARINI AMITHAWARDHANI -> DCA Cianjur
-                '01.19.08.102' => '641940101', // RONALD NOVEMBRI W -> DCA Ciawi
+                $dataMap = [];
+                foreach ($masterTypes as $mType) {
+                    $dataMap[$mType] = 0;
+                }
+
+                foreach ($countsByModel as $modelName => $totalSpk) {
+                    if (isset($dataMap[$modelName])) {
+                        $dataMap[$modelName] += $totalSpk;
+                    } else {
+                        $matchedKey = null;
+                        $cleanModel = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $modelName));
+                        foreach ($masterTypes as $mType) {
+                            $cleanM = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $mType));
+                            if ($cleanModel === $cleanM) {
+                                $matchedKey = $mType;
+                                break;
+                            }
+                        }
+
+                        if ($matchedKey) {
+                            $dataMap[$matchedKey] += $totalSpk;
+                        } else {
+                            // Selalu simpan agar total unit SPK tidak berkurang
+                            $dataMap[$modelName] = $totalSpk;
+                        }
+                    }
+                }
+
+                $data = collect();
+                foreach ($dataMap as $tName => $val) {
+                    $row = new \stdClass();
+                    $row->TipeKendaraan = $tName;
+                    $row->total_spk = $val;
+                    $data->push($row);
+                }
+
+                $data = $data->sortBy('TipeKendaraan')->values();
+            } elseif ($viewType === 'inquiry') {
+                // 🔒 INQUIRY Murni dari pmKDP (Berdasarkan InquiryDate)
+                $query = Kdp::query();
+                $dateColumn = 'InquiryDate';
+
+                if (!empty($fromDate) && !empty($toDate)) {
+                    $query->whereBetween($dateColumn, ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"]);
+                } else {
+                    $query->whereMonth($dateColumn, $selectedMonth)
+                          ->whereYear($dateColumn, $selectedYear);
+                }
+
+                // Filter Branch Resmi
+                if (!empty($targetBranchCode)) {
+                    $query->where('BranchCode', $targetBranchCode);
+                }
+
+                // Filter SPV
+                if (!empty($matchingSpvIds)) {
+                    $query->whereIn('SpvEmployeeID', $matchingSpvIds);
+                } elseif (!empty($spvId)) {
+                    $query->where('SpvEmployeeID', 'LIKE', "%{$spvId}%");
+                }
+
+                // Filter Salesman
+                if (!empty($salesman)) {
+                    $query->where(function($q) use ($salesman) {
+                        $q->where('EmployeeID', 'LIKE', "%{$salesman}%")
+                          ->orWhere('CreatedBy', 'LIKE', "%{$salesman}%");
+                    });
+                }
+
+                $rawResults = $query->selectRaw("
+                    TipeKendaraan,
+                    Variant,
+                    COUNT(*) as total_inquiry
+                ")
+                ->whereNotNull('TipeKendaraan')
+                ->where('TipeKendaraan', '!=', '')
+                ->groupBy('TipeKendaraan', 'Variant')
+                ->orderBy('TipeKendaraan')
+                ->orderBy('Variant')
+                ->get();
+
+                $dataMap = [];
+                foreach ($masterTypes as $mType) {
+                    $dataMap[$mType] = 0;
+                }
+
+                foreach ($rawResults as $r) {
+                    $tipe = trim($r->TipeKendaraan);
+                    $variant = trim($r->Variant ?? '');
+                    $fullName = !empty($variant) ? "{$tipe} {$variant}" : $tipe;
+                    $count = (int)($r->total_inquiry ?? 0);
+
+                    if (isset($dataMap[$fullName])) {
+                        $dataMap[$fullName] += $count;
+                    } else {
+                        $matchedKey = null;
+                        $cleanFullName = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $fullName));
+                        foreach ($masterTypes as $mType) {
+                            $cleanM = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $mType));
+                            if ($cleanFullName === $cleanM) {
+                                $matchedKey = $mType;
+                                break;
+                            }
+                        }
+
+                        if ($matchedKey) {
+                            $dataMap[$matchedKey] += $count;
+                        } else {
+                            // Selalu simpan agar total inquiry tidak berkurang
+                            $dataMap[$fullName] = $count;
+                        }
+                    }
+                }
+
+                $data = collect();
+                foreach ($dataMap as $tName => $val) {
+                    $row = new \stdClass();
+                    $row->TipeKendaraan = $tName;
+                    $row->total_inquiry = $val;
+                    $data->push($row);
+                }
+
+                $data = $data->sortBy('TipeKendaraan')->values();
+            } else {
+                // 🔒 3. Query data DO dari model Kdp (koneksi dms -> tabel pmKDP)
+                $query = Kdp::query();
+                $dateColumn = 'LastUpdateDate';
+
+                if (!empty($fromDate) && !empty($toDate)) {
+                    $query->whereBetween($dateColumn, ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"]);
+                } else {
+                    $query->whereMonth($dateColumn, $selectedMonth)
+                          ->whereYear($dateColumn, $selectedYear);
+                }
+
+                // 🔒 Filter Status Khusus Actual DO: DELIVERY / DO / Status 60
+                $query->where(function($q) {
+                    $q->whereIn(DB::raw("TRIM(UPPER(LastProgress))"), ['DELIVERY', 'DO'])
+                      ->orWhere('StatusProspek', '60');
+                });
+
+                // Filter Branch Resmi
+                if (!empty($targetBranchCode)) {
+                    $query->where('BranchCode', $targetBranchCode);
+                }
+
+                // Filter SPV
+                if (!empty($matchingSpvIds)) {
+                    $query->whereIn('SpvEmployeeID', $matchingSpvIds);
+                } elseif (!empty($spvId)) {
+                    $query->where('SpvEmployeeID', 'LIKE', "%{$spvId}%");
+                }
+
+                // Filter Salesman
+                if (!empty($salesman)) {
+                    $query->where(function($q) use ($salesman) {
+                        $q->where('EmployeeID', 'LIKE', "%{$salesman}%")
+                          ->orWhere('CreatedBy', 'LIKE', "%{$salesman}%");
+                    });
+                }
+
+                $rawResults = $query->selectRaw("
+                    TipeKendaraan,
+                    Variant,
+                    SUM(CASE WHEN StatusProspek = '10' THEN 1 ELSE 0 END) as total_new,
+                    SUM(CASE WHEN StatusProspek = '20' THEN 1 ELSE 0 END) as total_repeat_order,
+                    SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'P' OR TRIM(UPPER(LastProgress)) = 'PROSPECT' THEN 1 ELSE 0 END) as total_prospect,
+                    SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'HP' OR TRIM(UPPER(LastProgress)) = 'HOT PROSPECT' THEN 1 ELSE 0 END) as total_hot_prospect,
+                    SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'SPK' THEN 1 ELSE 0 END) as total_spk,
+                    SUM(CASE WHEN TRIM(UPPER(LastProgress)) IN ('DO', 'DELIVERY') OR StatusProspek = '60' THEN 1 ELSE 0 END) as total_do,
+                    SUM(CASE WHEN TRIM(UPPER(LastProgress)) IN ('DO', 'DELIVERY') THEN 1 ELSE 0 END) as total_delivery,
+                    SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'LOST' THEN 1 ELSE 0 END) as total_lost
+                ")
+                ->whereNotNull('TipeKendaraan')
+                ->where('TipeKendaraan', '!=', '')
+                ->groupBy('TipeKendaraan', 'Variant')
+                ->orderBy('TipeKendaraan')
+                ->orderBy('Variant')
+                ->get();
+
+                $dataMap = [];
+                foreach ($masterTypes as $mType) {
+                    $dataMap[$mType] = [
+                        'total_do' => 0,
+                        'total_delivery' => 0,
+                    ];
+                }
+
+                foreach ($rawResults as $r) {
+                    $tipe = trim($r->TipeKendaraan);
+                    $variant = trim($r->Variant ?? '');
+                    $fullName = !empty($variant) ? "{$tipe} {$variant}" : $tipe;
+                    $doVal = (int)($r->total_do ?? 0);
+                    $delVal = (int)($r->total_delivery ?? 0);
+
+                    if (isset($dataMap[$fullName])) {
+                        $dataMap[$fullName]['total_do'] += $doVal;
+                        $dataMap[$fullName]['total_delivery'] += $delVal;
+                    } else {
+                        $matchedKey = null;
+                        $cleanFullName = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $fullName));
+                        foreach ($masterTypes as $mType) {
+                            $cleanM = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $mType));
+                            if ($cleanFullName === $cleanM) {
+                                $matchedKey = $mType;
+                                break;
+                            }
+                        }
+
+                        if ($matchedKey) {
+                            $dataMap[$matchedKey]['total_do'] += $doVal;
+                            $dataMap[$matchedKey]['total_delivery'] += $delVal;
+                        } else {
+                            // Selalu simpan agar total DO tidak berkurang
+                            $dataMap[$fullName] = [
+                                'total_do' => $doVal,
+                                'total_delivery' => $delVal,
+                            ];
+                        }
+                    }
+                }
+
+                $data = collect();
+                foreach ($dataMap as $tName => $vals) {
+                    $row = new \stdClass();
+                    $row->TipeKendaraan = $tName;
+                    $row->total_do = $vals['total_do'];
+                    $row->total_delivery = $vals['total_delivery'];
+                    $data->push($row);
+                }
+
+                $data = $data->sortBy('TipeKendaraan')->values();
+            }
+
+            // 1. Branch Manager List dari HrEmployee / Standar Map
+            $bmsMap = [
+                '14.26.01.549' => ['Name' => 'EDI SUMARDI', 'Jabatan' => 'BM', 'BranchCode' => '641940106'],
+                '03.24.02.001' => ['Name' => 'Subagja', 'Jabatan' => 'BM', 'BranchCode' => '641940103'],
+                '06.25.11.001' => ['Name' => 'JOHN EDUWARD SIMATUPANG', 'Jabatan' => 'BM', 'BranchCode' => '641940104'],
+                '06.24.11.005' => ['Name' => 'ANGGARINI AMITHAWARDHANI', 'Jabatan' => 'BM', 'BranchCode' => '641940102'],
+                '01.19.08.102' => ['Name' => 'RONALD NOVEMBRI W', 'Jabatan' => 'BM', 'BranchCode' => '641940101'],
+            ];
+            $bmBranchMap = [
+                '14.26.01.549' => '641940106',
+                '03.24.02.001' => '641940103',
+                '06.25.11.001' => '641940104',
+                '06.24.11.005' => '641940102',
+                '01.19.08.102' => '641940101',
             ];
 
-            // 1. Branch Manager List dari HrEmployee
-            $bmsRaw = DB::connection('dms')
+            $bmsQuery = DB::connection('dms')
                 ->table('HrEmployee')
                 ->select('EmployeeID', 'EmployeeName')
                 ->where('Position', 'BM')
                 ->where('PersonnelStatus', '1')
                 ->where('IsDeleted', '0')
-                ->orderBy('EmployeeName')
-                ->get();
+                ->orderBy('EmployeeName');
 
-            $bmsMap = [];
-            $bmBranchMap = [];
+            if (!$isPusat) {
+                $userBranchCode = $this->branchNameToCode[$userCabang] ?? ($user->branch ?? $user->cabang);
+                $allowedBmIds = array_keys(array_filter($this->bmBranchCodeMapping, fn($bc) => $bc == $userBranchCode));
+                if (!empty($allowedBmIds)) {
+                    $bmsQuery->whereIn('EmployeeID', $allowedBmIds);
+                }
+            }
+
+            $bmsRaw = $bmsQuery->get();
+
             foreach ($bmsRaw as $bm) {
-                $bCode = $bmBranchCodeMapping[$bm->EmployeeID] ?? '641940106';
+                $bCode = $this->bmBranchCodeMapping[$bm->EmployeeID] ?? '641940106';
                 $bmsMap[$bm->EmployeeID] = [
                     'Name'       => $bm->EmployeeName,
                     'Jabatan'    => 'BM',
@@ -192,12 +567,18 @@ class ActualController extends Controller
                 $bmBranchMap[$bm->EmployeeID] = $bCode;
             }
 
-            // 2. Sales Head List (diambil dari Target RKA PlanSales & gnMstEmployee)
-            $planCombos = \App\Models\Sales\vsv\PlanSales::select('BranchCode', 'SpvEmployeeID')
+            // 2. Sales Head List
+            $planCombosQuery = PlanSales::select('BranchCode', 'SpvEmployeeID')
                 ->whereNotNull('SpvEmployeeID')
                 ->where('SpvEmployeeID', '!=', '')
-                ->distinct()
-                ->get();
+                ->distinct();
+
+            if (!$isPusat) {
+                $userBranchCode = $this->branchNameToCode[$userCabang] ?? ($user->branch ?? $user->cabang);
+                $planCombosQuery->where('BranchCode', $userBranchCode);
+            }
+
+            $planCombos = $planCombosQuery->get();
 
             $spvBranchRel = [];
             foreach ($planCombos as $combo) {
@@ -230,21 +611,40 @@ class ActualController extends Controller
                 $branchSpvMap[$spvBranchCode][] = $s->EmployeeID;
             }
 
+            // Resolusi Nama BM
             $branchManagerName = '';
             if (!empty($branchCode) && isset($bmsMap[$branchCode])) {
                 $branchManagerName = $bmsMap[$branchCode]['Name'];
+            } elseif (!$isPusat && !empty($bmsRaw->first())) {
+                $branchManagerName = $bmsRaw->first()->EmployeeName;
+                $branchCode = $bmsRaw->first()->EmployeeID;
             }
 
+            // Resolusi Nama Sales Head
             $salesHeadName = '';
-            if (!empty($spvId) && isset($spvsMap[$spvId])) {
-                $salesHeadName = $spvsMap[$spvId]['Name'];
+            $effectiveSpvCode = !empty($matchingSpvIds) ? $matchingSpvIds[0] : $spvId;
+            if (!empty($effectiveSpvCode)) {
+                if (isset($spvsMap[$effectiveSpvCode])) {
+                    $salesHeadName = $spvsMap[$effectiveSpvCode]['Name'];
+                } else {
+                    $salesHeadName = DB::connection('dms')->table('gnMstEmployee')
+                        ->where('EmployeeID', $effectiveSpvCode)
+                        ->orWhere('EmployeeName', 'LIKE', "%{$effectiveSpvCode}%")
+                        ->value('EmployeeName') ?: $effectiveSpvCode;
+                }
+            } else {
+                $salesHeadName = $isBM ? 'Semua Sales Head' : 'Pilih Sales Head...';
             }
 
             $subTitleText = ($viewType === 'spk')
                 ? 'Monitoring data aktual SPK berdasarkan tipe kendaraan'
-                : 'Monitoring data aktual Delivery Order (DO) & Delivery berdasarkan tipe kendaraan';
+                : (($viewType === 'inquiry')
+                    ? 'Monitoring data aktual Inquiry berdasarkan tipe kendaraan'
+                    : 'Monitoring data aktual Delivery Order (DO) & Delivery berdasarkan tipe kendaraan');
 
-            return view('sales.vsv.actual.index', [
+            $viewName = ($viewType === 'inquiry') ? 'sales.vsv.actual.inquiry_index' : 'sales.vsv.actual.index';
+
+            return view($viewName, [
                 'data'              => $data,
                 'pageTitle'         => $pageTitle,
                 'subTitle'          => $subTitleText,
@@ -261,53 +661,85 @@ class ActualController extends Controller
                 'branchManagerName' => $branchManagerName,
                 'salesHeadName'     => $salesHeadName,
                 'BranchCode'        => $branchCode,
-                'SpvEmployeeID'     => $spvId
+                'SpvEmployeeID'     => $effectiveSpvCode,
+                'isLockedBranch'    => !$isPusat,
+                'isLockedSpv'       => $isSH
             ]);
-
 
         } catch (\Exception $e) {
             $data = collect();
             Log::error("Error saat membaca data Actual KDP dari DB Server: " . $e->getMessage());
             
+            $bmsMap = [
+                '14.26.01.549' => ['Name' => 'EDI SUMARDI', 'Jabatan' => 'BM', 'BranchCode' => '641940106'],
+                '03.24.02.001' => ['Name' => 'Subagja', 'Jabatan' => 'BM', 'BranchCode' => '641940103'],
+                '06.25.11.001' => ['Name' => 'JOHN EDUWARD SIMATUPANG', 'Jabatan' => 'BM', 'BranchCode' => '641940104'],
+                '06.24.11.005' => ['Name' => 'ANGGARINI AMITHAWARDHANI', 'Jabatan' => 'BM', 'BranchCode' => '641940102'],
+                '01.19.08.102' => ['Name' => 'RONALD NOVEMBRI W', 'Jabatan' => 'BM', 'BranchCode' => '641940101'],
+            ];
+            $bmBranchMap = [
+                '14.26.01.549' => '641940106',
+                '03.24.02.001' => '641940103',
+                '06.25.11.001' => '641940104',
+                '06.24.11.005' => '641940102',
+                '01.19.08.102' => '641940101',
+            ];
+
             return view('sales.vsv.actual.index', [
-                'pageTitle'     => $pageTitle,
-                'headerLabel'   => $headerLabel,
-                'subTitle'      => "Periode " . date('d M Y', strtotime($fromDate)) . " s/d " . date('d M Y', strtotime($toDate)),
-                'fromDate'      => $fromDate,
-                'toDate'        => $toDate,
-                'selectedMonth' => (int)$selectedMonth,
-                'selectedYear'  => (int)$selectedYear,
-                'BranchCode'    => $branchCode,
-                'data'          => $data
+                'pageTitle'         => $pageTitle,
+                'headerLabel'       => $headerLabel,
+                'subTitle'          => "Periode " . date('d M Y', strtotime($fromDate)) . " s/d " . date('d M Y', strtotime($toDate)),
+                'fromDate'          => $fromDate,
+                'toDate'            => $toDate,
+                'selectedMonth'     => (int)$selectedMonth,
+                'selectedYear'      => (int)$selectedYear,
+                'BranchCode'        => $branchCode,
+                'bmsMap'            => $bmsMap,
+                'spvsMap'           => [],
+                'bmBranchMap'       => $bmBranchMap,
+                'branchSpvMap'      => [],
+                'branchManagerName' => '',
+                'salesHeadName'     => '',
+                'data'              => $data
             ]);
         }
     }
 
     private function processActualInquiry(Request $request, $pageTitle, $headerLabel)
     {
+        $user = Auth::user();
+        $userRole = strtoupper($user->role ?? '');
+        $userCabang = strtoupper(trim($user->branch ?? $user->cabang ?? ''));
+        
+        $isPusat = ($user->is_admin ?? false) || 
+                   in_array($userCabang, ['ADMIN', 'PUSAT']) || 
+                   in_array($userRole, ['ADMIN', 'OM', 'ADMIN DCA', 'OM DCA']);
+                   
+        $isBM = ($userRole === 'BM' || $userCabang === 'BM');
+        $isSH = ($userRole === 'SH' || $userCabang === 'SH');
+
         $selectedMonth = $request->input('month', date('n'));
         $selectedYear = $request->input('year', date('Y'));
 
-        $branchCode = $request->input('BranchCode', $request->input('branch_code', $request->input('branch_manager')));
-        $spvId = $request->input('SpvEmployeeID', $request->input('spv_id', $request->input('sales_head')));
-        $salesman = $request->input('salesman');
+        if (!$isPusat) {
+            $userBranchCode = $this->branchNameToCode[$userCabang] ?? ($user->branch ?? $user->cabang);
+            $branchCode = $userBranchCode;
+            $spvId = $isSH ? $user->name : $request->input('sales_head', $request->input('SpvEmployeeID', $request->input('spv_id')));
+        } else {
+            $branchCode = $request->input('branch_manager', $request->input('BranchCode', $request->input('branch_code')));
+            $spvId = $request->input('sales_head', $request->input('SpvEmployeeID', $request->input('spv_id')));
+            $userBranchCode = null;
+        }
 
+        $salesman = $request->input('salesman');
         $fromDate = $request->input('from_date', "{$selectedYear}-" . str_pad($selectedMonth, 2, '0', STR_PAD_LEFT) . "-01");
         $toDate = $request->input('to_date', date('Y-m-t', mktime(0, 0, 0, $selectedMonth, 1, $selectedYear)));
 
         try {
-            $bmBranchCodeMapping = [
-                '14.26.01.549' => '641940106', // EDI SUMARDI -> DCA Cipanas
-                '03.24.02.001' => '641940103', // Subagja -> DCA Cinere
-                '06.25.11.001' => '641940104', // JOHN EDUWARD SIMATUPANG -> DCA Jatiasih
-                '06.24.11.005' => '641940102', // ANGGARINI AMITHAWARDHANI -> DCA Cianjur
-                '01.19.08.102' => '641940101', // RONALD NOVEMBRI W -> DCA Ciawi
-            ];
-
             $matchingBranchCodes = [];
             if (!empty($branchCode)) {
-                if (isset($bmBranchCodeMapping[$branchCode])) {
-                    $matchingBranchCodes = [$bmBranchCodeMapping[$branchCode]];
+                if (isset($this->bmBranchCodeMapping[$branchCode])) {
+                    $matchingBranchCodes = [$this->bmBranchCodeMapping[$branchCode]];
                 } else {
                     $empBranch = DB::connection('dms')
                         ->table('gnMstEmployee')
@@ -329,17 +761,7 @@ class ActualController extends Controller
                 }
             }
 
-            $matchingSpvIds = [];
-            if (!empty($spvId)) {
-                $matchingSpvIds = DB::connection('dms')
-                    ->table('gnMstEmployee')
-                    ->where('EmployeeID', 'LIKE', "%{$spvId}%")
-                    ->orWhere('EmployeeName', 'LIKE', "%{$spvId}%")
-                    ->pluck('EmployeeID')
-                    ->unique()
-                    ->values()
-                    ->toArray();
-            }
+            $matchingSpvIds = $this->resolveSpvEmployeeIds($spvId, $user, $userBranchCode ?? null);
 
             $isSearched = $request->has('search') || $request->has('page');
             $perPage = (int)$request->input('per_page', 500);
@@ -414,58 +836,92 @@ class ActualController extends Controller
                 $data = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage);
             }
 
-            // 4. Fetch all 7 Branches from gnMstOrganizationDtl
-            $branchesRaw = DB::connection('dms')
-                ->table('gnMstOrganizationDtl')
-                ->select('BranchCode', 'BranchName')
-                ->orderBy('BranchCode')
-                ->get();
+            $bmsQuery = DB::connection('dms')
+                ->table('HrEmployee')
+                ->select('EmployeeID', 'EmployeeName')
+                ->where('Position', 'BM')
+                ->where('PersonnelStatus', '1')
+                ->where('IsDeleted', '0')
+                ->orderBy('EmployeeName');
 
-            $branchesMap = [];
-            foreach ($branchesRaw as $b) {
-                $branchesMap[$b->BranchCode] = trim($b->BranchName);
+            if (!$isPusat) {
+                $userBranchCode = $this->branchNameToCode[$userCabang] ?? ($user->branch ?? $user->cabang);
+                $allowedBmIds = array_keys(array_filter($this->bmBranchCodeMapping, fn($bc) => $bc == $userBranchCode));
+                if (!empty($allowedBmIds)) {
+                    $bmsQuery->whereIn('EmployeeID', $allowedBmIds);
+                }
             }
 
-            // 5. Fetch all Sales Heads (SPVs)
-            $spvIdsInKdp = DB::connection('dms')->table('pmKDP')
-                ->select('SpvEmployeeID', 'BranchCode')
-                ->distinct()
+            $bmsRaw = $bmsQuery->get();
+
+            $bmsMap = [];
+            $bmBranchMap = [];
+            foreach ($bmsRaw as $bm) {
+                $bCode = $this->bmBranchCodeMapping[$bm->EmployeeID] ?? '641940106';
+                $bmsMap[$bm->EmployeeID] = [
+                    'Name'       => $bm->EmployeeName,
+                    'Jabatan'    => 'BM',
+                    'BranchCode' => $bCode,
+                ];
+                $bmBranchMap[$bm->EmployeeID] = $bCode;
+            }
+
+            $planCombosQuery = PlanSales::select('BranchCode', 'SpvEmployeeID')
                 ->whereNotNull('SpvEmployeeID')
                 ->where('SpvEmployeeID', '!=', '')
-                ->get();
+                ->distinct();
 
-            $spvCodes = $spvIdsInKdp->pluck('SpvEmployeeID')->unique()->filter()->values()->toArray();
+            if (!$isPusat) {
+                $userBranchCode = $this->branchNameToCode[$userCabang] ?? ($user->branch ?? $user->cabang);
+                $planCombosQuery->where('BranchCode', $userBranchCode);
+            }
 
-            $spvsRaw = DB::connection('dms')
-                ->table('gnMstEmployee')
-                ->select('EmployeeID', 'EmployeeName', 'BranchCode')
-                ->whereIn('EmployeeID', $spvCodes)
-                ->where('PersonnelStatus', '1')
-                ->orderBy('EmployeeName')
-                ->get();
+            $planCombos = $planCombosQuery->get();
 
             $spvBranchRel = [];
-            foreach ($spvIdsInKdp as $combo) {
+            foreach ($planCombos as $combo) {
                 $spvBranchRel[$combo->SpvEmployeeID] = $combo->BranchCode;
             }
 
+            $spvCodes = array_keys($spvBranchRel);
+
+            $spvsRaw = DB::connection('dms')
+                ->table('gnMstEmployee')
+                ->select('EmployeeID', 'EmployeeName', 'BranchCode', 'TitleCode')
+                ->whereIn('EmployeeID', $spvCodes)
+                ->where('PersonnelStatus', '1')
+                ->orderBy('EmployeeName')
+                ->get()
+                ->unique('EmployeeID');
+
             $spvsMap = [];
+            $branchSpvMap = [];
             foreach ($spvsRaw as $s) {
-                $bCode = $spvBranchRel[$s->EmployeeID] ?? $s->BranchCode;
+                $spvBranchCode = $spvBranchRel[$s->EmployeeID] ?? $s->BranchCode;
                 $spvsMap[$s->EmployeeID] = [
-                    'Name'       => trim($s->EmployeeName),
-                    'BranchCode' => $bCode
+                    'Name'       => $s->EmployeeName,
+                    'Jabatan'    => 'SH',
+                    'BranchCode' => $spvBranchCode,
                 ];
+                if (!isset($branchSpvMap[$spvBranchCode])) {
+                    $branchSpvMap[$spvBranchCode] = [];
+                }
+                $branchSpvMap[$spvBranchCode][] = $s->EmployeeID;
             }
 
-            // 6. Fetch all Salesmen
-            $salesmanIdsInKdp = DB::connection('dms')->table('pmKDP')
+            // Fetch Salesmen
+            $smQuery = DB::connection('dms')->table('pmKDP')
                 ->select('EmployeeID', 'SpvEmployeeID', 'BranchCode')
                 ->distinct()
                 ->whereNotNull('EmployeeID')
-                ->where('EmployeeID', '!=', '')
-                ->get();
+                ->where('EmployeeID', '!=', '');
 
+            if (!$isPusat) {
+                $userBranchCode = $this->branchNameToCode[$userCabang] ?? ($user->branch ?? $user->cabang);
+                $smQuery->where('BranchCode', $userBranchCode);
+            }
+
+            $salesmanIdsInKdp = $smQuery->get();
             $smCodes = $salesmanIdsInKdp->pluck('EmployeeID')->unique()->filter()->values()->toArray();
 
             $salesmenRaw = DB::connection('dms')
@@ -492,8 +948,16 @@ class ActualController extends Controller
                 ];
             }
 
-            $selectedBranchName = isset($branchesMap[$branchCode]) ? $branchesMap[$branchCode] : ($branchCode ?: '');
-            $selectedSpvName = isset($spvsMap[$spvId]) ? $spvsMap[$spvId]['Name'] : ($spvId ?: '');
+            $effectiveSpvCode = !empty($matchingSpvIds) ? $matchingSpvIds[0] : $spvId;
+            $branchManagerName = '';
+            if (!empty($branchCode) && isset($bmsMap[$branchCode])) {
+                $branchManagerName = $bmsMap[$branchCode]['Name'];
+            }
+            
+            $salesHeadName = '';
+            if (!empty($effectiveSpvCode) && isset($spvsMap[$effectiveSpvCode])) {
+                $salesHeadName = $spvsMap[$effectiveSpvCode]['Name'];
+            }
             $selectedSalesmanName = isset($salesmenMap[$salesman]) ? $salesmenMap[$salesman]['Name'] : ($salesman ?: '');
 
             return view('sales.vsv.actual.inquiry_index', [
@@ -506,15 +970,19 @@ class ActualController extends Controller
                 'toDate'               => $toDate,
                 'selectedMonth'        => (int)$selectedMonth,
                 'selectedYear'         => (int)$selectedYear,
-                'branchesMap'          => $branchesMap,
+                'bmsMap'               => $bmsMap,
+                'bmBranchMap'          => $bmBranchMap,
+                'branchSpvMap'         => $branchSpvMap,
                 'spvsMap'              => $spvsMap,
                 'salesmenMap'          => $salesmenMap,
-                'selectedBranchName'   => $selectedBranchName,
-                'selectedSpvName'      => $selectedSpvName,
+                'branchManagerName'    => $branchManagerName,
+                'salesHeadName'        => $salesHeadName,
                 'selectedSalesmanName' => $selectedSalesmanName,
                 'BranchCode'           => $branchCode,
-                'SpvEmployeeID'        => $spvId,
-                'salesman'             => $salesman
+                'SpvEmployeeID'        => $effectiveSpvCode,
+                'salesman'             => $salesman,
+                'isLockedBranch'       => !$isPusat,
+                'isLockedSpv'          => $isSH
             ]);
 
         } catch (\Exception $e) {
@@ -547,78 +1015,66 @@ class ActualController extends Controller
 
     private function processActualSource(Request $request, $viewType, $pageTitle, $headerLabel)
     {
+        $user = Auth::user();
+        $userRole = strtoupper($user->role ?? '');
+        $userCabang = strtoupper(trim($user->branch ?? $user->cabang ?? ''));
+        
+        $isPusat = ($user->is_admin ?? false) || 
+                   in_array($userCabang, ['ADMIN', 'PUSAT']) || 
+                   in_array($userRole, ['ADMIN', 'OM', 'ADMIN DCA', 'OM DCA']);
+                   
+        $isBM = ($userRole === 'BM' || $userCabang === 'BM');
+        $isSH = ($userRole === 'SH' || $userCabang === 'SH');
+
         $selectedMonth = $request->input('month', date('n'));
         $selectedYear = $request->input('year', date('Y'));
 
-        $branchCode = $request->input('BranchCode', $request->input('branch_code', $request->input('branch_manager')));
-        $spvId = $request->input('SpvEmployeeID', $request->input('spv_id', $request->input('sales_head')));
-        $salesman = $request->input('salesman');
+        if (!$isPusat) {
+            $userBranchCode = $this->branchNameToCode[$userCabang] ?? ($user->branch ?? $user->cabang);
+            $branchCode = $userBranchCode;
+            $spvId = $isSH ? $user->name : $request->input('sales_head', $request->input('SpvEmployeeID', $request->input('spv_id')));
+        } else {
+            $branchCode = $request->input('branch_manager', $request->input('BranchCode', $request->input('branch_code')));
+            $spvId = $request->input('sales_head', $request->input('SpvEmployeeID', $request->input('spv_id')));
+            $userBranchCode = null;
+        }
 
+        $salesman = $request->input('salesman');
         $fromDate = $request->input('from_date', "{$selectedYear}-" . str_pad($selectedMonth, 2, '0', STR_PAD_LEFT) . "-01");
         $toDate = $request->input('to_date', date('Y-m-t', mktime(0, 0, 0, $selectedMonth, 1, $selectedYear)));
 
         try {
-            // 1. Resolusi BranchCode
-            $bmBranchCodeMapping = [
-                '14.26.01.549' => '641940106', // EDI SUMARDI -> DCA Cipanas
-                '03.24.02.001' => '641940103', // Subagja -> DCA Cinere
-                '06.25.11.001' => '641940104', // JOHN EDUWARD SIMATUPANG -> DCA Jatiasih
-                '06.24.11.005' => '641940102', // ANGGARINI AMITHAWARDHANI -> DCA Cianjur
-                '01.19.08.102' => '641940101', // RONALD NOVEMBRI W -> DCA Ciawi
-            ];
-
-            $matchingBranchCodes = [];
+            $targetBranchCode = null;
             if (!empty($branchCode)) {
-                if (isset($bmBranchCodeMapping[$branchCode])) {
-                    $matchingBranchCodes = [$bmBranchCodeMapping[$branchCode]];
-                } else {
-                    $empBranch = DB::connection('dms')
-                        ->table('gnMstEmployee')
-                        ->where('EmployeeID', $branchCode)
-                        ->value('BranchCode');
-                    
-                    if ($empBranch) {
-                        $matchingBranchCodes = [$empBranch];
-                    } else {
-                        $matchingBranchCodes = DB::connection('dms')
-                            ->table('gnMstOrganizationDtl')
-                            ->where('BranchCode', 'LIKE', "%{$branchCode}%")
-                            ->orWhere('BranchName', 'LIKE', "%{$branchCode}%")
-                            ->pluck('BranchCode')
-                            ->unique()
-                            ->values()
-                            ->toArray();
-                    }
-                }
+                $targetBranchCode = $this->bmBranchCodeMapping[$branchCode] 
+                    ?? ($this->branchNameToCode[strtoupper(trim($branchCode))] ?? $branchCode);
             }
 
-            // 2. Resolusi SpvEmployeeID
-            $matchingSpvIds = [];
-            if (!empty($spvId)) {
-                $matchingSpvIds = DB::connection('dms')
-                    ->table('gnMstEmployee')
-                    ->where('EmployeeID', 'LIKE', "%{$spvId}%")
-                    ->orWhere('EmployeeName', 'LIKE', "%{$spvId}%")
-                    ->pluck('EmployeeID')
-                    ->unique()
-                    ->values()
-                    ->toArray();
-            }
+            $matchingSpvIds = $this->resolveSpvEmployeeIds($spvId, $user, $userBranchCode ?? null);
 
-            // 3. Query data dari model Kdp (koneksi dms -> tabel pmKDP)
             $query = Kdp::query();
 
+            // 🔒 Penyesuaian filter tanggal: source_do_inquiry menggunakan LastUpdateDate, source_inquiry menggunakan InquiryDate
+            $dateColumn = ($viewType === 'source_do_inquiry') ? 'LastUpdateDate' : 'InquiryDate';
+
             if (!empty($fromDate) && !empty($toDate)) {
-                $query->whereBetween('InquiryDate', ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"]);
+                $query->whereBetween($dateColumn, ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"]);
             } else {
-                $query->whereMonth('InquiryDate', $selectedMonth)
-                      ->whereYear('InquiryDate', $selectedYear);
+                $query->whereMonth($dateColumn, $selectedMonth)
+                      ->whereYear($dateColumn, $selectedYear);
             }
 
-            if (!empty($matchingBranchCodes)) {
-                $query->whereIn('BranchCode', $matchingBranchCodes);
-            } elseif (!empty($branchCode)) {
-                $query->where('BranchCode', 'LIKE', "%{$branchCode}%");
+            // Filter status untuk DO
+            if ($viewType === 'source_do_inquiry') {
+                $query->where(function($q) {
+                    $q->whereIn(DB::raw("TRIM(UPPER(LastProgress))"), ['DO', 'DELIVERY'])
+                      ->orWhere('StatusProspek', '60');
+                });
+            }
+
+            // Filter Branch Resmi Sesuai Project Kantor
+            if (!empty($targetBranchCode)) {
+                $query->where('BranchCode', $targetBranchCode);
             }
 
             if (!empty($matchingSpvIds)) {
@@ -634,7 +1090,6 @@ class ActualController extends Controller
                 });
             }
 
-            // Grouping berdasarkan PerolehanData (Sumber Data)
             $data = $query->selectRaw("
                 TRIM(PerolehanData) as SumberData,
                 SUM(CASE WHEN StatusProspek = '10' THEN 1 ELSE 0 END) as total_new,
@@ -642,7 +1097,7 @@ class ActualController extends Controller
                 SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'P' OR TRIM(UPPER(LastProgress)) = 'PROSPECT' THEN 1 ELSE 0 END) as total_prospect,
                 SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'HP' OR TRIM(UPPER(LastProgress)) = 'HOT PROSPECT' THEN 1 ELSE 0 END) as total_hot_prospect,
                 SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'SPK' THEN 1 ELSE 0 END) as total_spk,
-                SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'DO' THEN 1 ELSE 0 END) as total_do,
+                SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'DO' OR StatusProspek = '60' THEN 1 ELSE 0 END) as total_do,
                 SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'DELIVERY' THEN 1 ELSE 0 END) as total_delivery,
                 SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'LOST' THEN 1 ELSE 0 END) as total_lost
             ")
@@ -652,19 +1107,98 @@ class ActualController extends Controller
             ->orderBy(DB::raw('TRIM(PerolehanData)'))
             ->get();
 
-            $bmsRaw = DB::connection('dms')
+            // 🔒 Sinkronisasi angka DO & Delivery dengan Dashboard Performance SOI (Berdasarkan LastUpdateDate periode terpilih)
+            $qDoBySource = Kdp::query()
+                ->where(function($q) {
+                    $q->whereIn(DB::raw("TRIM(UPPER(LastProgress))"), ['DO', 'DELIVERY'])
+                      ->orWhere('StatusProspek', '60');
+                });
+
+            if (!empty($fromDate) && !empty($toDate)) {
+                $qDoBySource->whereBetween('LastUpdateDate', ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"]);
+            } else {
+                $qDoBySource->whereMonth('LastUpdateDate', $selectedMonth)
+                            ->whereYear('LastUpdateDate', $selectedYear);
+            }
+
+            if (!empty($targetBranchCode)) {
+                $qDoBySource->where('BranchCode', $targetBranchCode);
+            }
+            if (!empty($matchingSpvIds)) {
+                $qDoBySource->whereIn('SpvEmployeeID', $matchingSpvIds);
+            }
+            if (!empty($salesman)) {
+                $qDoBySource->where(function($q) use ($salesman) {
+                    $q->where('EmployeeID', 'LIKE', "%{$salesman}%")
+                      ->orWhere('CreatedBy', 'LIKE', "%{$salesman}%");
+                });
+            }
+
+            $doRaw = $qDoBySource->selectRaw("
+                TRIM(PerolehanData) as SumberData,
+                SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'DELIVERY' THEN 1 ELSE 0 END) as total_delivery,
+                SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'DO' OR StatusProspek = '60' THEN 1 ELSE 0 END) as total_do
+            ")
+            ->whereNotNull('PerolehanData')
+            ->where('PerolehanData', '!=', '')
+            ->groupBy(DB::raw('TRIM(PerolehanData)'))
+            ->get();
+
+            $doCountsMap = [];
+            foreach ($doRaw as $dr) {
+                $sKey = strtoupper(trim($dr->SumberData));
+                $doCountsMap[$sKey] = [
+                    'delivery' => (int)$dr->total_delivery,
+                    'do'       => (int)$dr->total_do,
+                    'total'    => (int)($dr->total_delivery + $dr->total_do)
+                ];
+            }
+
+            $data->transform(function($item) use ($doCountsMap) {
+                $sKey = strtoupper(trim($item->SumberData ?? ''));
+                if (isset($doCountsMap[$sKey])) {
+                    $item->total_delivery = $doCountsMap[$sKey]['total'];
+                    $item->total_do = 0;
+                } else {
+                    $matched = false;
+                    foreach ($doCountsMap as $mapName => $cnts) {
+                        if (stripos($sKey, $mapName) !== false || stripos($mapName, $sKey) !== false) {
+                            $item->total_delivery = $cnts['total'];
+                            $item->total_do = 0;
+                            $matched = true;
+                            break;
+                        }
+                    }
+                    if (!$matched) {
+                        $item->total_delivery = 0;
+                        $item->total_do = 0;
+                    }
+                }
+                return $item;
+            });
+
+            $bmsQuery = DB::connection('dms')
                 ->table('HrEmployee')
                 ->select('EmployeeID', 'EmployeeName')
                 ->where('Position', 'BM')
                 ->where('PersonnelStatus', '1')
                 ->where('IsDeleted', '0')
-                ->orderBy('EmployeeName')
-                ->get();
+                ->orderBy('EmployeeName');
+
+            if (!$isPusat) {
+                $userBranchCode = $this->branchNameToCode[$userCabang] ?? ($user->branch ?? $user->cabang);
+                $allowedBmIds = array_keys(array_filter($this->bmBranchCodeMapping, fn($bc) => $bc == $userBranchCode));
+                if (!empty($allowedBmIds)) {
+                    $bmsQuery->whereIn('EmployeeID', $allowedBmIds);
+                }
+            }
+
+            $bmsRaw = $bmsQuery->get();
 
             $bmsMap = [];
             $bmBranchMap = [];
             foreach ($bmsRaw as $bm) {
-                $bCode = $bmBranchCodeMapping[$bm->EmployeeID] ?? '641940106';
+                $bCode = $this->bmBranchCodeMapping[$bm->EmployeeID] ?? '641940106';
                 $bmsMap[$bm->EmployeeID] = [
                     'Name'       => $bm->EmployeeName,
                     'Jabatan'    => 'BM',
@@ -673,11 +1207,17 @@ class ActualController extends Controller
                 $bmBranchMap[$bm->EmployeeID] = $bCode;
             }
 
-            $planCombos = \App\Models\Sales\vsv\PlanSales::select('BranchCode', 'SpvEmployeeID')
+            $planCombosQuery = PlanSales::select('BranchCode', 'SpvEmployeeID')
                 ->whereNotNull('SpvEmployeeID')
                 ->where('SpvEmployeeID', '!=', '')
-                ->distinct()
-                ->get();
+                ->distinct();
+
+            if (!$isPusat) {
+                $userBranchCode = $this->branchNameToCode[$userCabang] ?? ($user->branch ?? $user->cabang);
+                $planCombosQuery->where('BranchCode', $userBranchCode);
+            }
+
+            $planCombos = $planCombosQuery->get();
 
             $spvBranchRel = [];
             foreach ($planCombos as $combo) {
@@ -715,9 +1255,10 @@ class ActualController extends Controller
                 $branchManagerName = $bmsMap[$branchCode]['Name'];
             }
 
+            $effectiveSpvCode = !empty($matchingSpvIds) ? $matchingSpvIds[0] : $spvId;
             $salesHeadName = '';
-            if (!empty($spvId) && isset($spvsMap[$spvId])) {
-                $salesHeadName = $spvsMap[$spvId]['Name'];
+            if (!empty($effectiveSpvCode) && isset($spvsMap[$effectiveSpvCode])) {
+                $salesHeadName = $spvsMap[$effectiveSpvCode]['Name'];
             }
 
             $subTitleText = ($viewType === 'source_do_inquiry')
@@ -741,7 +1282,9 @@ class ActualController extends Controller
                 'branchManagerName' => $branchManagerName,
                 'salesHeadName'     => $salesHeadName,
                 'BranchCode'        => $branchCode,
-                'SpvEmployeeID'     => $spvId
+                'SpvEmployeeID'     => $effectiveSpvCode,
+                'isLockedBranch'    => !$isPusat,
+                'isLockedSpv'       => $isSH
             ]);
 
         } catch (\Exception $e) {
@@ -764,40 +1307,59 @@ class ActualController extends Controller
 
     private function processActualSalesByLeasing(Request $request, $pageTitle, $headerLabel)
     {
+        $user = Auth::user();
+        $userRole = strtoupper($user->role ?? '');
+        $userCabang = strtoupper(trim($user->branch ?? $user->cabang ?? ''));
+        
+        $isPusat = ($user->is_admin ?? false) || 
+                   in_array($userCabang, ['ADMIN', 'PUSAT']) || 
+                   in_array($userRole, ['ADMIN', 'OM', 'ADMIN DCA', 'OM DCA']);
+                   
+        $isBM = ($userRole === 'BM' || $userCabang === 'BM');
+        $isSH = ($userRole === 'SH' || $userCabang === 'SH');
+
         $selectedMonth = $request->input('month', date('n'));
         $selectedYear = $request->input('year', date('Y'));
 
-        $branchCode = $request->input('BranchCode', $request->input('branch_code', $request->input('branch_manager')));
-        $spvId = $request->input('SpvEmployeeID', $request->input('spv_id', $request->input('sales_head')));
-        $salesman = $request->input('salesman');
+        if (!$isPusat) {
+            $userBranchCode = $this->branchNameToCode[$userCabang] ?? ($user->branch ?? $user->cabang);
+            $branchCode = $userBranchCode;
+            $spvId = $isSH ? $user->name : $request->input('sales_head', $request->input('SpvEmployeeID', $request->input('spv_id')));
+        } else {
+            $branchCode = $request->input('branch_manager', $request->input('BranchCode', $request->input('branch_code')));
+            $spvId = $request->input('sales_head', $request->input('SpvEmployeeID', $request->input('spv_id')));
+            $userBranchCode = null;
+        }
 
+        $salesman = $request->input('salesman');
         $fromDate = $request->input('from_date', "{$selectedYear}-" . str_pad($selectedMonth, 2, '0', STR_PAD_LEFT) . "-01");
         $toDate = $request->input('to_date', date('Y-m-t', mktime(0, 0, 0, $selectedMonth, 1, $selectedYear)));
 
         $data = collect();
 
         try {
-            $bmBranchCodeMapping = [
-                '14.26.01.549' => '641940106', // EDI SUMARDI -> DCA Cipanas
-                '03.24.02.001' => '641940103', // Subagja -> DCA Cinere
-                '06.25.11.001' => '641940104', // JOHN EDUWARD SIMATUPANG -> DCA Jatiasih
-                '06.24.11.005' => '641940102', // ANGGARINI AMITHAWARDHANI -> DCA Cianjur
-                '01.19.08.102' => '641940101', // RONALD NOVEMBRI W -> DCA Ciawi
-            ];
-
-            $bmsRaw = DB::connection('dms')
+            $bmsQuery = DB::connection('dms')
                 ->table('HrEmployee')
                 ->select('EmployeeID', 'EmployeeName')
                 ->where('Position', 'BM')
                 ->where('PersonnelStatus', '1')
                 ->where('IsDeleted', '0')
-                ->orderBy('EmployeeName')
-                ->get();
+                ->orderBy('EmployeeName');
+
+            if (!$isPusat) {
+                $userBranchCode = $this->branchNameToCode[$userCabang] ?? ($user->branch ?? $user->cabang);
+                $allowedBmIds = array_keys(array_filter($this->bmBranchCodeMapping, fn($bc) => $bc == $userBranchCode));
+                if (!empty($allowedBmIds)) {
+                    $bmsQuery->whereIn('EmployeeID', $allowedBmIds);
+                }
+            }
+
+            $bmsRaw = $bmsQuery->get();
 
             $bmsMap = [];
             $bmBranchMap = [];
             foreach ($bmsRaw as $bm) {
-                $bCode = $bmBranchCodeMapping[$bm->EmployeeID] ?? '641940106';
+                $bCode = $this->bmBranchCodeMapping[$bm->EmployeeID] ?? '641940106';
                 $bmsMap[$bm->EmployeeID] = [
                     'Name'       => $bm->EmployeeName,
                     'Jabatan'    => 'BM',
@@ -806,11 +1368,17 @@ class ActualController extends Controller
                 $bmBranchMap[$bm->EmployeeID] = $bCode;
             }
 
-            $planCombos = \App\Models\Sales\vsv\PlanSales::select('BranchCode', 'SpvEmployeeID')
+            $planCombosQuery = PlanSales::select('BranchCode', 'SpvEmployeeID')
                 ->whereNotNull('SpvEmployeeID')
                 ->where('SpvEmployeeID', '!=', '')
-                ->distinct()
-                ->get();
+                ->distinct();
+
+            if (!$isPusat) {
+                $userBranchCode = $this->branchNameToCode[$userCabang] ?? ($user->branch ?? $user->cabang);
+                $planCombosQuery->where('BranchCode', $userBranchCode);
+            }
+
+            $planCombos = $planCombosQuery->get();
 
             $spvBranchRel = [];
             foreach ($planCombos as $combo) {
@@ -848,134 +1416,109 @@ class ActualController extends Controller
                 $branchManagerName = $bmsMap[$branchCode]['Name'];
             }
 
+            $matchingSpvIds = $this->resolveSpvEmployeeIds($spvId, $user, $userBranchCode ?? null);
+            $effectiveSpvCode = !empty($matchingSpvIds) ? $matchingSpvIds[0] : $spvId;
+
             $salesHeadName = '';
-            if (!empty($spvId) && isset($spvsMap[$spvId])) {
-                $salesHeadName = $spvsMap[$spvId]['Name'];
+            if (!empty($effectiveSpvCode) && isset($spvsMap[$effectiveSpvCode])) {
+                $salesHeadName = $spvsMap[$effectiveSpvCode]['Name'];
             }
 
-            // CRITICAL RULE: Sebelum ada filtering branch manager & sales head, jangan tampilkan data
-            if (!empty($branchCode) && !empty($spvId)) {
-                $matchingBranchCodes = [];
-                if (isset($bmBranchCodeMapping[$branchCode])) {
-                    $matchingBranchCodes = [$bmBranchCodeMapping[$branchCode]];
+            if (!empty($branchCode)) {
+                // 🔒 Query Data dari tabel omTrSalesLeasing 
+                $queryLeasing = DB::connection('dms')->table('omTrSalesLeasing')
+                    ->whereNotNull('Leasing')
+                    ->where('Leasing', '<>', '');
+
+                if (!empty($fromDate) && !empty($toDate)) {
+                    $queryLeasing->whereBetween('CreatedDate', ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"]);
                 } else {
-                    $empBranch = DB::connection('dms')
-                        ->table('gnMstEmployee')
-                        ->where('EmployeeID', $branchCode)
-                        ->value('BranchCode');
-                    
-                    if ($empBranch) {
-                        $matchingBranchCodes = [$empBranch];
-                    } else {
-                        $matchingBranchCodes = DB::connection('dms')
-                            ->table('gnMstOrganizationDtl')
-                            ->where('BranchCode', 'LIKE', "%{$branchCode}%")
-                            ->orWhere('BranchName', 'LIKE', "%{$branchCode}%")
-                            ->pluck('BranchCode')
-                            ->unique()
-                            ->values()
-                            ->toArray();
-                    }
+                    $queryLeasing->whereMonth('CreatedDate', $selectedMonth)
+                                 ->whereYear('CreatedDate', $selectedYear);
                 }
 
-                $matchingSpvIds = [];
-                if (!empty($spvId)) {
-                    $matchingSpvIds = DB::connection('dms')
-                        ->table('gnMstEmployee')
-                        ->where('EmployeeID', 'LIKE', "%{$spvId}%")
-                        ->orWhere('EmployeeName', 'LIKE', "%{$spvId}%")
-                        ->pluck('EmployeeID')
-                        ->unique()
-                        ->values()
-                        ->toArray();
+                // Filter Branch Manager (Sesuaikan dengan nama / ID BM di Database)
+                if (!empty($branchManagerName)) {
+                    $queryLeasing->where(function($q) use ($branchCode, $branchManagerName) {
+                        $q->where('BMName', $branchManagerName)
+                          ->orWhere('BMID', $branchCode)
+                          ->orWhere('BMName', 'LIKE', "%{$branchManagerName}%");
+                    });
+                } else {
+                    $queryLeasing->where('BMID', $branchCode);
                 }
+
+                $leasingRecords = $queryLeasing->get();
 
                 // 1. Branch Manager Summary Row(s)
-                $bmLeasings = Kdp::whereBetween('InquiryDate', ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"])
-                    ->whereIn('BranchCode', $matchingBranchCodes)
-                    ->selectRaw("
-                        COALESCE(NULLIF(TRIM(Leasing), ''), 'TUNAI / CASH') as LeasingName,
-                        SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'SPK' THEN 1 ELSE 0 END) as total_spk,
-                        SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'DO' THEN 1 ELSE 0 END) as total_do,
-                        SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'DELIVERY' THEN 1 ELSE 0 END) as total_delivery
-                    ")
-                    ->groupBy(DB::raw("COALESCE(NULLIF(TRIM(Leasing), ''), 'TUNAI / CASH')"))
-                    ->get();
+                $bmGrouped = $leasingRecords->groupBy(function($item) {
+                    return strtoupper(trim($item->Leasing ?? 'TUNAI / CASH'));
+                });
 
-                foreach ($bmLeasings as $bl) {
+                foreach ($bmGrouped as $lName => $items) {
                     $item = new \stdClass();
                     $item->Posisi = 'Branch Manager';
-                    $item->Nama = $branchManagerName ?: 'Branch Manager';
-                    $item->Leasing = $bl->LeasingName;
-                    $item->total_spk = $bl->total_spk;
-                    $item->total_do = $bl->total_do;
-                    $item->total_delivery = $bl->total_delivery;
+                    $item->Nama = $branchManagerName ?: ($items->first()->BMName ?? 'Branch Manager');
+                    $item->Leasing = $lName;
+                    $item->total_spk = $items->count();
+                    $item->total_do = $items->filter(fn($i) => !empty($i->DONo))->count();
+                    $item->total_delivery = $items->filter(fn($i) => !empty($i->DONo))->count();
                     $data->push($item);
                 }
 
-                // 2. Sales Head Summary Row(s)
-                $shLeasings = Kdp::whereBetween('InquiryDate', ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"])
-                    ->whereIn('BranchCode', $matchingBranchCodes)
-                    ->whereIn('SpvEmployeeID', $matchingSpvIds)
-                    ->selectRaw("
-                        COALESCE(NULLIF(TRIM(Leasing), ''), 'TUNAI / CASH') as LeasingName,
-                        SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'SPK' THEN 1 ELSE 0 END) as total_spk,
-                        SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'DO' THEN 1 ELSE 0 END) as total_do,
-                        SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'DELIVERY' THEN 1 ELSE 0 END) as total_delivery
-                    ")
-                    ->groupBy(DB::raw("COALESCE(NULLIF(TRIM(Leasing), ''), 'TUNAI / CASH')"))
-                    ->get();
-
-                foreach ($shLeasings as $sl) {
-                    $item = new \stdClass();
-                    $item->Posisi = 'Sales Head';
-                    $item->Nama = $salesHeadName ?: 'Sales Head';
-                    $item->Leasing = $sl->LeasingName;
-                    $item->total_spk = $sl->total_spk;
-                    $item->total_do = $sl->total_do;
-                    $item->total_delivery = $sl->total_delivery;
-                    $data->push($item);
-                }
-
-                // 3. Salesmen Rows under Sales Head
-                $smQuery = Kdp::whereBetween('InquiryDate', ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"])
-                    ->whereIn('BranchCode', $matchingBranchCodes)
-                    ->whereIn('SpvEmployeeID', $matchingSpvIds);
-
-                if (!empty($salesman)) {
-                    $smQuery->where(function($q) use ($salesman) {
-                        $q->where('EmployeeID', 'LIKE', "%{$salesman}%")
-                          ->orWhere('CreatedBy', 'LIKE', "%{$salesman}%");
+                // 2. Sales Head Rows
+                $shRecords = $leasingRecords;
+                if (!empty($effectiveSpvCode)) {
+                    $shRecords = $shRecords->filter(function($i) use ($matchingSpvIds, $effectiveSpvCode, $salesHeadName) {
+                        if (!empty($matchingSpvIds) && in_array($i->SalesHeadID, $matchingSpvIds)) return true;
+                        if ($i->SalesHeadID == $effectiveSpvCode) return true;
+                        if (!empty($salesHeadName) && stripos($i->SalesHeadName ?? '', $salesHeadName) !== false) return true;
+                        return false;
                     });
                 }
 
-                $smLeasings = $smQuery->selectRaw("
-                        EmployeeID,
-                        COALESCE(NULLIF(TRIM(Leasing), ''), 'TUNAI / CASH') as LeasingName,
-                        SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'SPK' THEN 1 ELSE 0 END) as total_spk,
-                        SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'DO' THEN 1 ELSE 0 END) as total_do,
-                        SUM(CASE WHEN TRIM(UPPER(LastProgress)) = 'DELIVERY' THEN 1 ELSE 0 END) as total_delivery
-                    ")
-                    ->groupBy('EmployeeID', DB::raw("COALESCE(NULLIF(TRIM(Leasing), ''), 'TUNAI / CASH')"))
-                    ->get();
+                $shGrouped = $shRecords->filter(fn($i) => !empty($i->SalesHeadName) || !empty($i->SalesHeadID))
+                    ->groupBy(function($item) {
+                        $shName = trim($item->SalesHeadName ?? $item->SalesHeadID ?? 'Sales Head');
+                        return $shName . '|||' . strtoupper(trim($item->Leasing ?? 'TUNAI / CASH'));
+                    });
 
-                $smIds = $smLeasings->pluck('EmployeeID')->unique()->filter()->values()->toArray();
-                $employeesMap = [];
-                if (!empty($smIds)) {
-                    $employeesMap = DB::connection('dms')->table('gnMstEmployee')
-                        ->whereIn('EmployeeID', $smIds)
-                        ->pluck('EmployeeName', 'EmployeeID')
-                        ->toArray();
+                foreach ($shGrouped as $key => $items) {
+                    list($shName, $lName) = explode('|||', $key);
+                    $item = new \stdClass();
+                    $item->Posisi = 'Sales Head';
+                    $item->Nama = $shName;
+                    $item->Leasing = $lName;
+                    $item->total_spk = $items->count();
+                    $item->total_do = $items->filter(fn($i) => !empty($i->DONo))->count();
+                    $item->total_delivery = $items->filter(fn($i) => !empty($i->DONo))->count();
+                    $data->push($item);
                 }
 
-                foreach ($smLeasings as $sm) {
+                // 3. Salesmen Rows
+                $smFiltered = $shRecords;
+                if (!empty($salesman)) {
+                    $smFiltered = $smFiltered->filter(function($i) use ($salesman) {
+                        return stripos($i->SalesmanID ?? '', $salesman) !== false 
+                            || stripos($i->SalesmanName ?? '', $salesman) !== false;
+                    });
+                }
+
+                $smGrouped = $smFiltered->filter(fn($i) => !empty($i->SalesmanName) || !empty($i->SalesmanID))
+                    ->groupBy(function($item) {
+                        $smName = trim($item->SalesmanName ?? $item->SalesmanID ?? 'Salesman');
+                        return $smName . '|||' . strtoupper(trim($item->Leasing ?? 'TUNAI / CASH'));
+                    });
+
+                foreach ($smGrouped as $key => $items) {
+                    list($smName, $lName) = explode('|||', $key);
                     $item = new \stdClass();
                     $item->Posisi = 'Salesman';
-                    $item->Nama = $employeesMap[$sm->EmployeeID] ?? $sm->EmployeeID ?? 'Salesman';
-                    $item->Leasing = $sm->LeasingName;
-                    $item->total_spk = $sm->total_spk;
-                    $item->total_do = $sm->total_do;
-                    $item->total_delivery = $sm->total_delivery;
+                    $item->Nama = $smName;
+                    $item->Leasing = $lName;
+                    $item->total_spk = $items->count();
+                    $item->total_do = $items->filter(fn($i) => !empty($i->DONo))->count();
+                    $item->total_delivery = $items->filter(fn($i) => !empty($i->DONo))->count();
                     $data->push($item);
                 }
             }
@@ -996,7 +1539,9 @@ class ActualController extends Controller
                 'branchManagerName' => $branchManagerName,
                 'salesHeadName'     => $salesHeadName,
                 'BranchCode'        => $branchCode,
-                'SpvEmployeeID'     => $spvId
+                'SpvEmployeeID'     => $effectiveSpvCode,
+                'isLockedBranch'    => !$isPusat,
+                'isLockedSpv'       => $isSH
             ]);
 
         } catch (\Exception $e) {
@@ -1019,7 +1564,13 @@ class ActualController extends Controller
 
     public function salesforces(Request $request)
     {
-        $user = \Illuminate\Support\Facades\Auth::user();
+        $user = Auth::user();
+        $userRole = strtoupper($user->role ?? '');
+        $userCabang = strtoupper(trim($user->branch ?? $user->cabang ?? ''));
+        
+        $isPusat = ($user->is_admin ?? false) || 
+                   in_array($userCabang, ['ADMIN', 'PUSAT']) || 
+                   in_array($userRole, ['ADMIN', 'OM', 'ADMIN DCA', 'OM DCA']);
         
         $modelClass = class_exists(\App\Models\Sales\vsv\current\ActualSalesforce::class) 
             ? \App\Models\Sales\vsv\current\ActualSalesforce::class 
@@ -1027,13 +1578,13 @@ class ActualController extends Controller
 
         if ($modelClass) {
             $query = $modelClass::with('user');
-            if (!in_array(strtolower($user->role ?? ''), ['admin', 'om', 'admin dca', 'om dca'])) {
+            if (!$isPusat) {
                 if (strtoupper($user->role ?? '') === 'BM') {
-                    $query->where('cabang', $user->cabang ?? '');
+                    $query->where('cabang', $user->cabang ?? $user->branch ?? '');
                 } elseif (strtoupper($user->role ?? '') === 'SH') {
                     $query->where('user_id', $user->id);
                 } else {
-                    $query->where('cabang', $user->cabang ?? '');
+                    $query->where('cabang', $user->cabang ?? $user->branch ?? '');
                 }
             }
             $data = $query->get();
@@ -1053,35 +1604,160 @@ class ActualController extends Controller
 
     public function doSalesforces(Request $request)
     {
-        $user = \Illuminate\Support\Facades\Auth::user();
+        $user = Auth::user();
+        $userRole = strtoupper($user->role ?? '');
+        $userCabang = strtoupper(trim($user->branch ?? $user->cabang ?? ''));
+        
+        $isPusat = ($user->is_admin ?? false) || 
+                   in_array($userCabang, ['ADMIN', 'PUSAT']) || 
+                   in_array($userRole, ['ADMIN', 'OM', 'ADMIN DCA', 'OM DCA']);
 
-        $modelClass = class_exists(\App\Models\Sales\vsv\current\ActualDoSalesForce::class) 
-            ? \App\Models\Sales\vsv\current\ActualDoSalesForce::class 
-            : (class_exists(\App\Models\current\ActualDoSalesForce::class) ? \App\Models\current\ActualDoSalesForce::class : null);
+        $year = (int)$request->input('year', now()->year);
+        $selectedCabang = $request->input('cabang');
 
-        if ($modelClass) {
-            $query = $modelClass::with('user');
-            if (!in_array(strtolower($user->role ?? ''), ['admin', 'om', 'admin dca', 'om dca'])) {
-                if (strtoupper($user->role ?? '') === 'BM') {
-                    $query->where('cabang', $user->cabang ?? '');
-                } elseif (strtoupper($user->role ?? '') === 'SH') {
-                    $query->where('user_id', $user->id);
-                } else {
-                    $query->where('cabang', $user->cabang ?? '');
-                }
+        $branchMap = [
+            '641940101' => 'Ciawi',
+            '641940102' => 'Cianjur',
+            '641940103' => 'Cinere',
+            '641940104' => 'Jatiasih',
+            '641940106' => 'Cipanas',
+        ];
+
+        $allowedBranches = $branchMap;
+        if (!$isPusat && !empty($userCabang)) {
+            $uCode = $this->branchNameToCode[$userCabang] ?? null;
+            if ($uCode && isset($branchMap[$uCode])) {
+                $allowedBranches = [$uCode => $branchMap[$uCode]];
             }
-            $data = $query->get();
-        } else {
-            $data = collect();
+        } elseif (!empty($selectedCabang)) {
+            $sCode = $this->branchNameToCode[strtoupper(trim($selectedCabang))] ?? $selectedCabang;
+            if (isset($branchMap[$sCode])) {
+                $allowedBranches = [$sCode => $branchMap[$sCode]];
+            }
         }
 
-        $year = now()->year;
-        $grandTotal = $data->sum('total');
+        $gradeMap = [
+            4 => 'PLATINUM',
+            3 => 'GOLD',
+            2 => 'SILVER',
+            1 => 'TRAINEE',
+        ];
+        $gradeOrder = [
+            'PLATINUM' => 1,
+            'GOLD'     => 2,
+            'SILVER'   => 3,
+            'TRAINEE'  => 4,
+        ];
+        $monthKeys = ['jan', 'feb', 'mar', 'apr', 'mei', 'jun', 'jul', 'agu', 'sep', 'okt', 'nov', 'des'];
+
+        try {
+            // 🔒 Query Live DMS: pmKDP JOIN HrEmployee (DELIVERY + Active Salesforce)
+            $records = DB::connection('dms')
+                ->table('pmKDP')
+                ->join('HrEmployee', 'pmKDP.EmployeeID', '=', 'HrEmployee.EmployeeID')
+                ->where('pmKDP.LastProgress', 'DELIVERY')
+                ->where('HrEmployee.IsDeleted', '0')
+                ->whereYear('pmKDP.LastUpdateDate', $year)
+                ->whereIn('pmKDP.BranchCode', array_keys($allowedBranches))
+                ->selectRaw('pmKDP.BranchCode, HrEmployee.EmployeeID, HrEmployee.EmployeeName, HrEmployee.Grade, MONTH(pmKDP.LastUpdateDate) as m_num, COUNT(*) as total')
+                ->groupBy('pmKDP.BranchCode', 'HrEmployee.EmployeeID', 'HrEmployee.EmployeeName', 'HrEmployee.Grade', DB::raw('MONTH(pmKDP.LastUpdateDate)'))
+                ->get();
+
+            $salesMatrix = [];
+            foreach ($records as $r) {
+                $bCode = trim($r->BranchCode);
+                $empId = trim($r->EmployeeID);
+                $empName = trim($r->EmployeeName);
+                $gNum = (int)$r->Grade;
+                $gName = $gradeMap[$gNum] ?? 'TRAINEE';
+                $mNum = (int)$r->m_num;
+
+                if (!isset($salesMatrix[$bCode][$empId])) {
+                    $salesMatrix[$bCode][$empId] = [
+                        'name'   => $empName,
+                        'grade'  => $gName,
+                        'months' => array_fill(1, 12, 0),
+                    ];
+                }
+
+                $salesMatrix[$bCode][$empId]['months'][$mNum] += (int)$r->total;
+            }
+
+            $dataByBranch = [];
+            $flatData = collect();
+            $grandTotals = array_fill_keys($monthKeys, 0);
+            $grandTotalAll = 0;
+
+            foreach ($allowedBranches as $bCode => $bName) {
+                $branchRows = [];
+                $subtotal = array_fill_keys($monthKeys, 0);
+                $subtotalAll = 0;
+
+                $empList = $salesMatrix[$bCode] ?? [];
+
+                // Sort salesmen by Grade (Platinum -> Gold -> Silver -> Trainee), then by Name
+                uasort($empList, function($a, $b) use ($gradeOrder) {
+                    $orderA = $gradeOrder[$a['grade']] ?? 99;
+                    $orderB = $gradeOrder[$b['grade']] ?? 99;
+                    if ($orderA === $orderB) {
+                        return strcmp($a['name'], $b['name']);
+                    }
+                    return $orderA <=> $orderB;
+                });
+
+                foreach ($empList as $empId => $empData) {
+                    $rowObj = new \stdClass();
+                    $rowObj->id = $empId;
+                    $rowObj->employee_id = $empId;
+                    $rowObj->salesman_name = $empData['name'];
+                    $rowObj->grading = $empData['grade'];
+                    $rowObj->cabang = $bName;
+                    $rowObj->tahun = $year;
+                    $rowTotal = 0;
+
+                    for ($m = 1; $m <= 12; $m++) {
+                        $mKey = $monthKeys[$m - 1];
+                        $val = $empData['months'][$m] ?? 0;
+                        $rowObj->$mKey = $val;
+                        $rowTotal += $val;
+                        $subtotal[$mKey] += $val;
+                        $grandTotals[$mKey] += $val;
+                    }
+
+                    $rowObj->total = $rowTotal;
+                    $subtotalAll += $rowTotal;
+                    $grandTotalAll += $rowTotal;
+
+                    $branchRows[] = $rowObj;
+                    $flatData->push($rowObj);
+                }
+
+                $subtotal['total'] = $subtotalAll;
+
+                $dataByBranch[] = [
+                    'branch_code' => $bCode,
+                    'branch_name' => $bName,
+                    'rows'        => $branchRows,
+                    'subtotal'    => $subtotal,
+                ];
+            }
+
+            $data = $flatData;
+            $grandTotal = $grandTotalAll;
+
+        } catch (\Exception $e) {
+            Log::error("Error reading Actual DO Salesforce from DMS pmKDP: " . $e->getMessage());
+            $dataByBranch = [];
+            $data = collect();
+            $grandTotals = array_fill_keys($monthKeys, 0);
+            $grandTotal = 0;
+            $grandTotalAll = 0;
+        }
 
         $viewName = view()->exists('sales.vsv.current.actual_do_salesforces.index') 
             ? 'sales.vsv.current.actual_do_salesforces.index' 
             : 'current.actual_do_salesforces.index';
 
-        return view($viewName, compact('data', 'year', 'grandTotal'));
+        return view($viewName, compact('data', 'dataByBranch', 'year', 'grandTotal', 'grandTotals', 'grandTotalAll', 'allowedBranches', 'selectedCabang', 'isPusat'));
     }
 }

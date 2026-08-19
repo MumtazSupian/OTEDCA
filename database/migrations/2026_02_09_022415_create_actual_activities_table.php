@@ -15,7 +15,7 @@ return new class extends Migration
             $table->enum('activity', ['D_MARKETING', 'EXHIBITION', 'MOVING_EXHIBITION', 'SHOWROOM_EVENT', 'GROUP_PRESENTATION', 'EVENT_TEST_DRIVE', 'OPEN_TABLE', 'CETAK_FLYER']);
             $table->string('platform_lokasi');
             $table->enum('jenis_unit', ['Commercial', 'Passenger']);
-            $table->enum('type_unit', ['CARRY_PU', 'CARRY_BOX', 'CARRY_BV', 'CARRY_MOKO', 'CARRY_AMBULANCE', 'CARRY_TOWING', 'APV_MB', 'APV_AMBULANCE', 'ERTIGA', 'ERTIGA_HYBRID', 'XL7', 'XL7_HYBRID', 'S_PRESSO', 'IGNIS', 'e_VITARA', 'GRAND_VITARA', 'JIMNY']);
+            $table->enum('type_unit', ['CARRY_PU', 'CARRY_BOX', 'CARRY_BV', 'CARRY_MOKO', 'CARRY_AMBULANCE', 'CARRY_TOWING', 'APV_MB', 'APV_AMBULANCE', 'ERTIGA', 'ERTIGA_HYBRID', 'XL7', 'XL7_HYBRID', 'S_PRESSO', 'IGNIS', 'e_VITARA', 'GRAND_VITARA', 'JIMNY', 'FRONX']);
             $table->date('tanggal');
             $table->time('jam');
             $table->string('pic');
