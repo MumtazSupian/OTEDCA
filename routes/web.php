@@ -239,6 +239,118 @@ Route::middleware(['auth', 'no-direct'])->group(function () {
         Route::resource('summary', SummaryController::class);
         Route::resource('summaryaction', SummaryActionController::class);
     });
+
+    Route::get('/sales/leads/{cabang}', [\App\Http\Controllers\LeadController::class, 'index'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    // Leads Dashboard
+    Route::get('/sales/leads/dashboard', [\App\Http\Controllers\Sales\LeadsDashboardController::class, 'index'])->name('sales.leads.dashboard');
+
+    Route::get('/sales/leads/{cabang}/create', [\App\Http\Controllers\LeadController::class, 'create'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::post('/sales/leads/{cabang}/store', [\App\Http\Controllers\LeadController::class, 'store'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+
+    // Leads
+    Route::get('/sales/leads/{cabang}/leads', [\App\Http\Controllers\LeadController::class, 'index'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    
+    Route::get('/sales/leads/{cabang}/leads/create', [\App\Http\Controllers\LeadController::class, 'create'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    
+    Route::post('/sales/leads/{cabang}/leads/store', [\App\Http\Controllers\LeadController::class, 'store'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+
+    Route::delete('/sales/leads/{cabang}/leads/{id}', [\App\Http\Controllers\LeadController::class, 'destroy'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas'])
+        ->name('sales.leads.destroy');
+    
+    Route::get('/sales/leads/{cabang}/leads/{id}/edit', [\App\Http\Controllers\LeadController::class, 'edit'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::put('/sales/leads/{cabang}/leads/{id}', [\App\Http\Controllers\LeadController::class, 'update'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+
+    // SPV
+    Route::get('/sales/leads/{cabang}/spv', [\App\Http\Controllers\SpvLeadController::class, 'index'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::get('/sales/leads/{cabang}/spv/create', [\App\Http\Controllers\SpvLeadController::class, 'create'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::post('/sales/leads/{cabang}/spv/store', [\App\Http\Controllers\SpvLeadController::class, 'store'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::delete('/sales/leads/{cabang}/spv/{id}', [\App\Http\Controllers\SpvLeadController::class, 'destroy'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::get('/sales/leads/{cabang}/spv/{id}/edit', [\App\Http\Controllers\SpvLeadController::class, 'edit'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::put('/sales/leads/{cabang}/spv/{id}', [\App\Http\Controllers\SpvLeadController::class, 'update'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+
+    // Sales
+    Route::get('/sales/leads/{cabang}/sales', [\App\Http\Controllers\SalesLeadController::class, 'index'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::get('/sales/leads/{cabang}/sales/create', [\App\Http\Controllers\SalesLeadController::class, 'create'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::post('/sales/leads/{cabang}/sales/store', [\App\Http\Controllers\SalesLeadController::class, 'store'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::delete('/sales/leads/{cabang}/sales/{id}', [\App\Http\Controllers\SalesLeadController::class, 'destroy'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::get('/sales/leads/{cabang}/sales/{id}/edit', [\App\Http\Controllers\SalesLeadController::class, 'edit'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::put('/sales/leads/{cabang}/sales/{id}', [\App\Http\Controllers\SalesLeadController::class, 'update'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+
+    // ADM
+    Route::get('/sales/leads/{cabang}/adm', [\App\Http\Controllers\AdmLeadController::class, 'index'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::get('/sales/leads/{cabang}/adm/create', [\App\Http\Controllers\AdmLeadController::class, 'create'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::post('/sales/leads/{cabang}/adm/store', [\App\Http\Controllers\AdmLeadController::class, 'store'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::delete('/sales/leads/{cabang}/adm/{id}', [\App\Http\Controllers\AdmLeadController::class, 'destroy'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::get('/sales/leads/{cabang}/adm/{id}/edit', [\App\Http\Controllers\AdmLeadController::class, 'edit'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+    Route::put('/sales/leads/{cabang}/adm/{id}', [\App\Http\Controllers\AdmLeadController::class, 'update'])
+        ->whereIn('cabang', ['ciawi', 'cianjur', 'cinere', 'jatiasih', 'cipanas']);
+
+    // Unit Lead
+    Route::get('/sales/leads/unit', [\App\Http\Controllers\UnitLeadController::class, 'index']);
+    Route::get('/sales/leads/unit/create', [\App\Http\Controllers\UnitLeadController::class, 'create']);
+    Route::post('/sales/leads/unit', [\App\Http\Controllers\UnitLeadController::class, 'store']);
+    Route::get('/sales/leads/unit/{unit}/edit', [\App\Http\Controllers\UnitLeadController::class, 'edit']);
+    Route::put('/sales/leads/unit/{unit}', [\App\Http\Controllers\UnitLeadController::class, 'update']);
+    Route::delete('/sales/leads/unit/{unit}', [\App\Http\Controllers\UnitLeadController::class, 'destroy']);
+
+    // Sumber Lead
+    Route::get('/sales/leads/sumber', [\App\Http\Controllers\SumberLeadController::class, 'index']);
+    Route::get('/sales/leads/sumber/create', [\App\Http\Controllers\SumberLeadController::class, 'create']);
+    Route::post('/sales/leads/sumber', [\App\Http\Controllers\SumberLeadController::class, 'store']);
+    Route::get('/sales/leads/sumber/{sumber}/edit', [\App\Http\Controllers\SumberLeadController::class, 'edit']);
+    Route::put('/sales/leads/sumber/{sumber}', [\App\Http\Controllers\SumberLeadController::class, 'update']);
+    Route::delete('/sales/leads/sumber/{sumber}', [\App\Http\Controllers\SumberLeadController::class, 'destroy']);
+
+    // Budget Lead
+    Route::get('/sales/leads/budget', [\App\Http\Controllers\BudgetLeadController::class, 'index']);
+    Route::get('/sales/leads/budget/create', [\App\Http\Controllers\BudgetLeadController::class, 'create']);
+    Route::post('/sales/leads/budget', [\App\Http\Controllers\BudgetLeadController::class, 'store']);
+    Route::get('/sales/leads/budget/{budget}/edit', [\App\Http\Controllers\BudgetLeadController::class, 'edit']);
+    Route::put('/sales/leads/budget/{budget}', [\App\Http\Controllers\BudgetLeadController::class, 'update']);
+    Route::delete('/sales/leads/budget/{budget}', [\App\Http\Controllers\BudgetLeadController::class, 'destroy']);
+
+    // Status Lead
+    Route::get('/sales/leads/status', [\App\Http\Controllers\StatusLeadController::class, 'index']);
+    Route::get('/sales/leads/status/create', [\App\Http\Controllers\StatusLeadController::class, 'create']);
+    Route::post('/sales/leads/status', [\App\Http\Controllers\StatusLeadController::class, 'store']);
+    Route::get('/sales/leads/status/{status}/edit', [\App\Http\Controllers\StatusLeadController::class, 'edit']);
+    Route::put('/sales/leads/status/{status}', [\App\Http\Controllers\StatusLeadController::class, 'update']);
+    Route::delete('/sales/leads/status/{status}', [\App\Http\Controllers\StatusLeadController::class, 'destroy']);
+
+    // Respon Lead
+    Route::get('/sales/leads/respon', [\App\Http\Controllers\ResponLeadController::class, 'index']);
+    Route::get('/sales/leads/respon/create', [\App\Http\Controllers\ResponLeadController::class, 'create']);
+    Route::post('/sales/leads/respon', [\App\Http\Controllers\ResponLeadController::class, 'store']);
+    Route::get('/sales/leads/respon/{respon}/edit', [\App\Http\Controllers\ResponLeadController::class, 'edit']);
+    Route::put('/sales/leads/respon/{respon}', [\App\Http\Controllers\ResponLeadController::class, 'update']);
+    Route::delete('/sales/leads/respon/{respon}', [\App\Http\Controllers\ResponLeadController::class, 'destroy']);
+
 });
 
 Route::fallback(function () {
@@ -325,6 +437,9 @@ Route::fallback(function () {
                 'jakarta' => now('Asia/Jakarta')->toDateTimeString(),
             ];
         });
+
+
+
     });
 
 });
