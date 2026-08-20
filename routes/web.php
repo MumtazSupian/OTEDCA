@@ -15,6 +15,9 @@ use App\Http\Controllers\Sales\WarnaController;
 use App\Http\Controllers\Sales\GudangController;
 use App\Http\Controllers\Sales\CabangController;
 use App\Http\Controllers\Sales\InUnitController;
+use App\Http\Controllers\Service\ServiceAcController;
+use App\Http\Controllers\Service\PostCheckAcController;
+use App\Http\Controllers\Service\PreCheckAcController;
 // Sales VSV
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -350,6 +353,34 @@ Route::middleware(['auth', 'no-direct'])->group(function () {
     Route::get('/sales/leads/respon/{respon}/edit', [\App\Http\Controllers\ResponLeadController::class, 'edit']);
     Route::put('/sales/leads/respon/{respon}', [\App\Http\Controllers\ResponLeadController::class, 'update']);
     Route::delete('/sales/leads/respon/{respon}', [\App\Http\Controllers\ResponLeadController::class, 'destroy']);
+
+    // Route untuk PDF Post Check (sesuai request user)
+    Route::get('/postcheck/pdf_laporan/{id}', [\App\Http\Controllers\Service\PostCheckAcController::class, 'pdf'])->name('postcheck.pdf_laporan');
+
+    // Service AC
+    Route::prefix('service/service-ac')->name('service.service-ac.')->group(function () {
+        Route::get('/', [ServiceAcController::class, 'monitoring'])->name('index');
+        Route::get('/monitoring', [ServiceAcController::class, 'monitoring'])->name('monitoring');
+        
+        // Post Check AC Routes
+        Route::get('/ac/post-check', [PostCheckAcController::class, 'index'])->name('ac.post_check');
+        Route::post('/ac/post-check', [PostCheckAcController::class, 'store'])->name('ac.post_check_store');
+        Route::get('/ac/post-check/{id}/edit', [PostCheckAcController::class, 'edit'])->name('ac.post_check_edit');
+        Route::put('/ac/post-check/{id}', [PostCheckAcController::class, 'update'])->name('ac.post_check_update');
+        Route::patch('/ac/post-check/{id}/status', [PostCheckAcController::class, 'updateStatus'])->name('ac.post_check_status');
+        Route::get('/ac/post-check/{id}/pdf', [PostCheckAcController::class, 'pdf'])->name('ac.post_check_pdf');
+        Route::delete('/ac/post-check/{id}', [PostCheckAcController::class, 'destroy'])->name('ac.post_check_destroy');
+        
+        // Pre Check AC Routes
+        Route::get('/ac/pre-check', [PreCheckAcController::class, 'index'])->name('ac.pre_check');
+        Route::post('/ac/pre-check', [PreCheckAcController::class, 'store'])->name('ac.pre_check_store');
+        Route::get('/ac/pre-check/{id}/edit', [PreCheckAcController::class, 'edit'])->name('ac.pre_check_edit');
+        Route::put('/ac/pre-check/{id}', [PreCheckAcController::class, 'update'])->name('ac.pre_check_update');
+        Route::patch('/ac/pre-check/{id}/status', [PreCheckAcController::class, 'updateStatus'])->name('ac.pre_check_status');
+        Route::get('/ac/pre-check/{id}/pdf', [PreCheckAcController::class, 'pdf'])->name('ac.pre_check_pdf');
+        Route::delete('/ac/pre-check/{id}', [PreCheckAcController::class, 'destroy'])->name('ac.pre_check_destroy');
+        Route::resource('data', ServiceAcController::class)->parameters(['data' => 'data']);
+    });
 
 });
 

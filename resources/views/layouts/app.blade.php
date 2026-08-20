@@ -619,7 +619,35 @@
                             </svg>
                         </button>
                         <div class="nav-submenu">
-                            <span class="nav-sublink" style="opacity: 0.5; font-style: italic; cursor: default;">(kosong)</span>
+                            <a href="{{ url('/service/service-ac/monitoring') }}" class="nav-sublink {{ request()->is('service/service-ac*') && !request()->is('service/service-ac/ac/*') ? 'active' : '' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z"></path>
+                                    <path d="M14 3v5h5M16 13H8M16 17H8M10 9H8"></path>
+                                </svg>
+                                Service AC
+                            </a>
+
+                            <!-- MENU AC -->
+                            <div class="nav-group {{ request()->is('service/service-ac/ac/*') ? 'open' : '' }}" id="menuAcDropdown">
+                                <button class="nav-sublink nav-toggle" onclick="toggleSubmenu('menuAcDropdown')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer;">
+                                    <i class="far fa-copy" style="margin-right: 8px; font-size: 14px; width: 14px; text-align: center;"></i>
+                                    <span style="font-size: 13px;">MENU AC</span>
+                                    <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-left: auto;">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </button>
+                                <div class="nav-submenu">
+                                    <a href="{{ route('service.service-ac.ac.post_check') }}" class="nav-sublink {{ request()->is('service/service-ac/ac/post-check') ? 'active' : '' }}" style="padding-left: 25px; white-space: nowrap;">
+                                        <i class="far fa-circle" style="margin-right: 8px; font-size: 11px;"></i>
+                                        POST CHECK AC
+                                    </a>
+                                    <a href="{{ route('service.service-ac.ac.pre_check') }}" class="nav-sublink {{ request()->is('service/service-ac/ac/pre-check') ? 'active' : '' }}" style="padding-left: 25px; white-space: nowrap;">
+                                        <i class="far fa-circle" style="margin-right: 8px; font-size: 11px;"></i>
+                                        PRE CHECK AC
+                                    </a>
+                                </div>
+                            </div>
+                            
                         </div>
                     </div>
 
