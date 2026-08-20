@@ -256,9 +256,15 @@
                     <i class="fa-solid fa-arrow-left"></i> Kembali Stock
                 </a>
             @else
-                <a href="{{ route('admin.stocks.create') }}" class="btn-primary-top" style="background-color: #dc2626;">
-                    <i class="fa-solid fa-plus"></i> Tambah Stock
-                </a>
+                @if(auth()->user()->role !== 'bm_sh')
+                  @if(auth()->user()->role !== 'bm_sh')
+                  @if(auth()->user()->role !== 'bm_sh')
+                  <a href="{{ route('admin.stocks.create') }}" class="btn-primary-top" style="background-color: #dc2626;">
+                      <i class="fa-solid fa-plus"></i> Tambah Stock
+                  </a>
+                  @endif
+                  @endif
+                  @endif
             @endif
         </div>
     </div>
@@ -562,14 +568,16 @@
                         <td style="text-align: center;">{{ $item->unit }}</td>
                         <td class="col-action-body">
                             <div style="display: flex; gap: 8px; justify-content: center;">
-                                <a href="{{ route('admin.stocks.edit', $item) }}" class="btn-action-primary">Edit</a>
-                                <form action="{{ route('admin.stocks.destroy', $item) }}" method="POST"
-                                    style="margin: 0;">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="btn-action-danger"
-                                        onclick="return confirm('Apakah Anda yakin ingin menghapus data ini?')">Hapus</button>
-                                </form>
-                            </div>
+                                  @if(auth()->user()->role !== 'bm_sh')
+                                  <a href="{{ route('admin.stocks.edit', $item) }}" class="btn-action-primary">Edit</a>
+                                  <form action="{{ route('admin.stocks.destroy', $item) }}" method="POST"
+                                      style="margin: 0;">
+                                      @csrf @method('DELETE')
+                                      <button type="submit" class="btn-action-danger"
+                                          onclick="return confirm('Apakah Anda yakin ingin menghapus data ini?')">Hapus</button>
+                                  </form>
+                                  @endif
+                              </div>
                         </td>
                     </tr>
                 @empty

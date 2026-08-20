@@ -415,7 +415,7 @@ class ActualController extends Controller
             } else {
                 // 🔒 3. Query data DO dari model Kdp (koneksi dms -> tabel pmKDP)
                 $query = Kdp::query();
-                $dateColumn = 'LastUpdateDate';
+                $dateColumn = 'LastUpdateStatus';
 
                 if (!empty($fromDate) && !empty($toDate)) {
                     $query->whereBetween($dateColumn, ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"]);
@@ -1054,8 +1054,8 @@ class ActualController extends Controller
 
             $query = Kdp::query();
 
-            // 🔒 Penyesuaian filter tanggal: source_do_inquiry menggunakan LastUpdateDate, source_inquiry menggunakan InquiryDate
-            $dateColumn = ($viewType === 'source_do_inquiry') ? 'LastUpdateDate' : 'InquiryDate';
+            // 🔒 Penyesuaian filter tanggal: source_do_inquiry menggunakan LastUpdateStatus, source_inquiry menggunakan InquiryDate
+            $dateColumn = ($viewType === 'source_do_inquiry') ? 'LastUpdateStatus' : 'InquiryDate';
 
             if (!empty($fromDate) && !empty($toDate)) {
                 $query->whereBetween($dateColumn, ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"]);
@@ -1107,7 +1107,7 @@ class ActualController extends Controller
             ->orderBy(DB::raw('TRIM(PerolehanData)'))
             ->get();
 
-            // 🔒 Sinkronisasi angka DO & Delivery dengan Dashboard Performance SOI (Berdasarkan LastUpdateDate periode terpilih)
+            // 🔒 Sinkronisasi angka DO & Delivery dengan Dashboard Performance SOI (Berdasarkan LastUpdateStatus periode terpilih)
             $qDoBySource = Kdp::query()
                 ->where(function($q) {
                     $q->whereIn(DB::raw("TRIM(UPPER(LastProgress))"), ['DO', 'DELIVERY'])
@@ -1115,10 +1115,10 @@ class ActualController extends Controller
                 });
 
             if (!empty($fromDate) && !empty($toDate)) {
-                $qDoBySource->whereBetween('LastUpdateDate', ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"]);
+                $qDoBySource->whereBetween('LastUpdateStatus', ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"]);
             } else {
-                $qDoBySource->whereMonth('LastUpdateDate', $selectedMonth)
-                            ->whereYear('LastUpdateDate', $selectedYear);
+                $qDoBySource->whereMonth('LastUpdateStatus', $selectedMonth)
+                            ->whereYear('LastUpdateStatus', $selectedYear);
             }
 
             if (!empty($targetBranchCode)) {
@@ -1657,10 +1657,10 @@ class ActualController extends Controller
                 ->join('HrEmployee', 'pmKDP.EmployeeID', '=', 'HrEmployee.EmployeeID')
                 ->where('pmKDP.LastProgress', 'DELIVERY')
                 ->where('HrEmployee.IsDeleted', '0')
-                ->whereYear('pmKDP.LastUpdateDate', $year)
+                ->whereYear('pmKDP.LastUpdateStatus', $year)
                 ->whereIn('pmKDP.BranchCode', array_keys($allowedBranches))
-                ->selectRaw('pmKDP.BranchCode, HrEmployee.EmployeeID, HrEmployee.EmployeeName, HrEmployee.Grade, MONTH(pmKDP.LastUpdateDate) as m_num, COUNT(*) as total')
-                ->groupBy('pmKDP.BranchCode', 'HrEmployee.EmployeeID', 'HrEmployee.EmployeeName', 'HrEmployee.Grade', DB::raw('MONTH(pmKDP.LastUpdateDate)'))
+                ->selectRaw('pmKDP.BranchCode, HrEmployee.EmployeeID, HrEmployee.EmployeeName, HrEmployee.Grade, MONTH(pmKDP.LastUpdateStatus) as m_num, COUNT(*) as total')
+                ->groupBy('pmKDP.BranchCode', 'HrEmployee.EmployeeID', 'HrEmployee.EmployeeName', 'HrEmployee.Grade', DB::raw('MONTH(pmKDP.LastUpdateStatus)'))
                 ->get();
 
             $salesMatrix = [];

@@ -70,6 +70,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/finance/dashboard', [\App\Http\Controllers\Finance\DashboardController::class, 'index'])->name('finance.dashboard');
     Route::get('/sales/dashboard', [\App\Http\Controllers\Sales\DashboardController::class, 'index'])->name('sales.dashboard');
+    Route::get('/sales/dashboard_sales', [\App\Http\Controllers\Sales\DashboardSalesController::class, 'index'])->name('sales.dashboard_sales');
+
     Route::get('/sales/vsv/dashboard/v1', [\App\Http\Controllers\Sales\vsv\DashboardController::class, 'v1'])->name('sales.vsv.dashboard.v1');
     Route::get('/sales/vsv/dashboard/v1/export-pdf', [\App\Http\Controllers\Sales\vsv\DashboardController::class, 'exportPdfV1'])->name('sales.vsv.dashboard.v1.export_pdf');
     Route::get('/sales/vsv/dashboard/v2', [\App\Http\Controllers\Sales\vsv\DashboardController::class, 'v2'])->name('sales.vsv.dashboard.v2');

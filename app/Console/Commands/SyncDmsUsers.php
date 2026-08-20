@@ -9,9 +9,9 @@ use App\Models\User;
 class SyncDmsUsers extends Command
 {
     protected $signature = 'dms:sync-users';
-    protected $description = 'Sync users from DMS sysUser and HrEmployee into local users table';
+    protected $description = 'Sinkronisasi user dari database DMS ke database lokal';
 
-    private const BRANCH_MAP = [
+    const BRANCH_MAP = [
         '641940101' => 'ciawi',
         '641940102' => 'cianjur',
         '641940103' => 'cinere',
@@ -25,28 +25,43 @@ class SyncDmsUsers extends Command
         $this->info('Mulai sinkronisasi data user dari DMS...');
 
         try {
+            // 1. Get all active users from sysUser
             $dmsUsers = DB::connection('dms')->select("
                 SELECT 
-                    u.UserId, 
-                    u.Password, 
-                    u.FullName, 
-                    u.BranchCode, 
-                    e.Position 
-                FROM sysUser u 
-                LEFT JOIN HrEmployee e ON u.UserId = e.RelatedUser 
-                WHERE e.PersonnelStatus = 1
-                AND u.UserId IS NOT NULL
+                    UserId, 
+                    Password, 
+                    FullName, 
+                    BranchCode
+                FROM sysUser 
+                WHERE IsActive = 1
+                AND UserId IS NOT NULL
             ");
+
+            // 2. Get all positions from HrEmployee
+            $hrEmployees = DB::connection('dms')->select("
+                SELECT 
+                    RelatedUser, 
+                    Position
+                FROM HrEmployee 
+                WHERE RelatedUser IS NOT NULL
+            ");
+
+            // 3. Map positions by RelatedUser
+            $positions = [];
+            foreach ($hrEmployees as $emp) {
+                $positions[strtolower(trim($emp->RelatedUser))] = trim($emp->Position);
+            }
 
             $count = 0;
 
             foreach ($dmsUsers as $dmsUser) {
+                $userId = trim($dmsUser->UserId);
+                $lowerUserId = strtolower($userId);
+                
                 $cabang = self::BRANCH_MAP[trim($dmsUser->BranchCode)] ?? null;
+                $position = $positions[$lowerUserId] ?? '';
 
                 $role = null;
-                $position = trim($dmsUser->Position ?? '');
-                $userId = trim($dmsUser->UserId);
-
                 if (strtoupper($userId) === 'DCAHOUNIT') {
                     $role = 'ho_unit';
                 } elseif (in_array(strtoupper($position), ['BM', 'SH'])) {
@@ -57,7 +72,7 @@ class SyncDmsUsers extends Command
                     $role = 'om';
                 }
 
-                $email = strtolower($userId);
+                $email = $lowerUserId;
                 $user = User::where('email', $email)->first();
 
                 if (!$user) {
@@ -68,23 +83,35 @@ class SyncDmsUsers extends Command
                 $user->name = trim($dmsUser->FullName) ?: $userId;
                 $user->password = trim($dmsUser->Password);
                 $user->cabang = $cabang;
-                $user->branch = $cabang;
-                $user->role = $role;
 
                 if ($role === 'om') {
-                    $user->is_admin = true;
-                    $user->is_admin_stock = true;
+                    $user->is_admin = 1;
+                    $user->is_admin_stock = 1;
+                    $user->role = 'om';
+                } elseif ($role === 'bm_sh') {
+                    $user->is_admin = 0;
+                    $user->is_admin_stock = 0;
+                    $user->role = 'bm_sh';
+                } elseif ($role === 'adh') {
+                    $user->is_admin = 0;
+                    $user->is_admin_stock = 0;
+                    $user->role = 'adh';
+                } elseif ($role === 'ho_unit') {
+                    $user->is_admin = 0;
+                    $user->is_admin_stock = 0;
+                    $user->role = 'ho_unit';
                 }
 
+                // Tetap set branch biar aplikasi lama tidak error
+                $user->branch = $cabang;
                 $user->save();
                 $count++;
             }
 
-            $this->info("Berhasil sinkronisasi $count user dari DMS.");
+            $this->info("Berhasil sinkronisasi {$count} user dari DMS!");
 
         } catch (\Exception $e) {
             $this->error('Gagal sinkronisasi: ' . $e->getMessage());
         }
     }
 }
-

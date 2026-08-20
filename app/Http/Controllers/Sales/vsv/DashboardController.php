@@ -612,20 +612,20 @@ class DashboardController extends Controller
                 $allInquiryRecords = $qInq->get(['BranchCode', 'TipeKendaraan', 'Variant', 'InquiryDate', 'PerolehanData']);
 
                 // 2. DO Bulan Berjalan (LastUpdateDate >= StartOfMonth AND LastUpdateDate < StartOfNextMonth)
-                $qDo = \App\Models\Sales\vsv\Kdp::where('LastUpdateDate', '>=', $startDateMonth)
-                    ->where('LastUpdateDate', '<', $nextMonthStartDate);
+                $qDo = \App\Models\Sales\vsv\Kdp::where('LastUpdateStatus', '>=', $startDateMonth)
+                    ->where('LastUpdateStatus', '<', $nextMonthStartDate);
                 if (!empty($allBranchCodes)) {
                     $qDo->whereIn('BranchCode', $allBranchCodes);
                 }
-                $allDoRecords = $qDo->get(['BranchCode', 'TipeKendaraan', 'Variant', 'LastProgress', 'StatusProspek', 'LastUpdateDate', 'PerolehanData']);
+                $allDoRecords = $qDo->get(['BranchCode', 'TipeKendaraan', 'Variant', 'LastProgress', 'StatusProspek', 'LastUpdateStatus', 'PerolehanData']);
 
                 // 3. DO YTD (LastUpdateDate >= YtdStartDate AND LastUpdateDate < StartOfNextMonth)
-                $qDoYtd = \App\Models\Sales\vsv\Kdp::where('LastUpdateDate', '>=', $ytdStartDate)
-                    ->where('LastUpdateDate', '<', $nextMonthStartDate);
+                $qDoYtd = \App\Models\Sales\vsv\Kdp::where('LastUpdateStatus', '>=', $ytdStartDate)
+                    ->where('LastUpdateStatus', '<', $nextMonthStartDate);
                 if (!empty($allBranchCodes)) {
                     $qDoYtd->whereIn('BranchCode', $allBranchCodes);
                 }
-                $allDoYtdRecords = $qDoYtd->get(['BranchCode', 'TipeKendaraan', 'Variant', 'LastProgress', 'StatusProspek', 'LastUpdateDate']);
+                $allDoYtdRecords = $qDoYtd->get(['BranchCode', 'TipeKendaraan', 'Variant', 'LastProgress', 'StatusProspek', 'LastUpdateStatus']);
 
                 // 4. SPK Murni dari omTrSalesSO
                 $qSpk = \Illuminate\Support\Facades\DB::connection('dms')->table('omTrSalesSO')

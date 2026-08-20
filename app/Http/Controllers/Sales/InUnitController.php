@@ -19,12 +19,18 @@ class InUnitController extends Controller
 
     public function create()
     {
+        if (auth()->user()->role === 'adh') {
+            abort(403, 'Anda hanya bisa melakukan edit data IN UNIT.');
+        }
         $cabangs = Cabang::orderBy('nama')->get();
         return view('sales.stock.in_unit_create', compact('cabangs'));
     }
 
     public function store(Request $request)
     {
+        if (auth()->user()->role === 'adh') {
+            abort(403, 'Anda hanya bisa melakukan edit data IN UNIT.');
+        }
         $request->validate([
             'nama_driver'        => 'required|string|max:255',
             'tanggal'            => 'required|date',
@@ -86,6 +92,9 @@ class InUnitController extends Controller
 
     public function destroy(InUnit $inUnit)
     {
+        if (auth()->user()->role === 'adh') {
+            abort(403, 'Anda hanya bisa melakukan edit data IN UNIT.');
+        }
         $inUnit->delete();
 
         return redirect()->route('admin.in-units.index')->with('success', 'Data In Unit berhasil dihapus.');
