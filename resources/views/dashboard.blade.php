@@ -3,6 +3,119 @@
 @section('title', 'Dashboard')
 
 @section('content')
+
+<style>
+    /* SERVICE AC STYLES */
+    .cabang-section {
+        margin-top: 20px;
+        margin-bottom: 45px;
+    }
+    .modern-cabang-title {
+        font-size: 22px;
+        color: #1a237e;
+        font-weight: 800;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .modern-cabang-title::before {
+        content: '';
+        width: 6px;
+        height: 28px;
+        background: linear-gradient(to bottom, #3498db, #2ecc71);
+        border-radius: 4px;
+        display: inline-block;
+    }
+    .cards-row {
+        display: flex;
+        gap: 25px;
+        flex-wrap: wrap;
+    }
+    .service-card {
+        flex: 1;
+        min-width: 320px;
+        background: #fff;
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+        border: 1px solid rgba(0,0,0,0.02);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .service-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+    }
+    .service-card.modern-blue::after { background: #3498db; }
+    .service-card.modern-orange::after { background: #f39c12; }
+    .service-card.modern-green::after { background: #2ecc71; }
+    .service-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+    }
+    .card-title-area {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 25px;
+        border-bottom: 1px solid #f0f4f8;
+        padding-bottom: 20px;
+    }
+    .icon-wrap {
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+    }
+    .modern-blue .icon-wrap { background: rgba(52, 152, 219, 0.1); color: #3498db; }
+    .modern-orange .icon-wrap { background: rgba(243, 156, 18, 0.1); color: #f39c12; }
+    .modern-green .icon-wrap { background: rgba(46, 204, 113, 0.1); color: #2ecc71; }
+    .card-title-area h4 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+    }
+    .modern-blue h4 { color: #3498db; }
+    .modern-orange h4 { color: #f39c12; }
+    .modern-green h4 { color: #2ecc71; }
+    .stats-area {
+        display: flex;
+        justify-content: space-between;
+        padding: 0 10px;
+    }
+    .stat-item {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .stat-num {
+        font-size: 24px;
+        font-weight: 800;
+    }
+    .modern-blue .stat-num { color: #2980b9; }
+    .modern-orange .stat-num { color: #e67e22; }
+    .modern-green .stat-num { color: #27ae60; }
+    .stat-text {
+        font-size: 11px;
+        color: #7f8c8d;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+</style>
+
     <div class="page-header">
         <div>
             <h1 class="page-title">Data SPK dan DO {{ $isPusat ? 'Semua Cabang' : ucfirst(strtolower($cabang)) }}</h1>
@@ -128,6 +241,86 @@
         </div>
     @endforeach
 
-  </div>
-</div>
+    <!-- MONITORING SERVICE CABANG -->
+    <hr style="margin: 40px 0; border: 0; border-top: 2px dashed #cbd5e1;">
+    <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-chart-pie" style="color: #20c997;"></i> Monitoring Service Cabang
+        </h2>
+    </div>
+
+    @foreach($dataCabangService as $cabang => $data)
+    <div class="cabang-section">
+        <div class="modern-cabang-title">{{ $cabang }}</div>
+        
+        <div class="cards-row">
+            <!-- UNIT ENTRY SERVICE -->
+            <div class="service-card modern-blue">
+                <div class="card-title-area">
+                    <div class="icon-wrap"><i class="fas fa-tools"></i></div>
+                    <h4>UNIT ENTRY SERVICE</h4>
+                </div>
+                <div class="stats-area">
+                    <div class="stat-item">
+                        <span class="stat-num">{{ $data['entry']['bulan'] ?? 0 }}</span>
+                        <span class="stat-text">Bulan</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num">{{ $data['entry']['hari_ini'] ?? 0 }}</span>
+                        <span class="stat-text">Hari Ini</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num">{{ $data['entry']['target'] ?? 0 }}</span>
+                        <span class="stat-text">Target</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UNIT SPOORING BALANCING -->
+            <div class="service-card modern-orange">
+                <div class="card-title-area">
+                    <div class="icon-wrap"><i class="fas fa-car-side"></i></div>
+                    <h4>UNIT SPOORING BALANCING</h4>
+                </div>
+                <div class="stats-area">
+                    <div class="stat-item">
+                        <span class="stat-num">{{ $data['spooring']['bulan'] ?? 0 }}</span>
+                        <span class="stat-text">Bulan</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num">{{ $data['spooring']['hari_ini'] ?? 0 }}</span>
+                        <span class="stat-text">Hari Ini</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num">{{ $data['spooring']['target'] ?? 0 }}</span>
+                        <span class="stat-text">Target</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UNIT AC -->
+            <div class="service-card modern-green">
+                <div class="card-title-area">
+                    <div class="icon-wrap"><i class="fas fa-snowflake"></i></div>
+                    <h4>UNIT AC</h4>
+                </div>
+                <div class="stats-area">
+                    <div class="stat-item">
+                        <span class="stat-num">{{ $data['ac']['bulan'] ?? 0 }}</span>
+                        <span class="stat-text">Bulan</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num">{{ $data['ac']['hari_ini'] ?? 0 }}</span>
+                        <span class="stat-text">Hari Ini</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-num">{{ $data['ac']['target'] ?? 0 }}</span>
+                        <span class="stat-text">Target</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endforeach
+
 @endsection

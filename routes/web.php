@@ -67,7 +67,7 @@ Route::middleware('auth')->group(function () {
         return redirect('/dashboard');
     });
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\MainDashboardController::class, 'index'])->name('dashboard');
     Route::get('/finance/dashboard', [\App\Http\Controllers\Finance\DashboardController::class, 'index'])->name('finance.dashboard');
     Route::get('/sales/dashboard', [\App\Http\Controllers\Sales\DashboardController::class, 'index'])->name('sales.dashboard');
     Route::get('/sales/dashboard_sales', [\App\Http\Controllers\Sales\DashboardSalesController::class, 'index'])->name('sales.dashboard_sales');
@@ -117,7 +117,7 @@ Route::middleware('auth')->group(function () {
     });
 
 Route::middleware(['auth', 'no-direct'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\MainDashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/v1', [DashboardController::class, 'v1'])->name('dashboard.v1');
     Route::get('/dashboard/v2', [DashboardController::class, 'v2'])->name('dashboard.v2');
 
