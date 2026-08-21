@@ -381,6 +381,12 @@ Route::middleware(['auth', 'no-direct'])->group(function () {
         Route::patch('/ac/pre-check/{id}/status', [PreCheckAcController::class, 'updateStatus'])->name('ac.pre_check_status');
         Route::get('/ac/pre-check/{id}/pdf', [PreCheckAcController::class, 'pdf'])->name('ac.pre_check_pdf');
         Route::delete('/ac/pre-check/{id}', [PreCheckAcController::class, 'destroy'])->name('ac.pre_check_destroy');
+
+        // Teknisi Routes
+        Route::get('/ac/teknisi', [App\Http\Controllers\Service\TeknisiController::class, 'index'])->name('ac.teknisi');
+        Route::post('/ac/teknisi', [App\Http\Controllers\Service\TeknisiController::class, 'store'])->name('ac.teknisi_store');
+        Route::put('/ac/teknisi/{id}', [App\Http\Controllers\Service\TeknisiController::class, 'update'])->name('ac.teknisi_update');
+        Route::delete('/ac/teknisi/{id}', [App\Http\Controllers\Service\TeknisiController::class, 'destroy'])->name('ac.teknisi_destroy');
         Route::resource('data', ServiceAcController::class)->parameters(['data' => 'data']);
     });
 

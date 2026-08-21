@@ -43,6 +43,7 @@
             <input type="hidden" name="periode_tren" value="{{ request('periode_tren', 'tahun_ini') }}">
             <button type="submit" style="background: #3c8dbc; color: white; border: none; padding: 5px 15px; border-radius: 3px; cursor: pointer;"><i class="fas fa-filter"></i> Terapkan</button>
             <a href="{{ route('sales.leads.dashboard') }}" style="background: #f4f4f4; color: #444; border: 1px solid #ddd; padding: 5px 15px; border-radius: 3px; cursor: pointer; text-decoration: none;">Reset</a>
+        </form>
     </div>
 
     <!-- 4 Cards -->

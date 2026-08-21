@@ -28,7 +28,26 @@ class PreCheckAcController extends Controller
         ];
         
         $perawatans = [
-            'Perawatan Ringan', 'Perawatan Sedang', 'Perawatan Berat', 'Tidak Ada Perawatan'
+            'OZONE',
+            'CABIN COMPARTEMENT',
+            'CONDENSOR CLEANER',
+            'SUPER LIGHT',
+            'SUPER LIGHT PLUS',
+            'LIGHT SERVICE - SINGLE BLOWER',
+            'LIGHT SERVICE - DOUBLE BLOWER',
+            'HEAVY SERVICE - SINGLE BLOWER',
+            'HEAVY - SERVICE - DOUBLE BLOWER',
+            'BONGKAR PASANG COMPRESSOR - MAGNET DILUAR FREON',
+            'BONGKAR PASANG CONDENSOR - INC PIPA DILUAR FREON',
+            'BONGKAR PASANG MOTOR FAN',
+            'JASA GANTI PIPA - TANPA BONGKAR COMPRESSOR',
+            'VACUM ISI FREON + OLI SINGLE',
+            'VACUM ISI FREON + OLI DOUBLE',
+            'ONLY TAMBAHAN FREON',
+            'ANTI RATS',
+            'ENGINE CLEAN',
+            'PAKET BERSIH ( E/G CLEAN + ANTI RATS )',
+            'HHO'
         ];
         
         return view('service.service_ac.ac.pre_check', compact('tab', 'preCheckAcs', 'cabangs', 'sas', 'perawatans'));
@@ -100,7 +119,28 @@ class PreCheckAcController extends Controller
             'CINERE' => ['SA Cinere 1', 'SA Cinere 2'],
             'JATIASIH' => ['SA Jatiasih 1', 'SA Jatiasih 2']
         ];
-        $perawatans = ['Perawatan Ringan', 'Perawatan Sedang', 'Perawatan Berat', 'Tidak Ada Perawatan'];
+        $perawatans = [
+            'OZONE',
+            'CABIN COMPARTEMENT',
+            'CONDENSOR CLEANER',
+            'SUPER LIGHT',
+            'SUPER LIGHT PLUS',
+            'LIGHT SERVICE - SINGLE BLOWER',
+            'LIGHT SERVICE - DOUBLE BLOWER',
+            'HEAVY SERVICE - SINGLE BLOWER',
+            'HEAVY - SERVICE - DOUBLE BLOWER',
+            'BONGKAR PASANG COMPRESSOR - MAGNET DILUAR FREON',
+            'BONGKAR PASANG CONDENSOR - INC PIPA DILUAR FREON',
+            'BONGKAR PASANG MOTOR FAN',
+            'JASA GANTI PIPA - TANPA BONGKAR COMPRESSOR',
+            'VACUM ISI FREON + OLI SINGLE',
+            'VACUM ISI FREON + OLI DOUBLE',
+            'ONLY TAMBAHAN FREON',
+            'ANTI RATS',
+            'ENGINE CLEAN',
+            'PAKET BERSIH ( E/G CLEAN + ANTI RATS )',
+            'HHO'
+        ];
 
         return view('service.service_ac.ac.pre_check_edit', compact('data', 'cabangs', 'sas', 'perawatans'));
     }

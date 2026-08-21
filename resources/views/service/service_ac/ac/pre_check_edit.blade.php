@@ -211,7 +211,7 @@
                 <label>Rekomendasi Perawatan</label>
                 <select name="rekomendasi_perawatan" class="form-control">
                     <option value="">-- Pilih Perawatan --</option>
-                    @foreach($perawatans ?? ['Perawatan Ringan', 'Perawatan Sedang', 'Perawatan Berat', 'Tidak Ada Perawatan'] as $per)
+                    @foreach($perawatans as $per)
                     <option value="{{ $per }}" {{ $data->rekomendasi_perawatan == $per ? 'selected' : '' }}>{{ $per }}</option>
                     @endforeach
                 </select>

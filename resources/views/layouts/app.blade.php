@@ -690,6 +690,10 @@ request()->is('admin/varians*') ? 'active' : '' }}">Varian</a>
                                         <i class="far fa-circle" style="margin-right: 8px; font-size: 11px;"></i>
                                         PRE CHECK AC
                                     </a>
+                                    <a href="{{ route('service.service-ac.ac.teknisi') }}" class="nav-sublink {{ request()->is('service/service-ac/ac/teknisi') ? 'active' : '' }}" style="padding-left: 25px; white-space: nowrap;">
+                                        <i class="far fa-circle" style="margin-right: 8px; font-size: 11px;"></i>
+                                        TEKNISI
+                                    </a>
                                 </div>
                             </div>
                             

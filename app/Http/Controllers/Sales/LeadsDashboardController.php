@@ -23,9 +23,9 @@ class LeadsDashboardController extends Controller
         $leadsQuery = Lead::query();
         if ($tahun && $tahun !== 'semua') {
             $leadsQuery->whereYear('tanggal', $tahun);
-            if ($bulan && $bulan !== 'semua') {
-                $leadsQuery->whereMonth('tanggal', $bulan);
-            }
+        }
+        if ($bulan && $bulan !== 'semua') {
+            $leadsQuery->whereMonth('tanggal', $bulan);
         }
         $leads = $leadsQuery->get();
 
