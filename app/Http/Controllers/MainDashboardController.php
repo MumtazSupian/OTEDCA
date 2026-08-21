@@ -125,7 +125,7 @@ class MainDashboardController extends Controller
         if (!$monthNum) $monthNum = now()->month;
         $year = now()->year;
         
-        $isPusat = ($user->is_admin ?? false) || 
+        $isPusat = ($user->is_admin ?? false) || in_array(strtolower(trim($user->branch ?? '')), ['admin', 'pusat']) || in_array(strtolower(trim($user->role ?? '')), ['admin', 'om', 'admin dca', 'om dca', 'ho_unit']); 
                    in_array(strtolower($user->branch ?? ''), ['admin', 'pusat']) ||
                    in_array(strtolower($user->role ?? ''), ['admin', 'om', 'admin dca', 'om dca', 'ho_unit']);
 
