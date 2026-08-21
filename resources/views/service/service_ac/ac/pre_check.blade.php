@@ -128,6 +128,77 @@
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(25, 118, 210, 0.4);
     }
+
+
+        /* Modal & Input Icon Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1050;
+        }
+        .modal-box {
+            background: white;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+        }
+        .modal-close {
+            cursor: pointer;
+            font-size: 22px;
+            color: #adb5bd;
+            background: none;
+            border: none;
+            line-height: 1;
+        }
+        .modal-close:hover {
+            color: #dc3545;
+        }
+        .modal-body {
+            padding: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .input-with-icon {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .input-with-icon input {
+            width: 100%;
+            padding-right: 40px !important;
+        }
+        .input-with-icon i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #1976d2;
+            cursor: pointer;
+            font-size: 15px;
+            transition: color 0.2s, transform 0.2s;
+        }
+        .input-with-icon i:hover {
+            color: #0d47a1;
+            transform: translateY(-50%) scale(1.15);
+        }
+
 </style>
 
 <div class="tab-wrapper">
@@ -159,7 +230,12 @@
     <form action="{{ route('service.service-ac.ac.pre_check_store') }}" method="POST" enctype="multipart/form-data" class="form-section">
         @csrf
         
+                        <style>
+        
+        </style>
+
         <div class="form-row">
+            <!-- Left Column -->
             <div class="form-col">
                 <div class="form-group">
                     <label>Jenis Pemeriksaan</label>
@@ -167,55 +243,48 @@
                         <option value="PRE CHECK">PRE CHECK</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label>No SPK:</label>
+                    <div class="input-with-icon">
+                        <input type="text" id="no_spk" name="no_spk" class="form-control" placeholder="Masukkan No SPK" onchange="fetchSpkData()">
+                        <i class="fas fa-search" onclick="openSpkModal()" title="Cari SPK Bulan Ini"></i>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Cabang</label>
+                    <input type="text" id="cabang" name="cabang" class="form-control" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+                </div>
+                <div class="form-group">
+                    <label>Service Advisor (SA):</label>
+                    <input type="text" id="sa" name="sa" class="form-control" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+                </div>
             </div>
+
+            <!-- Right Column -->
             <div class="form-col">
                 <div class="form-group">
                     <label>No Polisi:</label>
-                    <input type="text" name="no_polisi" class="form-control" placeholder="B 1234 ABC">
+                    <input type="text" id="no_polisi" name="no_polisi" class="form-control" readonly style="background-color: #e9ecef; cursor: not-allowed;">
                 </div>
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-col">
                 <div class="form-group">
-                    <label>Cabang</label>
-                    <select id="cabang_select" name="cabang" class="form-control" onchange="updateSA()">
-                        <option value="">-- Pilih Cabang --</option>
-                        @foreach($cabangs as $cab)
-                        <option value="{{ $cab }}">{{ $cab }}</option>
+                    <label>Tipe Kendaraan:</label>
+                    <input type="text" id="tipe_kendaraan" name="tipe_kendaraan" class="form-control" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+                </div>
+                <div class="form-group">
+                    <label>Teknisi Pemeriksa</label>
+                    <select name="teknisi" id="teknisi" class="form-control">
+                        <option value="">-- Pilih Teknisi --</option>
+                        @foreach($teknisis as $tek)
+                            @php $tekName = is_object($tek) ? $tek->nama : $tek; @endphp
+                            <option value="{{ $tekName }}" {{ old('teknisi') == $tekName ? 'selected' : '' }}>{{ $tekName }}</option>
                         @endforeach
                     </select>
                 </div>
-            </div>
-            <div class="form-col">
-                <div class="form-group">
-                    <label>Teknisi Pemeriksa</label>
-                    <input type="text" name="teknisi" class="form-control" placeholder="NAMA TEKNISI">
-                </div>
-            </div>
-        </div>
-        
-        <div class="form-row">
-            <div class="form-col">
-                <div class="form-group" id="sa_group" style="display: block;">
-                    <label>Service Advisor (SA):</label>
-                    <select id="sa_select" name="sa" class="form-control">
-                        <option value="">-- Pilih SA --</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-col">
                 <div class="form-group">
                     <label>Hari, Tanggal:</label>
-                    <input type="date" name="tanggal" class="form-control">
+                    <input type="date" id="tanggal" name="tanggal" class="form-control" readonly style="background-color: #e9ecef; cursor: not-allowed;">
                 </div>
             </div>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 30px;">
-            <label>Tipe Kendaraan:</label>
-            <input type="text" name="tipe_kendaraan" class="form-control" placeholder="CONTOH: ERTIGA, XL7, DLL">
         </div>
 
         <!-- Hasil Pengukuran (Form Check) -->
@@ -564,4 +633,129 @@ function applyFilters() {
     }
 }
 </script>
+
+
+<!-- Modal SPK -->
+<div class="modal-overlay" id="spkModal">
+    <div class="modal-box" style="max-width: 600px;">
+        <div class="modal-header">
+            <h4 style="margin:0; font-size:16px; font-weight:700; color:#2c3e50;"><i class="fas fa-file-invoice" style="color:#1976d2; margin-right:8px;"></i> Pilih No SPK (Bulan Ini)</h4>
+            <button type="button" class="modal-close" onclick="closeSpkModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                <div>
+                    <label style="font-size:12px; font-weight:normal; color:#555;">Show 
+                        <select id="spkLimit" onchange="renderSpkTable()" style="padding:4px 8px; border-radius:6px; border:1px solid #ced4da; font-size:12px;">
+                            <option value="10">10</option><option value="25">25</option><option value="50">50</option>
+                        </select> entries
+                    </label>
+                </div>
+                <div>
+                    <input type="text" id="spkSearch" class="form-control" style="display:inline-block; width:180px; padding:6px 12px; font-size:12px; border-radius:6px;" onkeyup="renderSpkTable()" placeholder="Cari No SPK...">
+                </div>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size:13px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #e9ecef; background:#f8f9fa;">
+                        <th style="padding: 12px 15px; text-align: left; color:#495057; font-weight:700;">No SPK</th>
+                        <th style="padding: 12px 15px; text-align: center; width: 120px; color:#495057; font-weight:700;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="spkTableBody">
+                    <tr><td colspan="2" style="text-align: center; padding: 25px; color:#6c757d;">Memuat data dari server...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+let spkDataList = [];
+
+function openSpkModal() {
+    document.getElementById('spkModal').style.display = 'flex';
+    document.getElementById('spkTableBody').innerHTML = '<tr><td colspan="2" style="text-align: center; padding: 25px; color:#6c757d;">Memuat data dari server...</td></tr>';
+    
+    fetch("{{ route('service.service-ac.ac.pre_check_get_spk_list') }}")
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                spkDataList = data.data;
+                renderSpkTable();
+            } else {
+                document.getElementById('spkTableBody').innerHTML = '<tr><td colspan="2" style="text-align: center; padding: 25px; color: #dc3545;">' + data.message + '</td></tr>';
+            }
+        })
+        .catch(error => {
+            document.getElementById('spkTableBody').innerHTML = '<tr><td colspan="2" style="text-align: center; padding: 25px; color: #dc3545;">Terjadi kesalahan koneksi ke server</td></tr>';
+        });
+}
+
+function closeSpkModal() {
+    document.getElementById('spkModal').style.display = 'none';
+}
+
+function renderSpkTable() {
+    let search = document.getElementById('spkSearch').value.toLowerCase();
+    let limit = parseInt(document.getElementById('spkLimit').value);
+    
+    let filtered = spkDataList.filter(item => {
+        return item.JobOrderNo && item.JobOrderNo.toLowerCase().includes(search);
+    });
+    
+    let html = '';
+    if (filtered.length === 0) {
+        html = '<tr><td colspan="2" style="text-align: center; padding: 25px; color:#dc3545; font-size:12px;">Data SPK tidak ditemukan</td></tr>';
+    } else {
+        let count = 0;
+        for (let item of filtered) {
+            if (count >= limit) break;
+            html += `
+                <tr style="border-bottom: 1px solid #e9ecef;">
+                    <td style="padding: 12px 15px; font-weight:600; color:#2c3e50;">${item.JobOrderNo}</td>
+                    <td style="padding: 12px 15px; text-align: center;">
+                        <button type="button" style="background: #1976d2; color: white; border: none; padding: 6px 18px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700; transition: all 0.2s;" onclick="pilihSpk('${item.JobOrderNo}')">Pilih</button>
+                    </td>
+                </tr>
+            `;
+            count++;
+        }
+    }
+    document.getElementById('spkTableBody').innerHTML = html;
+}
+
+function pilihSpk(spk) {
+    document.getElementById('no_spk').value = spk;
+    closeSpkModal();
+    fetchSpkData();
+}
+
+function fetchSpkData() {
+    let spk = document.getElementById('no_spk').value;
+    if (!spk) return;
+
+    fetch("{{ route('service.service-ac.ac.pre_check_get_spk_data') }}?no_spk=" + encodeURIComponent(spk))
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data) {
+                if (document.getElementById('cabang')) document.getElementById('cabang').value = data.data.BranchCode || '';
+                if (document.getElementById('sa')) document.getElementById('sa').value = data.data.EmployeeName || '';
+                if (document.getElementById('no_polisi')) document.getElementById('no_polisi').value = data.data.PoliceRegNo || '';
+                if (document.getElementById('tipe_kendaraan')) document.getElementById('tipe_kendaraan').value = data.data.BasicModel || '';
+                if (document.getElementById('tanggal')) {
+                    document.getElementById('tanggal').value = data.data.JobOrderDate || '';
+                }
+            } else {
+                alert(data.message || 'SPK tidak ditemukan di database');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching SPK:', error);
+            alert('Gagal mengambil data SPK dari server.');
+        });
+}
+</script>
+
+
 @endsection

@@ -111,7 +111,7 @@ class DashboardController extends Controller
             'S-PRESSO'       => ['S-PRESSO', 'SPRESO', 'S PRESSO', 'DN4'],
             'GRAND VITARA'   => ['GRAND VITARA', 'VITARA', 'GV'],
             'JIMNY 3D'       => ['JIMNY 3D', 'JIMNY 3-DOOR'],
-            'JIMNY 5D'       => ['JIMNY 5D', 'JIMNY 5-DOOR'],
+            'JIMNY 5D'       => ['JIMNY 5D', 'JIMNY 5-DOOR', '6N415'],
         ];
 
         $branchCodeMap = [
@@ -183,44 +183,100 @@ class DashboardController extends Controller
                     \Illuminate\Support\Facades\Log::error("Dashboard v1 Inquiry Error: " . $e->getMessage());
                 }
 
-                // 2. DATA SPK: omTrSalesSO TANPA SQL JOIN
+                // 2. DATA SPK: Sesuai logika MainDashboardController (pmKDP SPKDate & salesAppTable PBK)
                 try {
-                    $qSpkPrev = \Illuminate\Support\Facades\DB::connection('dms')->table('omTrSalesSO')
-                        ->whereBetween('SODate', [$prevStartDate, $prevEndDate]);
-
-                    $qSpkCurr = \Illuminate\Support\Facades\DB::connection('dms')->table('omTrSalesSO')
-                        ->whereBetween('SODate', [$currStartDate, $currEndDate]);
-
+                    // Previous Month SPK
+                    $spkPmkdpPrev = \Illuminate\Support\Facades\DB::connection('dms')->table('pmKDP')
+                        ->whereIn('BranchCode', ['641940102', '641940106'])
+                        ->whereMonth('SPKDate', $prevMonthNum)
+                        ->whereYear('SPKDate', $prevYear);
                     if (!empty($allBranchCodes)) {
-                        $qSpkPrev->whereIn('BranchCode', $allBranchCodes);
-                        $qSpkCurr->whereIn('BranchCode', $allBranchCodes);
+                        $spkPmkdpPrev->whereIn('BranchCode', $allBranchCodes);
+                    }
+                    $spkPmkdpPrev = $spkPmkdpPrev->select(['BranchCode', 'InquiryNumber', 'TipeKendaraan', 'Variant', 'SPKDate'])->get();
+
+                    $spkSatPrev = \Illuminate\Support\Facades\DB::connection('dms')->table('salesAppTable as t')
+                        ->leftJoin('pmKDP as p', 't.InquiryNumber', '=', 'p.InquiryNumber')
+                        ->whereIn('t.BranchCode', ['641940101', '641940103', '641940104'])
+                        ->whereNotNull('t.HID')
+                        ->where('t.HID', 'like', 'PBK%')
+                        ->whereMonth('t.CreationDate', $prevMonthNum)
+                        ->whereYear('t.CreationDate', $prevYear);
+                    if (!empty($allBranchCodes)) {
+                        $spkSatPrev->whereIn('t.BranchCode', $allBranchCodes);
+                    }
+                    $spkSatPrev = $spkSatPrev->select(['t.BranchCode', 't.InquiryNumber', 'p.TipeKendaraan', 'p.Variant', 't.TipeKendaraan2', 't.CreationDate as SPKDate'])->get();
+
+                    $allKdpPrevSpkRecords = collect();
+                    foreach ($spkPmkdpPrev as $r) {
+                        $allKdpPrevSpkRecords->push((object)[
+                            'BranchCode' => $r->BranchCode,
+                            'InquiryNumber' => $r->InquiryNumber,
+                            'TipeKendaraan' => $r->TipeKendaraan,
+                            'Variant' => $r->Variant,
+                            'SPKDate' => $r->SPKDate,
+                        ]);
+                    }
+                    foreach ($spkSatPrev as $r) {
+                        $tipe = trim($r->TipeKendaraan ?? ($r->TipeKendaraan2 ?? ''));
+                        if (empty($tipe)) $tipe = trim($r->TipeKendaraan2 ?? '');
+                        $allKdpPrevSpkRecords->push((object)[
+                            'BranchCode' => $r->BranchCode,
+                            'InquiryNumber' => $r->InquiryNumber,
+                            'TipeKendaraan' => $tipe,
+                            'Variant' => $r->Variant,
+                            'SPKDate' => $r->SPKDate,
+                        ]);
                     }
 
-                    $allKdpPrevSpkRecords = $qSpkPrev->select(['BranchCode', 'SONo', 'SODate as SPKDate'])->get();
-                    $allKdpCurrSpkRecords = $qSpkCurr->select(['BranchCode', 'SONo', 'SODate as SPKDate'])->get();
-
-                    $allSoNos = $allKdpPrevSpkRecords->pluck('SONo')->merge($allKdpCurrSpkRecords->pluck('SONo'))->filter()->unique()->toArray();
-                    $soModelMap = [];
-                    if (!empty($allSoNos)) {
-                        $soModelRecords = \Illuminate\Support\Facades\DB::connection('dms')->table('omTrSalesSOModel')
-                            ->whereIn('SONo', $allSoNos)
-                            ->get(['SONo', 'SalesModelCode']);
-                        foreach ($soModelRecords as $sm) {
-                            if (!isset($soModelMap[$sm->SONo])) {
-                                $soModelMap[$sm->SONo] = $sm->SalesModelCode;
-                            }
-                        }
+                    // Current Month SPK
+                    $spkPmkdpCurr = \Illuminate\Support\Facades\DB::connection('dms')->table('pmKDP')
+                        ->whereIn('BranchCode', ['641940102', '641940106'])
+                        ->whereMonth('SPKDate', $currMonthNum)
+                        ->whereYear('SPKDate', $currYear);
+                    if (!empty($allBranchCodes)) {
+                        $spkPmkdpCurr->whereIn('BranchCode', $allBranchCodes);
                     }
+                    $spkPmkdpCurr = $spkPmkdpCurr->select(['BranchCode', 'InquiryNumber', 'TipeKendaraan', 'Variant', 'SPKDate'])->get();
 
-                    $allKdpPrevSpkRecords = $allKdpPrevSpkRecords->map(function($item) use ($soModelMap) {
-                        $item->TipeKendaraan = $soModelMap[$item->SONo] ?? '';
-                        return $item;
-                    });
+                    $spkSatCurr = \Illuminate\Support\Facades\DB::connection('dms')->table('salesAppTable as t')
+                        ->leftJoin('pmKDP as p', 't.InquiryNumber', '=', 'p.InquiryNumber')
+                        ->whereIn('t.BranchCode', ['641940101', '641940103', '641940104'])
+                        ->whereNotNull('t.HID')
+                        ->where('t.HID', 'like', 'PBK%')
+                        ->where(function($q) use ($currMonthNum, $currYear) {
+                            $q->where(function($s) use ($currMonthNum, $currYear) {
+                                $s->whereMonth('t.CreationDate', $currMonthNum)->whereYear('t.CreationDate', $currYear);
+                            })->orWhere(function($s) {
+                                $s->where('t.BranchCode', '641940104')->whereIn('t.InquiryNumber', [482285, 482811]);
+                            });
+                        });
+                    if (!empty($allBranchCodes)) {
+                        $spkSatCurr->whereIn('t.BranchCode', $allBranchCodes);
+                    }
+                    $spkSatCurr = $spkSatCurr->select(['t.BranchCode', 't.InquiryNumber', 'p.TipeKendaraan', 'p.Variant', 't.TipeKendaraan2', 't.CreationDate as SPKDate'])->get();
 
-                    $allKdpCurrSpkRecords = $allKdpCurrSpkRecords->map(function($item) use ($soModelMap) {
-                        $item->TipeKendaraan = $soModelMap[$item->SONo] ?? '';
-                        return $item;
-                    });
+                    $allKdpCurrSpkRecords = collect();
+                    foreach ($spkPmkdpCurr as $r) {
+                        $allKdpCurrSpkRecords->push((object)[
+                            'BranchCode' => $r->BranchCode,
+                            'InquiryNumber' => $r->InquiryNumber,
+                            'TipeKendaraan' => $r->TipeKendaraan,
+                            'Variant' => $r->Variant,
+                            'SPKDate' => $r->SPKDate,
+                        ]);
+                    }
+                    foreach ($spkSatCurr as $r) {
+                        $tipe = trim($r->TipeKendaraan ?? ($r->TipeKendaraan2 ?? ''));
+                        if (empty($tipe)) $tipe = trim($r->TipeKendaraan2 ?? '');
+                        $allKdpCurrSpkRecords->push((object)[
+                            'BranchCode' => $r->BranchCode,
+                            'InquiryNumber' => $r->InquiryNumber,
+                            'TipeKendaraan' => $tipe,
+                            'Variant' => $r->Variant,
+                            'SPKDate' => $r->SPKDate,
+                        ]);
+                    }
                 } catch (\Throwable $e) {
                     \Illuminate\Support\Facades\Log::error("Dashboard v1 SPK Error: " . $e->getMessage());
                 }
@@ -561,7 +617,7 @@ class DashboardController extends Controller
             'e-VITARA'       => ['e-VITARA', 'EVITARA'],
             'GRAND VITARA'   => ['GRAND VITARA', 'VITARA', 'GV'],
             'JIMNY 3D'       => ['JIMNY 3D', 'JIMNY 3-DOOR'],
-            'JIMNY 5D'       => ['JIMNY 5D', 'JIMNY 5-DOOR'],
+            'JIMNY 5D'       => ['JIMNY 5D', 'JIMNY 5-DOOR', '6N415'],
             'FRONX'          => ['FRONX', 'BU4'],
             'BALENO'         => ['BALENO'],
         ];
@@ -611,7 +667,7 @@ class DashboardController extends Controller
                 }
                 $allInquiryRecords = $qInq->get(['BranchCode', 'TipeKendaraan', 'Variant', 'InquiryDate', 'PerolehanData']);
 
-                // 2. DO Bulan Berjalan (LastUpdateDate >= StartOfMonth AND LastUpdateDate < StartOfNextMonth)
+                // 2. DO Bulan Berjalan (LastUpdateStatus >= StartOfMonth AND LastUpdateStatus < StartOfNextMonth)
                 $qDo = \App\Models\Sales\vsv\Kdp::where('LastUpdateStatus', '>=', $startDateMonth)
                     ->where('LastUpdateStatus', '<', $nextMonthStartDate);
                 if (!empty($allBranchCodes)) {
@@ -619,7 +675,7 @@ class DashboardController extends Controller
                 }
                 $allDoRecords = $qDo->get(['BranchCode', 'TipeKendaraan', 'Variant', 'LastProgress', 'StatusProspek', 'LastUpdateStatus', 'PerolehanData']);
 
-                // 3. DO YTD (LastUpdateDate >= YtdStartDate AND LastUpdateDate < StartOfNextMonth)
+                // 3. DO YTD (LastUpdateStatus >= YtdStartDate AND LastUpdateStatus < StartOfNextMonth)
                 $qDoYtd = \App\Models\Sales\vsv\Kdp::where('LastUpdateStatus', '>=', $ytdStartDate)
                     ->where('LastUpdateStatus', '<', $nextMonthStartDate);
                 if (!empty($allBranchCodes)) {
@@ -627,32 +683,54 @@ class DashboardController extends Controller
                 }
                 $allDoYtdRecords = $qDoYtd->get(['BranchCode', 'TipeKendaraan', 'Variant', 'LastProgress', 'StatusProspek', 'LastUpdateStatus']);
 
-                // 4. SPK Murni dari omTrSalesSO
-                $qSpk = \Illuminate\Support\Facades\DB::connection('dms')->table('omTrSalesSO')
-                    ->whereBetween('SODate', [$startDateMonth, $endDateMonth]);
-
+                // 4. SPK Data: Sesuai logika MainDashboardController (pmKDP SPKDate & salesAppTable PBK)
+                $spkPmkdpV2 = \Illuminate\Support\Facades\DB::connection('dms')->table('pmKDP')
+                    ->whereIn('BranchCode', ['641940102', '641940106'])
+                    ->whereMonth('SPKDate', $currMonthNum)
+                    ->whereYear('SPKDate', $currYear);
                 if (!empty($allBranchCodes)) {
-                    $qSpk->whereIn('BranchCode', $allBranchCodes);
+                    $spkPmkdpV2->whereIn('BranchCode', $allBranchCodes);
                 }
-                $allSpkRecords = $qSpk->select(['BranchCode', 'SONo', 'SODate as SPKDate'])->get();
+                $spkPmkdpV2 = $spkPmkdpV2->select(['BranchCode', 'InquiryNumber', 'TipeKendaraan', 'Variant', 'SPKDate'])->get();
 
-                $allSoNosV2 = $allSpkRecords->pluck('SONo')->filter()->unique()->toArray();
-                $soModelMapV2 = [];
-                if (!empty($allSoNosV2)) {
-                    $soModelRecordsV2 = \Illuminate\Support\Facades\DB::connection('dms')->table('omTrSalesSOModel')
-                        ->whereIn('SONo', $allSoNosV2)
-                        ->get(['SONo', 'SalesModelCode']);
-                    foreach ($soModelRecordsV2 as $sm) {
-                        if (!isset($soModelMapV2[$sm->SONo])) {
-                            $soModelMapV2[$sm->SONo] = $sm->SalesModelCode;
-                        }
-                    }
+                $spkSatV2 = \Illuminate\Support\Facades\DB::connection('dms')->table('salesAppTable as t')
+                    ->leftJoin('pmKDP as p', 't.InquiryNumber', '=', 'p.InquiryNumber')
+                    ->whereIn('t.BranchCode', ['641940101', '641940103', '641940104'])
+                    ->whereNotNull('t.HID')
+                    ->where('t.HID', 'like', 'PBK%')
+                    ->where(function($q) use ($currMonthNum, $currYear) {
+                        $q->where(function($s) use ($currMonthNum, $currYear) {
+                            $s->whereMonth('t.CreationDate', $currMonthNum)->whereYear('t.CreationDate', $currYear);
+                        })->orWhere(function($s) {
+                            $s->where('t.BranchCode', '641940104')->whereIn('t.InquiryNumber', [482285, 482811]);
+                        });
+                    });
+                if (!empty($allBranchCodes)) {
+                    $spkSatV2->whereIn('t.BranchCode', $allBranchCodes);
                 }
+                $spkSatV2 = $spkSatV2->select(['t.BranchCode', 't.InquiryNumber', 'p.TipeKendaraan', 'p.Variant', 't.TipeKendaraan2', 't.CreationDate as SPKDate'])->get();
 
-                $allSpkRecords = $allSpkRecords->map(function($item) use ($soModelMapV2) {
-                    $item->TipeKendaraan = $soModelMapV2[$item->SONo] ?? '';
-                    return $item;
-                });
+                $allSpkRecords = collect();
+                foreach ($spkPmkdpV2 as $r) {
+                    $allSpkRecords->push((object)[
+                        'BranchCode' => $r->BranchCode,
+                        'InquiryNumber' => $r->InquiryNumber,
+                        'TipeKendaraan' => $r->TipeKendaraan,
+                        'Variant' => $r->Variant,
+                        'SPKDate' => $r->SPKDate,
+                    ]);
+                }
+                foreach ($spkSatV2 as $r) {
+                    $tipe = trim($r->TipeKendaraan ?? ($r->TipeKendaraan2 ?? ''));
+                    if (empty($tipe)) $tipe = trim($r->TipeKendaraan2 ?? '');
+                    $allSpkRecords->push((object)[
+                        'BranchCode' => $r->BranchCode,
+                        'InquiryNumber' => $r->InquiryNumber,
+                        'TipeKendaraan' => $tipe,
+                        'Variant' => $r->Variant,
+                        'SPKDate' => $r->SPKDate,
+                    ]);
+                }
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error("Dashboard v2 DMS Error: " . $e->getMessage());
             }
@@ -971,14 +1049,14 @@ class DashboardController extends Controller
         $fullStr = strtoupper(trim($itemStr . ' ' . $variantStr));
 
         if ($displayName === 'JIMNY 5D') {
-            $hasJimny = (stripos($fullStr, 'JIMNY') !== false || stripos($fullStr, 'JIM') !== false || stripos($fullStr, 'JMN') !== false || stripos($fullStr, 'SN413') !== false || stripos($fullStr, 'JB74') !== false || stripos($fullStr, 'JB674') !== false);
-            $has5D = (stripos($fullStr, '5D') !== false || stripos($fullStr, '5-DOOR') !== false || stripos($fullStr, '5 DOOR') !== false);
+            $hasJimny = (stripos($fullStr, 'JIMNY') !== false || stripos($fullStr, 'JIM') !== false || stripos($fullStr, 'JMN') !== false || stripos($fullStr, 'SN413') !== false || stripos($fullStr, 'JB74') !== false || stripos($fullStr, 'JB674') !== false || stripos($fullStr, '6N415') !== false);
+            $has5D = (stripos($fullStr, '5D') !== false || stripos($fullStr, '5-DOOR') !== false || stripos($fullStr, '5 DOOR') !== false || stripos($fullStr, '6N415') !== false);
             return $hasJimny && $has5D;
         }
 
         if ($displayName === 'JIMNY 3D') {
             $hasJimny = (stripos($fullStr, 'JIMNY') !== false || stripos($fullStr, 'JIM') !== false || stripos($fullStr, 'JMN') !== false || stripos($fullStr, 'SN413') !== false || stripos($fullStr, 'JB74') !== false || stripos($fullStr, 'JB674') !== false);
-            $has5D = (stripos($fullStr, '5D') !== false || stripos($fullStr, '5-DOOR') !== false || stripos($fullStr, '5 DOOR') !== false);
+            $has5D = (stripos($fullStr, '5D') !== false || stripos($fullStr, '5-DOOR') !== false || stripos($fullStr, '5 DOOR') !== false || stripos($fullStr, '6N415') !== false);
             return $hasJimny && !$has5D;
         }
 

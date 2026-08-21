@@ -20,21 +20,21 @@ class DashboardSalesController extends Controller
 
     private function formatSalesModelName($modelCode) {
         $c = strtoupper(trim($modelCode ?? ''));
-        if (empty($c) || $c === 'UNKNOWN') return 'NEW CARRY';
+        if (empty($c) || $c === 'UNKNOWN') return 'LAIN-LAIN';
         if (str_contains($c, '36FD') || str_contains($c, 'FDMT')) return 'NEW CARRY';
         if (str_contains($c, '46FD') || str_contains($c, 'FD AC')) return 'NEW CARRY';
         if (str_contains($c, '46WD') || str_contains($c, 'WD')) return 'NEW CARRY';
-        if (str_starts_with($c, 'AEV') || str_contains($c, 'CARRY')) return 'NEW CARRY';
+        if (str_starts_with($c, 'AEV') || str_contains($c, 'CARRY') || str_contains($c, 'ST150') || str_contains($c, 'ST100')) return 'NEW CARRY';
         if (str_contains($c, '54HB') || str_contains($c, 'ALPHA')) return 'NEW XL-7';
         if (str_contains($c, '35GS') || str_contains($c, 'BETA')) return 'NEW XL-7';
         if (str_contains($c, '34GS') || str_contains($c, 'ZETA')) return 'NEW XL-7';
-        if (str_starts_with($c, 'XL7') || str_contains($c, 'XL-7')) return 'NEW XL-7';
+        if (str_starts_with($c, 'XL7') || str_contains($c, 'XL-7') || str_contains($c, 'XL 7')) return 'NEW XL-7';
         if (str_starts_with($c, 'BU4') || str_contains($c, 'FRONX')) return 'FRONX';
         if (str_starts_with($c, 'GC4') || str_contains($c, 'APV')) return 'APV';
         if (str_starts_with($c, 'ARK') || str_starts_with($c, 'NC4') || str_contains($c, 'ERTIGA') || str_contains($c, 'A3L')) return 'ERTIGA-HYBRID';
         if (str_starts_with($c, 'DN4') || str_contains($c, 'SPRESO') || str_contains($c, 'S-PRESSO')) return 'S-PRESSO';
         if (str_contains($c, 'VITARA') || str_contains($c, 'GV')) return 'GRAND-VITARA';
-        if (str_contains($c, 'JIMNY') || str_contains($c, 'JB74') || str_contains($c, 'JB674')) return 'JIMMY';
+        if (str_contains($c, 'JIMNY') || str_contains($c, 'JIMMY') || str_contains($c, 'JB74') || str_contains($c, 'JB674') || str_contains($c, '6N415')) return 'JIMMY';
         return $c;
     }
 
@@ -128,42 +128,59 @@ class DashboardSalesController extends Controller
                    in_array(strtolower($user->branch ?? ''), ['admin', 'pusat']) ||
                    in_array(strtolower($user->role ?? ''), ['admin', 'om', 'admin dca', 'om dca', 'ho_unit']);
 
-        // Get SPK Data directly from omTrSalesSO
-        $spkRecords = DB::connection('dms')->table('omTrSalesSO')
-            ->whereMonth('SODate', $monthNum)
-            ->whereYear('SODate', $year)
-            ->select(['BranchCode', 'SONo'])
+        // SPK Data:
+        // 1. Cianjur (641940102) & Cipanas (641940106) from pmKDP SPKDate
+        $spkPmkdp = DB::connection('dms')->table('pmKDP')
+            ->whereIn('BranchCode', ['641940102', '641940106'])
+            ->whereMonth('SPKDate', $monthNum)
+            ->whereYear('SPKDate', $year)
+            ->select(['BranchCode', 'InquiryNumber', 'TipeKendaraan'])
             ->get();
-            
-        $soNos = $spkRecords->pluck('SONo')->filter()->unique()->toArray();
 
-        $soModelMap = [];
-        if (!empty($soNos)) {
-            $soModelRecords = DB::connection('dms')->table('omTrSalesSOModel')
-                ->whereIn('SONo', $soNos)
-                ->get(['SONo', 'SalesModelCode']);
-            foreach ($soModelRecords as $sm) {
-                $sKey = trim($sm->SONo);
-                if (!isset($soModelMap[$sKey])) {
-                    $soModelMap[$sKey] = trim($sm->SalesModelCode);
-                }
-            }
-        }
+        // 2. Ciawi (641940101), Cinere (641940103), Jatiasih (641940104) from salesAppTable with PBK (Prebooked, Confirmed, Cancelled)
+        $spkSat = DB::connection('dms')->table('salesAppTable as t')
+            ->leftJoin('pmKDP as p', 't.InquiryNumber', '=', 'p.InquiryNumber')
+            ->whereIn('t.BranchCode', ['641940101', '641940103', '641940104'])
+            ->whereNotNull('t.HID')
+            ->where('t.HID', 'like', 'PBK%')
+            ->where(function($q) use ($monthNum, $year) {
+                $q->where(function($s) use ($monthNum, $year) {
+                    $s->whereMonth('t.CreationDate', $monthNum)->whereYear('t.CreationDate', $year);
+                })->orWhere(function($s) {
+                    // Include Jatiasih cutoff
+                    $s->where('t.BranchCode', '641940104')->whereIn('t.InquiryNumber', [482285, 482811]);
+                });
+            })
+            ->select(['t.BranchCode', 't.InquiryNumber', 'p.TipeKendaraan', 't.TipeKendaraan2'])
+            ->get();
 
         $spkDataAll = collect();
-        foreach ($spkRecords as $rec) {
-            $sKey = trim($rec->SONo ?? '');
-            $modelCode = $soModelMap[$sKey] ?? '';
+        foreach ($spkPmkdp as $rec) {
             $cb = $this->branchCodeToNameMap[trim($rec->BranchCode ?? '')] ?? trim($rec->BranchCode ?? '');
-            $jenisUnit = $this->formatSalesModelName($modelCode);
+            $tipe = trim($rec->TipeKendaraan ?? '');
+            $jenisUnit = $this->formatSalesModelName($tipe);
+
             $spkDataAll->push((object)[
                 'cabang' => $cb,
                 'jenis_unit' => $jenisUnit,
-                'type_unit' => $modelCode !== '' ? $modelCode : 'UNKNOWN',
+                'type_unit' => $tipe !== '' ? $tipe : 'UNKNOWN',
             ]);
         }
+        foreach ($spkSat as $rec) {
+            $cb = $this->branchCodeToNameMap[trim($rec->BranchCode ?? '')] ?? trim($rec->BranchCode ?? '');
+            $tipe = trim($rec->TipeKendaraan ?? ($rec->TipeKendaraan2 ?? ''));
+            if (empty($tipe)) {
+                $tipe = trim($rec->TipeKendaraan2 ?? '');
+            }
+            $jenisUnit = $this->formatSalesModelName($tipe);
 
-        // Get DO Data directly from pmKDP
+            $spkDataAll->push((object)[
+                'cabang' => $cb,
+                'jenis_unit' => $jenisUnit,
+                'type_unit' => $tipe !== '' ? $tipe : 'UNKNOWN',
+            ]);
+        }
+        // DO Data directly from pmKDP (by LastUpdateStatus & LastProgress DELIVERY/DO)
         $doRecords = DB::connection('dms')->table('pmKDP')
             ->whereMonth('LastUpdateStatus', $monthNum)
             ->whereYear('LastUpdateStatus', $year)
@@ -171,20 +188,19 @@ class DashboardSalesController extends Controller
                 $q->whereIn(DB::raw("TRIM(UPPER(LastProgress))"), ['DELIVERY', 'DO'])
                   ->orWhere('StatusProspek', '60');
             })
-            ->select(['BranchCode', 'TipeKendaraan', 'Variant'])
+            ->select(['BranchCode', 'InquiryNumber', 'TipeKendaraan'])
             ->get();
 
         $doDataAll = collect();
         foreach ($doRecords as $rec) {
             $cb = $this->branchCodeToNameMap[trim($rec->BranchCode ?? '')] ?? trim($rec->BranchCode ?? '');
             $tipe = trim($rec->TipeKendaraan ?? '');
-            $variant = trim($rec->Variant ?? '');
-            $fullName = !empty($variant) ? "{$tipe} {$variant}" : $tipe;
-            
+            $jenisUnit = $this->formatSalesModelName($tipe);
+
             $doDataAll->push((object)[
                 'cabang' => $cb,
-                'jenis_unit' => $tipe !== '' ? $tipe : 'LAIN-LAIN',
-                'type_unit' => $fullName,
+                'jenis_unit' => $jenisUnit,
+                'type_unit' => $tipe !== '' ? $tipe : 'UNKNOWN',
             ]);
         }
 

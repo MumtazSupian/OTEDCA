@@ -134,7 +134,7 @@ class ActualController extends Controller
         if (str_starts_with($c, 'ARK') || str_starts_with($c, 'NC4') || str_contains($c, 'ERTIGA') || str_contains($c, 'A3L')) return 'ALL NEW ERTIGA';
         if (str_starts_with($c, 'DN4') || str_contains($c, 'SPRESO') || str_contains($c, 'S-PRESSO')) return 'S-PRESSO';
         if (str_contains($c, 'VITARA') || str_contains($c, 'GV')) return 'GRAND VITARA';
-        if (str_contains($c, 'JIMNY') || str_contains($c, 'JB74') || str_contains($c, 'JB674')) return 'JIMNY';
+        if (str_contains($c, 'JIMNY') || str_contains($c, 'JB74') || str_contains($c, 'JB674') || str_contains($c, '6N415')) return 'JIMNY';
         if (str_contains($c, 'BALENO')) return 'BALENO';
         if (str_contains($c, 'IGNIS')) return 'IGNIS';
 
@@ -234,54 +234,90 @@ class ActualController extends Controller
             $masterTypes = $this->getAllMasterVehicleTypes();
 
             if ($viewType === 'spk') {
-                // 🔒 SPK Murni dari omTrSalesSO & omTrSalesSOModel
-                $qSpk = DB::connection('dms')->table('omTrSalesSO');
-
+                // 1. Cianjur (641940102) & Cipanas (641940106) from pmKDP SPKDate
+                // 2. Ciawi (641940101), Cinere (641940103), Jatiasih (641940104) from salesAppTable with PBK
+                $q1 = DB::connection('dms')->table('pmKDP')
+                    ->whereIn('BranchCode', ['641940102', '641940106']);
                 if (!empty($fromDate) && !empty($toDate)) {
-                    $qSpk->whereBetween('SODate', ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"]);
+                    $q1->whereBetween('SPKDate', ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"]);
                 } else {
-                    $qSpk->whereMonth('SODate', $selectedMonth)
-                         ->whereYear('SODate', $selectedYear);
+                    $q1->whereMonth('SPKDate', $selectedMonth)->whereYear('SPKDate', $selectedYear);
                 }
-
                 if (!empty($targetBranchCode)) {
-                    $qSpk->where('BranchCode', $targetBranchCode);
+                    $q1->where('BranchCode', $targetBranchCode);
                 }
-
                 if (!empty($matchingSpvIds)) {
-                    $qSpk->whereIn('SpvEmployeeID', $matchingSpvIds);
+                    $q1->whereIn('SpvEmployeeID', $matchingSpvIds);
                 } elseif (!empty($spvId)) {
-                    $qSpk->where('SpvEmployeeID', 'LIKE', "%{$spvId}%");
+                    $q1->where('SpvEmployeeID', 'LIKE', "%{$spvId}%");
                 }
-
                 if (!empty($salesman)) {
-                    $qSpk->where(function($q) use ($salesman) {
+                    $q1->where(function($q) use ($salesman) {
                         $q->where('EmployeeID', 'LIKE', "%{$salesman}%")
                           ->orWhere('CreatedBy', 'LIKE', "%{$salesman}%");
                     });
                 }
+                $spkPmkdp = $q1->select(['BranchCode', 'InquiryNumber', 'TipeKendaraan', 'Variant'])->get();
 
-                $spkRecords = $qSpk->select(['BranchCode', 'SONo', 'SODate'])->get();
-                $soNos = $spkRecords->pluck('SONo')->filter()->unique()->toArray();
+                $q2 = DB::connection('dms')->table('salesAppTable as t')
+                    ->leftJoin('pmKDP as p', 't.InquiryNumber', '=', 'p.InquiryNumber')
+                    ->whereIn('t.BranchCode', ['641940101', '641940103', '641940104'])
+                    ->whereNotNull('t.HID')
+                    ->where('t.HID', 'like', 'PBK%');
+                if (!empty($fromDate) && !empty($toDate)) {
+                    $q2->where(function($q) use ($fromDate, $toDate) {
+                        $q->whereBetween('t.CreationDate', ["{$fromDate} 00:00:00", "{$toDate} 23:59:59"])
+                          ->orWhere(function($s) {
+                              $s->where('t.BranchCode', '641940104')->whereIn('t.InquiryNumber', [482285, 482811]);
+                          });
+                    });
+                } else {
+                    $q2->where(function($q) use ($selectedMonth, $selectedYear) {
+                        $q->where(function($s) use ($selectedMonth, $selectedYear) {
+                            $s->whereMonth('t.CreationDate', $selectedMonth)->whereYear('t.CreationDate', $selectedYear);
+                        })->orWhere(function($s) {
+                            $s->where('t.BranchCode', '641940104')->whereIn('t.InquiryNumber', [482285, 482811]);
+                        });
+                    });
+                }
+                if (!empty($targetBranchCode)) {
+                    $q2->where('t.BranchCode', $targetBranchCode);
+                }
+                if (!empty($matchingSpvIds)) {
+                    $q2->whereIn('p.SpvEmployeeID', $matchingSpvIds);
+                } elseif (!empty($spvId)) {
+                    $q2->where('p.SpvEmployeeID', 'LIKE', "%{$spvId}%");
+                }
+                if (!empty($salesman)) {
+                    $q2->where(function($q) use ($salesman) {
+                        $q->where('p.EmployeeID', 'LIKE', "%{$salesman}%")
+                          ->orWhere('p.CreatedBy', 'LIKE', "%{$salesman}%");
+                    });
+                }
+                $spkSat = $q2->select(['t.BranchCode', 't.InquiryNumber', 'p.TipeKendaraan', 'p.Variant', 't.TipeKendaraan2'])->get();
 
-                $soModelMap = [];
-                if (!empty($soNos)) {
-                    $soModelRecords = DB::connection('dms')->table('omTrSalesSOModel')
-                        ->whereIn('SONo', $soNos)
-                        ->get(['SONo', 'SalesModelCode']);
-                    foreach ($soModelRecords as $sm) {
-                        $sKey = trim($sm->SONo);
-                        if (!isset($soModelMap[$sKey])) {
-                            $soModelMap[$sKey] = trim($sm->SalesModelCode);
-                        }
-                    }
+                $allSpk = collect();
+                foreach ($spkPmkdp as $r) {
+                    $allSpk->push((object)[
+                        'TipeKendaraan' => $r->TipeKendaraan,
+                        'Variant' => $r->Variant,
+                    ]);
+                }
+                foreach ($spkSat as $r) {
+                    $tipe = trim($r->TipeKendaraan ?? ($r->TipeKendaraan2 ?? ''));
+                    if (empty($tipe)) $tipe = trim($r->TipeKendaraan2 ?? '');
+                    $allSpk->push((object)[
+                        'TipeKendaraan' => $tipe,
+                        'Variant' => $r->Variant,
+                    ]);
                 }
 
                 $countsByModel = [];
-                foreach ($spkRecords as $rec) {
-                    $sKey = trim($rec->SONo ?? '');
-                    $modelCode = $soModelMap[$sKey] ?? 'UNKNOWN';
-                    $displayName = $this->formatSalesModelName($modelCode);
+                foreach ($allSpk as $rec) {
+                    $tipe = trim($rec->TipeKendaraan ?? '');
+                    $variant = trim($rec->Variant ?? '');
+                    $fullName = !empty($variant) ? "{$tipe} {$variant}" : $tipe;
+                    $displayName = $this->formatSalesModelName($tipe, $fullName);
 
                     if (!isset($countsByModel[$displayName])) {
                         $countsByModel[$displayName] = 0;

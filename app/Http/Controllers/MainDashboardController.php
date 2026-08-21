@@ -21,21 +21,21 @@ class MainDashboardController extends Controller
 
     private function formatSalesModelName($modelCode) {
         $c = strtoupper(trim($modelCode ?? ''));
-        if (empty($c) || $c === 'UNKNOWN') return 'NEW CARRY';
+        if (empty($c) || $c === 'UNKNOWN') return 'LAIN-LAIN';
         if (str_contains($c, '36FD') || str_contains($c, 'FDMT')) return 'NEW CARRY';
         if (str_contains($c, '46FD') || str_contains($c, 'FD AC')) return 'NEW CARRY';
         if (str_contains($c, '46WD') || str_contains($c, 'WD')) return 'NEW CARRY';
-        if (str_starts_with($c, 'AEV') || str_contains($c, 'CARRY')) return 'NEW CARRY';
+        if (str_starts_with($c, 'AEV') || str_contains($c, 'CARRY') || str_contains($c, 'ST150') || str_contains($c, 'ST100')) return 'NEW CARRY';
         if (str_contains($c, '54HB') || str_contains($c, 'ALPHA')) return 'NEW XL-7';
         if (str_contains($c, '35GS') || str_contains($c, 'BETA')) return 'NEW XL-7';
         if (str_contains($c, '34GS') || str_contains($c, 'ZETA')) return 'NEW XL-7';
-        if (str_starts_with($c, 'XL7') || str_contains($c, 'XL-7')) return 'NEW XL-7';
+        if (str_starts_with($c, 'XL7') || str_contains($c, 'XL-7') || str_contains($c, 'XL 7')) return 'NEW XL-7';
         if (str_starts_with($c, 'BU4') || str_contains($c, 'FRONX')) return 'FRONX';
         if (str_starts_with($c, 'GC4') || str_contains($c, 'APV')) return 'APV';
         if (str_starts_with($c, 'ARK') || str_starts_with($c, 'NC4') || str_contains($c, 'ERTIGA') || str_contains($c, 'A3L')) return 'ERTIGA-HYBRID';
         if (str_starts_with($c, 'DN4') || str_contains($c, 'SPRESO') || str_contains($c, 'S-PRESSO')) return 'S-PRESSO';
         if (str_contains($c, 'VITARA') || str_contains($c, 'GV')) return 'GRAND-VITARA';
-        if (str_contains($c, 'JIMNY') || str_contains($c, 'JB74') || str_contains($c, 'JB674')) return 'JIMMY';
+        if (str_contains($c, 'JIMNY') || str_contains($c, 'JIMMY') || str_contains($c, 'JB74') || str_contains($c, 'JB674') || str_contains($c, '6N415')) return 'JIMMY';
         return $c;
     }
 
@@ -125,46 +125,64 @@ class MainDashboardController extends Controller
         if (!$monthNum) $monthNum = now()->month;
         $year = now()->year;
         
-        $isPusat = ($user->is_admin ?? false) || in_array(strtolower(trim($user->branch ?? '')), ['admin', 'pusat']) || in_array(strtolower(trim($user->role ?? '')), ['admin', 'om', 'admin dca', 'om dca', 'ho_unit']); 
-                   in_array(strtolower($user->branch ?? ''), ['admin', 'pusat']) ||
-                   in_array(strtolower($user->role ?? ''), ['admin', 'om', 'admin dca', 'om dca', 'ho_unit']);
+        $isPusat = ($user->is_admin ?? false) || 
+                   in_array(strtolower(trim($user->branch ?? '')), ['admin', 'pusat']) || 
+                   in_array(strtolower(trim($user->role ?? '')), ['admin', 'om', 'admin dca', 'om dca', 'ho_unit']);
 
-        // Get SPK Data directly from omTrSalesSO
-        $spkRecords = DB::connection('dms')->table('omTrSalesSO')
-            ->whereMonth('SODate', $monthNum)
-            ->whereYear('SODate', $year)
-            ->select(['BranchCode', 'SONo'])
+        // SPK Data:
+        // Cianjur (641940102) & Cipanas (641940106) pmKDP SPKDate
+        $spkPmkdp = DB::connection('dms')->table('pmKDP')
+            ->whereIn('BranchCode', ['641940102', '641940106'])
+            ->whereMonth('SPKDate', $monthNum)
+            ->whereYear('SPKDate', $year)
+            ->select(['BranchCode', 'InquiryNumber', 'TipeKendaraan'])
             ->get();
-            
-        $soNos = $spkRecords->pluck('SONo')->filter()->unique()->toArray();
 
-        $soModelMap = [];
-        if (!empty($soNos)) {
-            $soModelRecords = DB::connection('dms')->table('omTrSalesSOModel')
-                ->whereIn('SONo', $soNos)
-                ->get(['SONo', 'SalesModelCode']);
-            foreach ($soModelRecords as $sm) {
-                $sKey = trim($sm->SONo);
-                if (!isset($soModelMap[$sKey])) {
-                    $soModelMap[$sKey] = trim($sm->SalesModelCode);
-                }
-            }
-        }
+        // Ciawi (641940101), Cinere (641940103), Jatiasih (641940104) salesAppTable PBK
+        $spkSat = DB::connection('dms')->table('salesAppTable as t')
+            ->leftJoin('pmKDP as p', 't.InquiryNumber', '=', 'p.InquiryNumber')
+            ->whereIn('t.BranchCode', ['641940101', '641940103', '641940104'])
+            ->whereNotNull('t.HID')
+            ->where('t.HID', 'like', 'PBK%')
+            ->where(function($q) use ($monthNum, $year) {
+                $q->where(function($s) use ($monthNum, $year) {
+                    $s->whereMonth('t.CreationDate', $monthNum)->whereYear('t.CreationDate', $year);
+                })->orWhere(function($s) {
+                    // Include Jatiasih cutoff
+                    $s->where('t.BranchCode', '641940104')->whereIn('t.InquiryNumber', [482285, 482811]);
+                });
+            })
+            ->select(['t.BranchCode', 't.InquiryNumber', 'p.TipeKendaraan', 't.TipeKendaraan2'])
+            ->get();
 
         $spkDataAll = collect();
-        foreach ($spkRecords as $rec) {
-            $sKey = trim($rec->SONo ?? '');
-            $modelCode = $soModelMap[$sKey] ?? '';
+        foreach ($spkPmkdp as $rec) {
             $cb = $this->branchCodeToNameMap[trim($rec->BranchCode ?? '')] ?? trim($rec->BranchCode ?? '');
-            $jenisUnit = $this->formatSalesModelName($modelCode);
+            $tipe = trim($rec->TipeKendaraan ?? '');
+            $jenisUnit = $this->formatSalesModelName($tipe);
+
             $spkDataAll->push((object)[
                 'cabang' => $cb,
                 'jenis_unit' => $jenisUnit,
-                'type_unit' => $modelCode !== '' ? $modelCode : 'UNKNOWN',
+                'type_unit' => $tipe !== '' ? $tipe : 'UNKNOWN',
+            ]);
+        }
+        foreach ($spkSat as $rec) {
+            $cb = $this->branchCodeToNameMap[trim($rec->BranchCode ?? '')] ?? trim($rec->BranchCode ?? '');
+            $tipe = trim($rec->TipeKendaraan ?? ($rec->TipeKendaraan2 ?? ''));
+            if (empty($tipe)) {
+                $tipe = trim($rec->TipeKendaraan2 ?? '');
+            }
+            $jenisUnit = $this->formatSalesModelName($tipe);
+
+            $spkDataAll->push((object)[
+                'cabang' => $cb,
+                'jenis_unit' => $jenisUnit,
+                'type_unit' => $tipe !== '' ? $tipe : 'UNKNOWN',
             ]);
         }
 
-        // Get DO Data directly from pmKDP
+        // DO Data directly from pmKDP (by LastUpdateStatus & LastProgress DELIVERY/DO)
         $doRecords = DB::connection('dms')->table('pmKDP')
             ->whereMonth('LastUpdateStatus', $monthNum)
             ->whereYear('LastUpdateStatus', $year)
@@ -172,27 +190,25 @@ class MainDashboardController extends Controller
                 $q->whereIn(DB::raw("TRIM(UPPER(LastProgress))"), ['DELIVERY', 'DO'])
                   ->orWhere('StatusProspek', '60');
             })
-            ->select(['BranchCode', 'TipeKendaraan', 'Variant'])
+            ->select(['BranchCode', 'InquiryNumber', 'TipeKendaraan'])
             ->get();
 
         $doDataAll = collect();
         foreach ($doRecords as $rec) {
             $cb = $this->branchCodeToNameMap[trim($rec->BranchCode ?? '')] ?? trim($rec->BranchCode ?? '');
             $tipe = trim($rec->TipeKendaraan ?? '');
-            $variant = trim($rec->Variant ?? '');
-            $fullName = !empty($variant) ? "{$tipe} {$variant}" : $tipe;
-            
+            $jenisUnit = $this->formatSalesModelName($tipe);
+
             $doDataAll->push((object)[
                 'cabang' => $cb,
-                'jenis_unit' => $tipe !== '' ? $tipe : 'LAIN-LAIN',
-                'type_unit' => $fullName,
+                'jenis_unit' => $jenisUnit,
+                'type_unit' => $tipe !== '' ? $tipe : 'UNKNOWN',
             ]);
         }
 
         $sections = [];
 
         if ($isPusat) {
-            // Section Semua Cabang
             $statsAll = $this->buildMobilStats($spkDataAll, $doDataAll);
             $sections[] = (object)[
                 'title' => 'Semua Cabang',
@@ -201,7 +217,6 @@ class MainDashboardController extends Controller
                 'totalDo' => $statsAll->totalDoAll
             ];
 
-            // Section Tiap Cabang
             $cabangs = ['Ciawi', 'Cianjur', 'Cinere', 'Jatiasih', 'Cipanas'];
             foreach ($cabangs as $cb) {
                 $spkCb = $spkDataAll->filter(fn($i) => strtolower($i->cabang) == strtolower($cb));
@@ -215,7 +230,6 @@ class MainDashboardController extends Controller
                 ];
             }
         } else {
-            // Section Cabang Sendiri
             $spkCb = $spkDataAll->filter(fn($i) => strtolower($i->cabang) == strtolower($cabang));
             $doCb = $doDataAll->filter(fn($i) => strtolower($i->cabang) == strtolower($cabang));
             $statsCb = $this->buildMobilStats($spkCb, $doCb);
@@ -229,14 +243,47 @@ class MainDashboardController extends Controller
 
 
         // --- DATA SERVICE AC ---
-        // Parse selectedBulan like "August 2026"
-        $parts = explode(' ', $selectedBulan);
-        if (count($parts) == 2) {
-            $m = array_search(strtoupper($parts[0]), array_map('strtoupper', array_values($bulanMap))) + 1;
-            $y = $parts[1];
-            $filterDateStr = sprintf('%04d-%02d-01', $y, $m);
-        } else {
-            $filterDateStr = date('Y-m-01');
+        $m = $monthNum;
+        $y = $year;
+        $filterDateStr = sprintf('%04d-%02d-01', $y, $m);
+
+        $branchServiceMap = [
+            'CIAWI' => '641940101',
+            'CIANJUR' => '641940102',
+            'CINERE' => '641940103',
+            'JATIASIH' => '641940104',
+        ];
+
+        // 1. Fetch Targets from svMstTarget (Target referensi tahun 2025 sesuai data master DMS)
+        $targetYear = 2025;
+        $targets = DB::connection('dms')->table('svMstTarget')
+            ->where('PeriodYear', $targetYear)
+            ->where('PeriodMonth', $m)
+            ->whereIn('BranchCode', array_values($branchServiceMap))
+            ->get()
+            ->keyBy('BranchCode');
+
+        // 2. Fetch Month Service Units from svTrnService (tgl 1 s/d tgl berjalan)
+        $monthUnits = DB::connection('dms')->table('svTrnService')
+            ->whereYear('JobOrderDate', $y)
+            ->whereMonth('JobOrderDate', $m)
+            ->whereIn('BranchCode', array_values($branchServiceMap))
+            ->select('BranchCode', DB::raw('count(*) as total_bulan'))
+            ->groupBy('BranchCode')
+            ->get()
+            ->keyBy('BranchCode');
+
+        // 3. Fetch Today Service Units from svTrnService (hari ini)
+        $isCurrentMonth = ($y == intval(date('Y')) && $m == intval(date('m')));
+        $todayUnits = collect();
+        if ($isCurrentMonth) {
+            $todayUnits = DB::connection('dms')->table('svTrnService')
+                ->whereDate('JobOrderDate', date('Y-m-d'))
+                ->whereIn('BranchCode', array_values($branchServiceMap))
+                ->select('BranchCode', DB::raw('count(*) as total_hari_ini'))
+                ->groupBy('BranchCode')
+                ->get()
+                ->keyBy('BranchCode');
         }
 
         $soms = ServiceAc::where('periode', $filterDateStr)->get();
@@ -245,7 +292,6 @@ class MainDashboardController extends Controller
             'CIANJUR' => ['entry' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'spooring' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'ac' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0]],
             'CINERE' => ['entry' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'spooring' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'ac' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0]],
             'JATIASIH' => ['entry' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'spooring' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'ac' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0]],
-            'CIPANAS' => ['entry' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'spooring' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'ac' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0]],
         ];
 
         foreach ($soms as $som) {
@@ -257,6 +303,19 @@ class MainDashboardController extends Controller
                     'ac' => ['bulan' => $som->unit_ac_bulan, 'hari_ini' => $som->unit_ac_hari_ini, 'target' => $som->unit_ac_target],
                 ];
             }
+        }
+
+        // Set / Override UNIT ENTRY SERVICE from DMS (svTrnService & svMstTarget)
+        foreach ($branchServiceMap as $cabName => $bCode) {
+            $targetVal = isset($targets[$bCode]) ? intval($targets[$bCode]->TotalUnitService) : ($dataCabangService[$cabName]['entry']['target'] ?? 0);
+            $bulanVal = isset($monthUnits[$bCode]) ? intval($monthUnits[$bCode]->total_bulan) : ($dataCabangService[$cabName]['entry']['bulan'] ?? 0);
+            $hariIniVal = isset($todayUnits[$bCode]) ? intval($todayUnits[$bCode]->total_hari_ini) : ($isCurrentMonth ? 0 : ($dataCabangService[$cabName]['entry']['hari_ini'] ?? 0));
+
+            $dataCabangService[$cabName]['entry'] = [
+                'bulan' => $bulanVal,
+                'hari_ini' => $hariIniVal,
+                'target' => $targetVal,
+            ];
         }
 
         if (!$isPusat) {

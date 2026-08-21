@@ -365,7 +365,9 @@ Route::middleware(['auth', 'no-direct'])->group(function () {
         Route::get('/monitoring', [ServiceAcController::class, 'monitoring'])->name('monitoring');
         
         // Post Check AC Routes
-        Route::get('/ac/post-check', [PostCheckAcController::class, 'index'])->name('ac.post_check');
+                                Route::get('/ac/post-check/get-spk-data', [PostCheckAcController::class, 'getSpkData'])->name('ac.post_check_get_spk_data');
+        Route::get('/ac/post-check/get-spk-list', [PostCheckAcController::class, 'getSpkList'])->name('ac.post_check_get_spk_list');
+Route::get('/ac/post-check', [PostCheckAcController::class, 'index'])->name('ac.post_check');
         Route::post('/ac/post-check', [PostCheckAcController::class, 'store'])->name('ac.post_check_store');
         Route::get('/ac/post-check/{id}/edit', [PostCheckAcController::class, 'edit'])->name('ac.post_check_edit');
         Route::put('/ac/post-check/{id}', [PostCheckAcController::class, 'update'])->name('ac.post_check_update');
@@ -374,7 +376,9 @@ Route::middleware(['auth', 'no-direct'])->group(function () {
         Route::delete('/ac/post-check/{id}', [PostCheckAcController::class, 'destroy'])->name('ac.post_check_destroy');
         
         // Pre Check AC Routes
-        Route::get('/ac/pre-check', [PreCheckAcController::class, 'index'])->name('ac.pre_check');
+                Route::get('/ac/pre-check/get-spk-data', [PreCheckAcController::class, 'getSpkData'])->name('ac.pre_check_get_spk_data');
+        Route::get('/ac/pre-check/get-spk-list', [PreCheckAcController::class, 'getSpkList'])->name('ac.pre_check_get_spk_list');
+Route::get('/ac/pre-check', [PreCheckAcController::class, 'index'])->name('ac.pre_check');
         Route::post('/ac/pre-check', [PreCheckAcController::class, 'store'])->name('ac.pre_check_store');
         Route::get('/ac/pre-check/{id}/edit', [PreCheckAcController::class, 'edit'])->name('ac.pre_check_edit');
         Route::put('/ac/pre-check/{id}', [PreCheckAcController::class, 'update'])->name('ac.pre_check_update');

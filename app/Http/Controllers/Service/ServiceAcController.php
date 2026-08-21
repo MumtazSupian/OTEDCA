@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ServiceAc;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ServiceAcController extends Controller
 {
@@ -16,7 +17,49 @@ class ServiceAcController extends Controller
     {
         // Default filter bulan ini
         $filterDate = $request->input('periode', date('Y-m-01'));
+        $carbonDate = Carbon::parse($filterDate);
+        $y = intval($carbonDate->format('Y'));
+        $m = intval($carbonDate->format('m'));
         
+        $branchServiceMap = [
+            'CIAWI' => '641940101',
+            'CIANJUR' => '641940102',
+            'CINERE' => '641940103',
+            'JATIASIH' => '641940104',
+        ];
+
+        // 1. Fetch Targets from svMstTarget (Target referensi tahun 2025 sesuai data master DMS)
+        $targetYear = 2025;
+        $targets = DB::connection('dms')->table('svMstTarget')
+            ->where('PeriodYear', $targetYear)
+            ->where('PeriodMonth', $m)
+            ->whereIn('BranchCode', array_values($branchServiceMap))
+            ->get()
+            ->keyBy('BranchCode');
+
+        // 2. Fetch Month Service Units from svTrnService (tgl 1 s/d tgl berjalan)
+        $monthUnits = DB::connection('dms')->table('svTrnService')
+            ->whereYear('JobOrderDate', $y)
+            ->whereMonth('JobOrderDate', $m)
+            ->whereIn('BranchCode', array_values($branchServiceMap))
+            ->select('BranchCode', DB::raw('count(*) as total_bulan'))
+            ->groupBy('BranchCode')
+            ->get()
+            ->keyBy('BranchCode');
+
+        // 3. Fetch Today Service Units from svTrnService (hari ini)
+        $isCurrentMonth = ($y == intval(date('Y')) && $m == intval(date('m')));
+        $todayUnits = collect();
+        if ($isCurrentMonth) {
+            $todayUnits = DB::connection('dms')->table('svTrnService')
+                ->whereDate('JobOrderDate', date('Y-m-d'))
+                ->whereIn('BranchCode', array_values($branchServiceMap))
+                ->select('BranchCode', DB::raw('count(*) as total_hari_ini'))
+                ->groupBy('BranchCode')
+                ->get()
+                ->keyBy('BranchCode');
+        }
+
         $soms = ServiceAc::where('periode', $filterDate)->get();
         
         // Mempersiapkan struktur data seperti dummy sebelumnya agar sesuai dengan view
@@ -36,6 +79,19 @@ class ServiceAcController extends Controller
                     'ac' => ['bulan' => $som->unit_ac_bulan, 'hari_ini' => $som->unit_ac_hari_ini, 'target' => $som->unit_ac_target],
                 ];
             }
+        }
+
+        // Set / Override UNIT ENTRY SERVICE from DMS (svTrnService & svMstTarget)
+        foreach ($branchServiceMap as $cabName => $bCode) {
+            $targetVal = isset($targets[$bCode]) ? intval($targets[$bCode]->TotalUnitService) : ($dataCabang[$cabName]['entry']['target'] ?? 0);
+            $bulanVal = isset($monthUnits[$bCode]) ? intval($monthUnits[$bCode]->total_bulan) : ($dataCabang[$cabName]['entry']['bulan'] ?? 0);
+            $hariIniVal = isset($todayUnits[$bCode]) ? intval($todayUnits[$bCode]->total_hari_ini) : ($isCurrentMonth ? 0 : ($dataCabang[$cabName]['entry']['hari_ini'] ?? 0));
+
+            $dataCabang[$cabName]['entry'] = [
+                'bulan' => $bulanVal,
+                'hari_ini' => $hariIniVal,
+                'target' => $targetVal,
+            ];
         }
 
         // Untuk dropdown filter (tampilkan 12 bulan terakhir)
@@ -183,4 +239,5 @@ class ServiceAcController extends Controller
     {
         return view('service.service_ac.ac.pre_check');
     }
-}
+
+    }

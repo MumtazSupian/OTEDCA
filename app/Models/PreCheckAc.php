@@ -11,6 +11,7 @@ class PreCheckAc extends Model
 
     protected $fillable = [
         'jenis_pemeriksaan',
+        'no_spk',
         'no_polisi',
         'cabang',
         'teknisi',
