@@ -1,5 +1,18 @@
 <?php
 
+Route::get('/fix-no-report-data', function() {
+    // 13 ID ini adalah data yang aslinya kosong (null) yang ikut terubah jadi ID 8
+    $ids = [1019, 1681, 1912, 2020, 2116, 2558, 3311, 3490, 3492, 3841, 4881, 5099, 5100];
+    
+    // Mengembalikan 13 data tersebut menjadi kosong (null)
+    $count = \App\Models\Lead::whereIn('id', $ids)
+             ->where('status_id', 8)
+             ->update(['status_id' => null]);
+             
+    return "✅ Selesai! Berhasil memisahkan dan mengosongkan kembali {$count} data lead ke asalnya.<br>Sekarang angka No Report di dashboard Anda pasti kembali murni 2153!";
+});
+
+
 use App\Http\Controllers\Sales\vsv\DashboardController;
 use App\Http\Controllers\AuthController;
 // Finance Controllers
@@ -55,11 +68,16 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Database\Schema\Blueprint;
 
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
 });
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Route PDF yang dapat diakses secara publik (dari link WhatsApp)
+Route::get('/service/service-ac/ac/post-check/{id}/pdf', [\App\Http\Controllers\Service\PostCheckAcController::class, 'pdf'])->name('service.service-ac.ac.post_check_pdf');
+Route::get('/service/service-ac/ac/pre-check/{id}/pdf', [\App\Http\Controllers\Service\PreCheckAcController::class, 'pdf'])->name('service.service-ac.ac.pre_check_pdf');
 
 Route::middleware('auth')->group(function () {
 
@@ -372,7 +390,8 @@ Route::get('/ac/post-check', [PostCheckAcController::class, 'index'])->name('ac.
         Route::get('/ac/post-check/{id}/edit', [PostCheckAcController::class, 'edit'])->name('ac.post_check_edit');
         Route::put('/ac/post-check/{id}', [PostCheckAcController::class, 'update'])->name('ac.post_check_update');
         Route::patch('/ac/post-check/{id}/status', [PostCheckAcController::class, 'updateStatus'])->name('ac.post_check_status');
-        Route::get('/ac/post-check/{id}/pdf', [PostCheckAcController::class, 'pdf'])->name('ac.post_check_pdf');
+        // Route PDF dipindahkan ke luar middleware auth
+        // Route::get('/ac/post-check/{id}/pdf', [PostCheckAcController::class, 'pdf'])->name('ac.post_check_pdf');
         Route::delete('/ac/post-check/{id}', [PostCheckAcController::class, 'destroy'])->name('ac.post_check_destroy');
         
         // Pre Check AC Routes
@@ -383,7 +402,8 @@ Route::get('/ac/pre-check', [PreCheckAcController::class, 'index'])->name('ac.pr
         Route::get('/ac/pre-check/{id}/edit', [PreCheckAcController::class, 'edit'])->name('ac.pre_check_edit');
         Route::put('/ac/pre-check/{id}', [PreCheckAcController::class, 'update'])->name('ac.pre_check_update');
         Route::patch('/ac/pre-check/{id}/status', [PreCheckAcController::class, 'updateStatus'])->name('ac.pre_check_status');
-        Route::get('/ac/pre-check/{id}/pdf', [PreCheckAcController::class, 'pdf'])->name('ac.pre_check_pdf');
+        // Route PDF dipindahkan ke luar middleware auth
+        // Route::get('/ac/pre-check/{id}/pdf', [PreCheckAcController::class, 'pdf'])->name('ac.pre_check_pdf');
         Route::delete('/ac/pre-check/{id}', [PreCheckAcController::class, 'destroy'])->name('ac.pre_check_destroy');
 
         // Teknisi Routes

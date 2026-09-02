@@ -49,13 +49,16 @@
                         <td>{{ $items->firstItem() + $i }}</td>
                         <td>{{ $item->nama }}</td>
                         <td>{{ $item->deskripsi }}</td>
-                        <td>
-                            <a href="{{ route('admin.units.edit', $item) }}" class="btn-primary">Edit</a>
-                            <form action="{{ route('admin.units.destroy', $item) }}" method="POST" style="display:inline-flex; margin-left:8px;">
+                       <td style="vertical-align: middle;">
+                         <div style="display: flex; gap: 8px; align-items: center; justify-content: flex-start; flex-wrap: nowrap;">
+                             <a href="{{ route('admin.units.edit', $item) }}" class="btn-primary" style="margin: 0; white-space: nowrap;">Edit</a>
+                             <form action="{{ route('admin.units.destroy', $item) }}" method="POST" style="margin: 0;">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="btn-secondary" style="background:#ef4444; color:#1e293b; font-weight:800; border:none;">Hapus</button>
-                            </form>
-                        </td>
+                                <button type="submit" class="btn-secondary" style="background:#ef4444; color:#fff; font-weight:600; border:none; margin: 0; white-space: nowrap;" onclick="return confirm('Yakin hapus unit ini?')">Hapus</button>
+                             </form>
+                         </div>
+                       </td>
+
                     </tr>
                 @empty
                     <tr>

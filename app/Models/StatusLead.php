@@ -11,3 +11,4 @@ class StatusLead extends Model
 
     protected $fillable = ['nama_status', 'deskripsi'];
 }
+

@@ -16,11 +16,7 @@
     @endif
 </div>
 
-@if(session('success'))
-<div style="background: #dcfce7; color: #166534; padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #bbf7d0;">
-    {{ session('success') }}
-</div>
-@endif
+
 
 <div style="background:#fff; border-radius:10px; border:1px solid #e2e8f0; padding:24px; overflow-x: auto;">
     <table style="width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1100px;">
@@ -31,7 +27,7 @@
                 <th colspan="4" style="border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; background: #dbeafe; font-weight: 700;">Unit Yang Diambil</th>
                 <th rowspan="2" style="border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; background: #e2e8f0; font-weight: 700; vertical-align: middle;">Lokasi Pengambilan</th>
                 <th rowspan="2" style="border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; background: #e2e8f0; font-weight: 700; vertical-align: middle;">Cabang</th>
-                <th colspan="2" style="border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; background: #dcfce7; font-weight: 700;">Kedatangan Unit</th>
+                <th colspan="2" style="border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; background: #d1fae5; font-weight: 700;">Kedatangan Unit</th>
                 <th rowspan="2" style="border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; background: #e2e8f0; font-weight: 700; vertical-align: middle; width: 100px;">Aksi</th>
             </tr>
             <tr>
@@ -39,8 +35,8 @@
                 <th style="border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; background: #dbeafe; font-weight: 700;">Warna</th>
                 <th style="border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; background: #dbeafe; font-weight: 700;">Rangka</th>
                 <th style="border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; background: #dbeafe; font-weight: 700;">Mesin</th>
-                <th style="border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; background: #dcfce7; font-weight: 700;">Cekits</th>
-                <th style="border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; background: #dcfce7; font-weight: 700;">Jam</th>
+                <th style="border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; background: #d1fae5; font-weight: 700;">Cekits</th>
+                <th style="border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; background: #d1fae5; font-weight: 700;">Jam</th>
             </tr>
         </thead>
         <tbody>
@@ -56,14 +52,14 @@
                     <td style="border: 1px solid #cbd5e1; padding: 6px 10px; text-align: center;">{{ $unit->cabang ? $unit->cabang->nama : '-' }}</td>
                     <td style="border: 1px solid #cbd5e1; padding: 6px 10px; text-align: center;">{{ $unit->cekits ?? '-' }}</td>
                     <td style="border: 1px solid #cbd5e1; padding: 6px 10px; text-align: center;">{{ $unit->jam_kedatangan ?? '-' }}</td>
-                    <td style="border: 1px solid #cbd5e1; padding: 6px 10px; text-align: center;">
-                        <div style="display: flex; gap: 6px; justify-content: center;">
-                            <a href="{{ route('admin.in-units.edit', $unit->id) }}" style="color: #0284c7; text-decoration: none; font-size: 11px; background: #e0f2fe; padding: 3px 8px; border-radius: 4px;">Edit</a>
+                    <td style="border: 1px solid #cbd5e1; padding: 6px 10px; text-align: center; vertical-align: middle;">
+                        <div style="display: flex; gap: 6px; justify-content: center; align-items: center; flex-wrap: nowrap;">
+                            <a href="{{ route('admin.in-units.edit', $unit->id) }}" style="color: #0284c7; text-decoration: none; font-size: 11px; background: #e0f2fe; padding: 4px 8px; border-radius: 4px; white-space: nowrap; margin: 0;">Edit</a>
                             @if(!$isRestrictedBranch && auth()->user()->role !== 'adh')
-                            <form action="{{ route('admin.in-units.destroy', $unit->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?');" style="margin: 0;">
+                            <form action="{{ route('admin.in-units.destroy', $unit->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?');" style="margin: 0; display: flex;">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" style="color: #e11d48; font-size: 11px; background: #ffe4e6; padding: 3px 8px; border-radius: 4px; border: none; cursor: pointer;">Hapus</button>
+                                <button type="submit" style="color: #e11d48; font-size: 11px; background: #ffe4e6; padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer; white-space: nowrap; margin: 0;">Hapus</button>
                             </form>
                             @endif
                         </div>
