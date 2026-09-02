@@ -39,7 +39,10 @@
                     <button onclick="tableExport.print(this)" style="background: #fff; border: 1px solid #ccc; padding: 5px 10px; border-radius: 3px; cursor: pointer; color: #333; font-size: 12px;">Print</button>
                 </div>
                 <div style="font-size: 13px;">
-                    Search: <input type="text" id="searchInput" onkeyup="searchTable()" style="padding: 5px; border: 1px solid #ccc; border-radius: 3px; outline: none;">
+                    <form method="GET" action="{{ url('/sales/leads/' . $cabang . '/leads') }}" style="margin: 0; display: flex; align-items: center; gap: 5px;">
+                        Search: <input type="search" name="search" id="searchInput" value="{{ request('search') }}" style="padding: 5px; border: 1px solid #ccc; border-radius: 3px; outline: none;">
+                        <button type="submit" style="background: #3c8dbc; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Cari</button>
+                    </form>
                 </div>
             </div>
 
@@ -94,11 +97,52 @@
             </div>
 
             <div style="margin-top: 15px; font-size: 13px; color: #333; display: flex; justify-content: space-between; align-items: center;">
-                <div>Showing 1 to {{ count($leads) }} of {{ count($leads) }} entries</div>
+                <div>Showing {{ $leads->firstItem() ?? 0 }} to {{ $leads->lastItem() ?? 0 }} of {{ $leads->total() }} entries</div>
                 <div style="display: flex;">
-                    <span style="padding: 5px 10px; border: 1px solid #ddd; background: #fff; color: #777; cursor: not-allowed; border-top-left-radius: 4px; border-bottom-left-radius: 4px;">Previous</span>
-                    <span style="padding: 5px 10px; border: 1px solid #3c8dbc; background: #3c8dbc; color: #fff;">1</span>
-                    <span style="padding: 5px 10px; border: 1px solid #ddd; border-left: none; background: #fff; color: #333; cursor: pointer; border-top-right-radius: 4px; border-bottom-right-radius: 4px;">Next</span>
+                    
+                    {{-- Tombol Previous --}}
+                    @if ($leads->onFirstPage())
+                        <span style="padding: 5px 10px; border: 1px solid #ddd; background: #fff; color: #777; cursor: not-allowed; border-top-left-radius: 4px; border-bottom-left-radius: 4px;">Previous</span>
+                    @else
+                        <a href="{{ $leads->previousPageUrl() }}" style="padding: 5px 10px; border: 1px solid #ddd; background: #fff; color: #333; text-decoration: none; border-top-left-radius: 4px; border-bottom-left-radius: 4px;">Previous</a>
+                    @endif
+
+                    {{-- Angka Halaman (1, 2, 3...) dengan pemendekan (...) --}}
+                    @php
+                        $window = \Illuminate\Pagination\UrlWindow::make($leads);
+                        $elements = array_filter([
+                            $window['first'],
+                            is_array($window['slider']) ? '...' : null,
+                            $window['slider'],
+                            is_array($window['last']) ? '...' : null,
+                            $window['last'],
+                        ]);
+                    @endphp
+                    @foreach ($elements as $element)
+                        {{-- Pemisah Tiga Titik (...) --}}
+                        @if (is_string($element))
+                            <span style="padding: 5px 10px; border: 1px solid #ddd; border-left: none; background: #f9f9f9; color: #777;">{{ $element }}</span>
+                        @endif
+
+                        {{-- Array Halaman --}}
+                        @if (is_array($element))
+                            @foreach ($element as $page => $url)
+                                @if ($page == $leads->currentPage())
+                                    <span style="padding: 5px 10px; border: 1px solid #3c8dbc; border-left: none; background: #3c8dbc; color: #fff;">{{ $page }}</span>
+                                @else
+                                    <a href="{{ $url }}" style="padding: 5px 10px; border: 1px solid #ddd; border-left: none; background: #fff; color: #333; text-decoration: none;">{{ $page }}</a>
+                                @endif
+                            @endforeach
+                        @endif
+                    @endforeach
+
+                    {{-- Tombol Next --}}
+                    @if ($leads->hasMorePages())
+                        <a href="{{ $leads->nextPageUrl() }}" style="padding: 5px 10px; border: 1px solid #ddd; border-left: none; background: #fff; color: #333; text-decoration: none; border-top-right-radius: 4px; border-bottom-right-radius: 4px;">Next</a>
+                    @else
+                        <span style="padding: 5px 10px; border: 1px solid #ddd; border-left: none; background: #fff; color: #777; cursor: not-allowed; border-top-right-radius: 4px; border-bottom-right-radius: 4px;">Next</span>
+                    @endif
+                    
                 </div>
             </div>
 

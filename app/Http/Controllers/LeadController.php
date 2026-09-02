@@ -14,9 +14,20 @@ use App\Models\SalesLead;
 
 class LeadController extends Controller
 {
-    public function index($cabang)
+    public function index(Request $request, $cabang)
     {
-        $leads = Lead::where('cabang', $cabang)->get();
+        $search = $request->input('search');
+        
+        $query = Lead::where('cabang', $cabang)->latest();
+        
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('no_hp', 'like', "%{$search}%")
+                  ->orWhere('nama', 'like', "%{$search}%");
+            });
+        }
+        
+        $leads = $query->paginate(10)->appends(['search' => $search]);
         return view("Sales.leads.{$cabang}.index", compact('leads', 'cabang'));
     }
 

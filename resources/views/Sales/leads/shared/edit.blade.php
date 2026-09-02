@@ -37,17 +37,17 @@
             <div style="display: flex; flex-wrap: wrap; justify-content: space-between;">
                 <!-- Kiri -->
                 <div style="width: 48%; box-sizing: border-box;">
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 700; font-size: 13px;">No HP*</label>
-                        <input type="text" name="no_hp" value="{{ old('no_hp', $lead->no_hp) }}" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 0; box-sizing: border-box;" required>
+                   <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 700; font-size: 13px;">Nama Customer*</label>
+                        <input type="text" name="nama" value="{{ old('nama', $lead->nama) }}" class="form-control" placeholder="Input Nama Customer" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 0; box-sizing: border-box;" required>
                     </div>
                     <div style="margin-bottom: 15px;">
                         <label style="display: block; margin-bottom: 5px; font-weight: 700; font-size: 13px;">Tanggal Leads*</label>
-                        <input type="date" name="tanggal" value="{{ old('tanggal', $lead->tanggal) }}" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 0; box-sizing: border-box;" required>
+                        <input type="date" name="tanggal" value="{{ old('tanggal', $lead->tanggal) }}" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 0; box-sizing: border-box; background: #eee; cursor: not-allowed;" readonly required>
                     </div>
                     <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 700; font-size: 13px;">Nama Customer*</label>
-                        <input type="text" name="nama" value="{{ old('nama', $lead->nama) }}" class="form-control" placeholder="Input Nama Customer" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 0; box-sizing: border-box;" required>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 700; font-size: 13px;">No HP*</label>
+                        <input type="text" name="no_hp" value="{{ old('no_hp', $lead->no_hp) }}" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 0; box-sizing: border-box; background: #eee; cursor: not-allowed;" readonly required>
                     </div>
                     <div style="margin-bottom: 15px;">
                         <label style="display: block; margin-bottom: 5px; font-weight: 700; font-size: 13px;">Alamat*</label>
@@ -56,7 +56,8 @@
                     
                     <div style="margin-bottom: 15px;">
                         <label style="display: block; margin-bottom: 5px; font-weight: 700; font-size: 13px;">Sumber*</label>
-                        <select name="sumber_id" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 0; box-sizing: border-box;" required>
+                        <input type="hidden" name="sumber_id" value="{{ $lead->sumber_id }}">
+                        <select class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 0; box-sizing: border-box; background: #eee; cursor: not-allowed;" disabled required>
                             <option value="">- Pilih -</option>
                             @foreach($sumbers as $s)
                                 <option value="{{ $s->id }}" {{ $lead->sumber_id == $s->id ? 'selected' : '' }}>{{ $s->nama_sumber }}</option>

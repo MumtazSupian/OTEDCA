@@ -26,23 +26,30 @@
     <div style="margin-bottom: 20px; font-family: 'Inter', sans-serif;">
         <div style="font-weight: 700; color: #1e3a5f; margin-bottom: 10px; font-size: 14px;">Filter Data :</div>
         <form method="GET" action="{{ route('sales.leads.dashboard') }}" style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px; font-size: 13px;">
-            <label>Bulan</label>
-            <select name="bulan" style="padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
-                <option value="semua" {{ $bulan == 'semua' ? 'selected' : '' }}>-- Semua Bulan --</option>
-                @for($i=1; $i<=12; $i++)
-                    <option value="{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}" {{ $bulan == str_pad($i, 2, '0', STR_PAD_LEFT) ? 'selected' : '' }}>{{ date('F', mktime(0, 0, 0, $i, 10)) }}</option>
-                @endfor
-            </select>
-            <label>Tahun</label>
-            <select name="tahun" style="padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
-                <option value="semua" {{ $tahun == 'semua' ? 'selected' : '' }}>-- Semua Tahun --</option>
-                @for($y=date('Y')-2; $y<=date('Y'); $y++)
-                    <option value="{{ $y }}" {{ $tahun == $y ? 'selected' : '' }}>{{ $y }}</option>
-                @endfor
-            </select>
             <input type="hidden" name="periode_tren" value="{{ request('periode_tren', 'tahun_ini') }}">
-            <button type="submit" style="background: #3c8dbc; color: white; border: none; padding: 5px 15px; border-radius: 3px; cursor: pointer;"><i class="fas fa-filter"></i> Terapkan</button>
-            <a href="{{ route('sales.leads.dashboard') }}" style="background: #f4f4f4; color: #444; border: 1px solid #ddd; padding: 5px 15px; border-radius: 3px; cursor: pointer; text-decoration: none;">Reset</a>
+            <input type="hidden" name="custom_date" value="{{ request('custom_date') }}">
+            
+            <select name="periode_leads" id="periode_leads" onchange="toggleCustomDate(this, 'leads')" style="padding: 6px 12px; border: 1px solid #3c8dbc; border-radius: 4px; background-color: white; color: #555; font-size: 13px; cursor: pointer; min-width: 180px;">
+                <option value="semua" {{ request('periode_leads') == 'semua' ? 'selected' : '' }}>-- Semua Bulan --</option>
+                <option value="bulan_ini" {{ request('periode_leads', 'bulan_ini') == 'bulan_ini' ? 'selected' : '' }}>Bulan Ini</option>
+                <option value="bulan_lalu" {{ request('periode_leads') == 'bulan_lalu' ? 'selected' : '' }}>Bulan Lalu</option>
+                <option value="custom" {{ request('periode_leads') == 'custom' ? 'selected' : '' }}>Custom Period</option>
+            </select>
+            
+            <label style="font-weight: bold; margin-left: 10px;">Tahun</label>
+            <select name="tahun" style="padding: 6px 12px; border: 1px solid #ccc; border-radius: 3px;">
+                <option value="semua" {{ request('tahun', 'semua') == 'semua' ? 'selected' : '' }}>-- Semua Tahun --</option>
+                @for($y=date('Y')-2; $y<=date('Y')+1; $y++)
+                    <option value="{{ $y }}" {{ request('tahun', 'semua') == $y ? 'selected' : '' }}>{{ $y }}</option>
+                @endfor
+            </select>
+            
+            <div id="custom_date_wrapper_leads" style="display: {{ request('periode_leads') == 'custom' ? 'flex' : 'none' }}; align-items: center; gap: 10px; margin-left: 10px;">
+                <input type="text" name="tanggal" id="custom_date_leads" class="daterange-picker" value="{{ request('tanggal') }}" style="padding: 6px 12px; border: 1px solid #3c8dbc; border-radius: 4px; width: 220px;" placeholder="DD/MM/YYYY - DD/MM/YYYY" {{ request('periode_leads') == 'custom' ? 'required' : '' }} disabled>
+            </div>
+            
+            <button type="submit" style="background: #3c8dbc; color: white; border: none; padding: 6px 15px; border-radius: 4px; cursor: pointer; margin-left: 10px;"><i class="fas fa-filter"></i> Terapkan</button>
+            <a href="{{ route('sales.leads.dashboard') }}" style="background: #f4f4f4; color: #444; border: 1px solid #ddd; padding: 6px 15px; border-radius: 4px; cursor: pointer; text-decoration: none;">Reset</a>
         </form>
     </div>
 
@@ -96,7 +103,9 @@
                 @foreach($budgets as $index => $b)
                 <tr style="border-bottom: 1px solid #f4f4f4; background-color: {{ $index % 2 == 0 ? '#f9f9f9' : '#fff' }};">
                     <td style="padding: 8px 10px;">{{ $index + 1 }}</td>
-                    <td style="padding: 8px 10px; text-transform: uppercase;">{{ $b->sumber->nama_sumber ?? 'UNKNOWN' }}</td>
+                    <td style="padding: 8px 10px; text-transform: uppercase;">
+                        {{ ($b->sumber->nama_sumber ?? '') == 'Google Ads' ? 'WEB' : ($b->sumber->nama_sumber ?? 'UNKNOWN') }}
+                    </td>
                     <td style="padding: 8px 10px;">{{ number_format($b->budget, 0, ',', '.') }}</td>
                 </tr>
                 @php $totalBudget += $b->budget; @endphp
@@ -171,9 +180,9 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($spkDoLeads as $index => $sd)
-                    <tr style="border-bottom: 1px solid #f4f4f4; background-color: {{ $index % 2 == 0 ? '#f9f9f9' : '#fff' }};">
-                        <td style="padding: 8px 10px;">{{ $index + 1 }}</td>
+                    @forelse($spkDoLeads as $sd)
+                    <tr style="border-bottom: 1px solid #f4f4f4; background-color: {{ $loop->iteration % 2 == 0 ? '#f9f9f9' : '#fff' }};">
+                        <td style="padding: 8px 10px;">{{ $loop->iteration }}</td>
                         <td style="padding: 8px 10px;">{{ $sd->nama }}</td>
                         <td style="padding: 8px 10px;">{{ $sd->no_hp }}</td>
                         <td style="padding: 8px 10px;">{{ date('d/m/Y', strtotime($sd->tanggal)) }}</td>
@@ -226,7 +235,7 @@
             <div style="flex: 1; background: #fff; border: 1px solid #eee;">
                 <div style="text-align: center; padding: 10px; border-bottom: 1px solid #eee;">
                     <div style="font-size: 12px; font-weight: bold;">Leads Status</div>
-                    <div style="font-size: 11px; font-weight: bold; text-transform: uppercase;">Semua Periode</div>
+                    <div style="font-size: 11px; font-weight: bold; text-transform: uppercase;">{{ $periodeLabel }}</div>
                 </div>
                 <div style="padding: 15px;">
                     <canvas id="statusChart" height="200"></canvas>
@@ -236,7 +245,7 @@
             <div style="flex: 1; background: #fff; border: 1px solid #eee;">
                 <div style="text-align: center; padding: 10px; border-bottom: 1px solid #eee;">
                     <div style="font-size: 12px; font-weight: bold;">Leads Source</div>
-                    <div style="font-size: 11px; font-weight: bold; text-transform: uppercase;">Semua Periode</div>
+                    <div style="font-size: 11px; font-weight: bold; text-transform: uppercase;">{{ $periodeLabel }}</div>
                 </div>
                 <div style="padding: 15px; display: flex; justify-content: center;">
                     <div style="width: 70%;">
@@ -253,7 +262,7 @@
                 <div style="cursor: pointer;"><i class="fas fa-minus"></i> &nbsp; <i class="fas fa-times"></i></div>
             </div>
             <div style="text-align: center; margin-bottom: 20px;">
-                <div style="font-size: 12px; font-weight: bold;">SEMUA PERIODE</div>
+                <div style="font-size: 12px; font-weight: bold; text-transform: uppercase;">{{ $periodeLabel }}</div>
                 <div style="font-size: 11px;">Perbandingan Jumlah Unit per Model</div>
             </div>
             <canvas id="unitChart" height="100"></canvas>
@@ -263,7 +272,7 @@
         <div style="background: #f4f4f4; padding: 10px; border: 1px solid #ddd; margin-bottom: 20px;">
             <div style="font-weight: 700; color: #1e3a5f; margin-bottom: 8px; font-size: 14px;">Filter Data Grafik Tren:</div>
             <form method="GET" action="{{ route('sales.leads.dashboard') }}" style="margin: 0;">
-                <input type="hidden" name="bulan" value="{{ $bulan }}">
+                <input type="hidden" name="tanggal" value="{{ $tanggal }}">
                 <input type="hidden" name="tahun" value="{{ $tahun }}">
                 <div style="margin-top: 5px; display: flex; align-items: center; gap: 10px;">
                     <select name="periode_tren" id="periode_tren_global" onchange="toggleCustomDate(this, 'global')" style="padding: 6px 12px; border: 1px solid #3c8dbc; border-radius: 4px; background-color: white; color: #555; font-size: 13px; cursor: pointer; min-width: 180px;">
@@ -312,21 +321,26 @@
                 <tr style="border-bottom: 1px solid #f4f4f4; background-color: {{ $index % 2 == 0 ? '#f9f9f9' : '#fff' }};">
                     <td style="padding: 8px 10px;">{{ $index + 1 }}</td>
                     <td style="padding: 8px 10px; text-transform: uppercase;">{{ $source }}</td>
-                    <td style="padding: 8px 10px;">{{ $chartSourceData[$index] }}</td>
+                    <td style="padding: 8px 10px;">{{ number_format($chartSourceData[$index], 0, ',', '.') }}</td>
                     <td style="padding: 8px 10px; text-align: right;">
                         @php
-                            $sumSource = array_sum($chartSourceData);
-                            $percentage = $sumSource > 0 ? ($chartSourceData[$index] / $sumSource) * 100 : 0;
+                            $curr = $chartSourceData[$index];
+                            $prev = $prevChartSourceData[$index] ?? 0;
+                            $percentageChange = $prev > 0 ? (($curr - $prev) / $prev) * 100 : 0;
                         @endphp
-                        <span style="color: {{ $percentage > 0 ? '#00a65a' : '#777' }}; font-weight: bold;">
-                            {{ number_format($percentage, 2, ',', '.') }}%
-                        </span>
+                        @if($prev > 0)
+                            <span style="color: {{ $percentageChange >= 0 ? '#00a65a' : '#dd4b39' }}; font-weight: bold;">
+                                {!! $percentageChange >= 0 ? '&#9650;' : '&#9660;' !!} {{ number_format($percentageChange, 2, ',', '.') }}%
+                            </span>
+                        @else
+                            <span style="color: #777; font-weight: bold;">-</span>
+                        @endif
                     </td>
                 </tr>
                 @endforeach
                 <tr style="border-bottom: 1px solid #f4f4f4; background-color: #fff; font-weight: bold;">
                     <td colspan="2" style="padding: 10px;">TOTAL</td>
-                    <td style="padding: 10px;">{{ array_sum($chartSourceData) }}</td>
+                    <td style="padding: 10px;">{{ number_format(array_sum($chartSourceData), 0, ',', '.') }}</td>
                     <td></td>
                 </tr>
             </tbody>
@@ -360,7 +374,7 @@
                     <div style="background: #fff; border: 1px solid #eee; height: 100%; display: flex; flex-direction: column;">
                         <div style="text-align: center; padding: 10px; border-bottom: 1px solid #eee;">
                             <div style="font-size: 12px; font-weight: bold;">Leads Status</div>
-                            <div style="font-size: 11px; font-weight: bold; text-transform: uppercase;">Semua Periode</div>
+                            <div style="font-size: 11px; font-weight: bold; text-transform: uppercase;">{{ $periodeLabel }}</div>
                         </div>
                         <div style="padding: 15px; flex: 1;">
                             <canvas id="statusChart_{{ $branch }}" height="200"></canvas>
@@ -372,7 +386,7 @@
                     <div style="background: #fff; border: 1px solid #eee; height: 100%; display: flex; flex-direction: column;">
                         <div style="text-align: center; padding: 10px; border-bottom: 1px solid #eee;">
                             <div style="font-size: 12px; font-weight: bold;">Leads Source</div>
-                            <div style="font-size: 11px; font-weight: bold; text-transform: uppercase;">Semua Periode</div>
+                            <div style="font-size: 11px; font-weight: bold; text-transform: uppercase;">{{ $periodeLabel }}</div>
                         </div>
                         <div style="padding: 15px; flex: 1; display: flex; justify-content: center; align-items: center;">
                             <div style="width: 70%;">
@@ -389,7 +403,7 @@
                     <div style="font-size: 13px; font-weight: normal; text-transform: capitalize;">{{ $branch }} Monthly</div>
                     <div style="font-size: 11px; color: #777;">Count Of Unit</div>
                 </div>
-                <div style="font-size: 11px; font-weight: bold; text-align: center; padding-top: 10px; text-transform: uppercase;">Semua Periode</div>
+                <div style="font-size: 11px; font-weight: bold; text-align: center; padding-top: 10px; text-transform: uppercase;">{{ $periodeLabel }}</div>
                 <div style="padding: 15px;">
                     <canvas id="unitChart_{{ $branch }}" height="80"></canvas>
                 </div>
@@ -404,7 +418,7 @@
             <div style="background: #f4f4f4; padding: 10px; border: 1px solid #ddd; margin-bottom: 20px;">
                 <div style="font-weight: 700; color: #1e3a5f; margin-bottom: 8px; font-size: 14px;">Filter Data Grafik Tren ({{ ucfirst($branch) }}):</div>
                 <form method="GET" action="{{ route('sales.leads.dashboard') }}#branch_{{ $branch }}" style="margin: 0;">
-                    <input type="hidden" name="bulan" value="{{ $bulan }}">
+                    <input type="hidden" name="tanggal" value="{{ $tanggal }}">
                     <input type="hidden" name="tahun" value="{{ $tahun }}">
                     <div style="margin-top: 5px; display: flex; align-items: center; gap: 10px;">
                         <select name="periode_tren" id="periode_tren_{{ $branch }}" onchange="toggleCustomDate(this, '{{ $branch }}')" style="padding: 6px 12px; border: 1px solid #3c8dbc; border-radius: 4px; background-color: white; color: #555; font-size: 13px; cursor: pointer; min-width: 180px;">
@@ -448,7 +462,7 @@
                                 <th style="padding: 10px; text-align: left; width: 5%;">#</th>
                                 <th style="padding: 10px; text-align: left;">Sumber Leads</th>
                                 <th style="padding: 10px; text-align: left;">Total Leads</th>
-                                <th style="padding: 10px; text-align: left;">Perubahan (%)</th>
+                                <th style="padding: 10px; text-align: right;"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -456,26 +470,68 @@
                             <tr style="border-bottom: 1px solid #f4f4f4; background-color: {{ $index % 2 == 0 ? '#f9f9f9' : '#fff' }};">
                                 <td style="padding: 8px 10px;">{{ $index + 1 }}</td>
                                 <td style="padding: 8px 10px; text-transform: uppercase;">{{ $source }}</td>
-                                <td style="padding: 8px 10px;">{{ $bData['chartSourceData'][$index] }}</td>
-                                <td style="padding: 8px 10px;">
+                                <td style="padding: 8px 10px;">{{ number_format($bData['chartSourceData'][$index], 0, ',', '.') }}</td>
+                                <td style="padding: 8px 10px; text-align: right;">
                                     @php
-                                        $bSumSource = array_sum($bData['chartSourceData']);
-                                        $bPercentage = $bSumSource > 0 ? ($bData['chartSourceData'][$index] / $bSumSource) * 100 : 0;
+                                        $bCurr = $bData['chartSourceData'][$index];
+                                        $bPrev = $bData['prevChartSourceData'][$index] ?? 0;
+                                        $bPercentageChange = $bPrev > 0 ? (($bCurr - $bPrev) / $bPrev) * 100 : 0;
                                     @endphp
-                                    <span style="color: {{ $bPercentage > 0 ? '#00a65a' : '#777' }}; font-weight: bold;">
-                                        {{ number_format($bPercentage, 2, ',', '.') }}%
-                                    </span>
+                                    @if($bPrev > 0)
+                                        <span style="color: {{ $bPercentageChange >= 0 ? '#00a65a' : '#dd4b39' }}; font-weight: bold;">
+                                            {!! $bPercentageChange >= 0 ? '&#9650;' : '&#9660;' !!} {{ number_format($bPercentageChange, 2, ',', '.') }}%
+                                        </span>
+                                    @else
+                                        <span style="color: #777; font-weight: bold;">-</span>
+                                    @endif
                                 </td>
                             </tr>
                             @endforeach
                             <tr style="border-bottom: 1px solid #f4f4f4; background-color: #fff; font-weight: bold;">
                                 <td colspan="2" style="padding: 10px;">TOTAL</td>
-                                <td style="padding: 10px;">{{ array_sum($bData['chartSourceData']) }}</td>
+                                <td style="padding: 10px;">{{ number_format(array_sum($bData['chartSourceData']), 0, ',', '.') }}</td>
                                 <td></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <!-- Result SPK & DO -->
+            <h4 style="font-size: 13px; font-weight: bold; margin-bottom: 10px;">Result SPK & DO Cabang {{ ucfirst($branch) }} :</h4>
+            <div style="overflow-x: auto; margin-bottom: 30px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #f4f4f4;">
+                            <th style="padding: 10px; text-align: left;">#</th>
+                            <th style="padding: 10px; text-align: left;">Nama</th>
+                            <th style="padding: 10px; text-align: left;">No.HP</th>
+                            <th style="padding: 10px; text-align: left;">Tanggal</th>
+                            <th style="padding: 10px; text-align: left;">Sumber</th>
+                            <th style="padding: 10px; text-align: left;">Unit</th>
+                            <th style="padding: 10px; text-align: left;">Status</th>
+                            <th style="padding: 10px; text-align: left;">Sales</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($bData['spkDoLeads'] as $sd)
+                        <tr style="border-bottom: 1px solid #f4f4f4; background-color: {{ $loop->iteration % 2 == 0 ? '#f9f9f9' : '#fff' }};">
+                            <td style="padding: 8px 10px;">{{ $loop->iteration }}</td>
+                            <td style="padding: 8px 10px; text-transform: uppercase;">{{ $sd->nama }}</td>
+                            <td style="padding: 8px 10px;">{{ $sd->no_hp }}</td>
+                            <td style="padding: 8px 10px;">{{ date('d/m/Y', strtotime($sd->tanggal)) }}</td>
+                            <td style="padding: 8px 10px; text-transform: uppercase;">{{ $sd->sumber->nama_sumber ?? '' }}</td>
+                            <td style="padding: 8px 10px; text-transform: uppercase;">{{ $sd->unit->nama_unit ?? '' }}</td>
+                            <td style="padding: 8px 10px; text-transform: uppercase;">{{ $sd->status->nama_status ?? '' }}</td>
+                            <td style="padding: 8px 10px; text-transform: uppercase;">{{ $sd->sales->nama ?? '' }}</td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="8" style="padding: 15px; text-align: center; color: #777;">Belum ada SPK/DO.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
 
             <!-- Tabel Konversi Leads ke SPK & DO -->
@@ -720,7 +776,7 @@ document.addEventListener("DOMContentLoaded", function() {
             datasets: [
                 {
                     label: 'FB/IG CABANG',
-                    data: {!! json_encode($monthlyTrend) !!}, // Placeholder
+                    data: {!! json_encode($trendSourceData['FB/IG CABANG'] ?? []) !!},
                     borderColor: '#4285F4',
                     borderWidth: 2,
                     pointRadius: 3,
@@ -732,7 +788,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 },
                 {
                     label: 'FB/IG OFFICIAL',
-                    data: {!! json_encode(array_map(function($v) { return $v * 0.5; }, $monthlyTrend)) !!}, // Placeholder
+                    data: {!! json_encode($trendSourceData['FB/IG OFFICIAL'] ?? []) !!},
                     borderColor: '#34A853',
                     borderWidth: 2,
                     pointRadius: 3,
@@ -744,7 +800,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 },
                 {
                     label: 'GMB',
-                    data: {!! json_encode(array_map(function($v) { return $v * 0.2; }, $monthlyTrend)) !!}, // Placeholder
+                    data: {!! json_encode($trendSourceData['GMB'] ?? []) !!},
                     borderColor: '#FBBC05',
                     borderWidth: 2,
                     pointRadius: 3,
@@ -756,7 +812,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 },
                 {
                     label: 'WEB',
-                    data: {!! json_encode(array_map(function($v) { return $v * 0.8; }, $monthlyTrend)) !!}, // Placeholder
+                    data: {!! json_encode($trendSourceData['WEB'] ?? []) !!},
                     borderColor: '#EA4335',
                     borderWidth: 2,
                     pointRadius: 3,
@@ -768,7 +824,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 },
                 {
                     label: 'WEB ORGANIK',
-                    data: {!! json_encode(array_map(function($v) { return $v * 0.3; }, $monthlyTrend)) !!}, // Placeholder
+                    data: {!! json_encode($trendSourceData['WEB ORGANIK'] ?? []) !!},
                     borderColor: '#8E24AA',
                     borderWidth: 2,
                     pointRadius: 3,
@@ -806,6 +862,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const branches = {!! json_encode($branches) !!};
     const branchData = {!! json_encode($branchData) !!};
     const chartStatusLabels = {!! json_encode($chartStatusLabels) !!};
+    const bChartStatusLabels = {!! json_encode($bChartStatusLabels) !!};
     const chartSourceLabels = {!! json_encode($chartSourceLabels) !!};
     const chartUnitLabels = {!! json_encode($chartUnitLabels) !!};
 
@@ -816,11 +873,20 @@ document.addEventListener("DOMContentLoaded", function() {
         new Chart(document.getElementById('statusChart_' + branch), {
             type: 'bar',
             data: {
-                labels: chartStatusLabels,
+                labels: bChartStatusLabels,
                 datasets: [{
                     label: 'Jumlah Leads',
                     data: bData.chartStatusData,
-                    backgroundColor: ['#999999', '#00a65a', '#f39c12', '#00c0ef', '#f56954'],
+                    backgroundColor: [
+                        '#00ffff', // UNFOLLOW UP (Cyan)
+                        '#aa00ff', // FOLLOW UP (Purple)
+                        '#008000', // PROSPEK (Green)
+                        '#ff9900', // HOT PROSPEK (Orange)
+                        '#ffff00', // SPK (Yellow)
+                        '#ff0000', // LOST (Red)
+                        '#0000ff', // DO (Blue)
+                        '#a0a0a0'  // NO REPORT (Gray)
+                    ],
                 }]
             },
             options: {

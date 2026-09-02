@@ -43,12 +43,12 @@
                     <td style="padding: 14px 18px; color: #1e293b; font-weight: 600;">{{ $item->nama }}</td>
                     <td style="padding: 14px 18px; color: #64748b;">{{ $item->deskripsi ?: '-' }}</td>
                     <td style="padding: 14px 18px; text-align: center;">
-                        <div style="display: inline-flex; gap: 8px; align-items: center; justify-content: center;">
-                            <a href="{{ route('admin.units.edit', $item) }}" style="display: inline-flex; align-items: center; background: #e0f2fe; color: #0284c7; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none; transition: all 0.15s ease;" onmouseover="this.style.background='#bae6fd'" onmouseout="this.style.background='#e0f2fe'">Edit</a>
-                            <form action="{{ route('admin.units.destroy', $item) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus unit {{ $item->nama }}?');">
+                        <div style="display: inline-flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: nowrap;">
+                            <a href="{{ route('admin.units.edit', $item) }}" style="display: inline-flex; align-items: center; background: #e0f2fe; color: #0284c7; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap; transition: all 0.15s ease;" onmouseover="this.style.background='#bae6fd'" onmouseout="this.style.background='#e0f2fe'">Edit</a>
+                            <form action="{{ route('admin.units.destroy', $item) }}" method="POST" style="margin: 0; display: inline-flex;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus unit {{ $item->nama }}?');">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" style="display: inline-flex; align-items: center; background: #fee2e2; color: #dc2626; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; transition: all 0.15s ease;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">Hapus</button>
+                                <button type="submit" style="display: inline-flex; align-items: center; background: #fee2e2; color: #dc2626; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; white-space: nowrap; transition: all 0.15s ease;" onmouseover="this.style.background='#fecaca'" onmouseout="this.style.background='#fee2e2'">Hapus</button>
                             </form>
                         </div>
                     </td>
