@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Models\ServiceAc;
-
 use App\Http\Controllers\Controller;
 
 class MainDashboardController extends Controller
@@ -112,8 +112,16 @@ class MainDashboardController extends Controller
 
     public function index(Request $request)
     {
+        @set_time_limit(0);
         $user = Auth::user();
+        if ($user && ($user->role === 'ho_unit' || strtolower($user->email ?? '') === 'dcahounit')) {
+            return redirect()->route('sales.dashboard');
+        }
+
         $cabang = $user->cabang ?: ($user->branch ?: 'Ciawi');
+        if (strtolower($cabang) === 'bp' || strtolower($user->branch ?? '') === 'bp') {
+            $cabang = 'Jatiasih';
+        }
 
         $bulanMap = [
             1 => 'jan', 2 => 'feb', 3 => 'mar', 4 => 'apr', 5 => 'mei', 6 => 'jun',
@@ -129,31 +137,48 @@ class MainDashboardController extends Controller
                    in_array(strtolower(trim($user->branch ?? '')), ['admin', 'pusat']) || 
                    in_array(strtolower(trim($user->role ?? '')), ['admin', 'om', 'admin dca', 'om dca', 'ho_unit']);
 
-        // SPK Data:
-        // Cianjur (641940102) & Cipanas (641940106) pmKDP SPKDate
-        $spkPmkdp = DB::connection('dms')->table('pmKDP')
-            ->whereIn('BranchCode', ['641940102', '641940106'])
-            ->whereMonth('SPKDate', $monthNum)
-            ->whereYear('SPKDate', $year)
-            ->select(['BranchCode', 'InquiryNumber', 'TipeKendaraan'])
-            ->get();
+        // SPK Data, DO Data 
+        $spkPmkdp = collect();
+        $spkSat = collect();
+        $doRecords = collect();
 
-        // Ciawi (641940101), Cinere (641940103), Jatiasih (641940104) salesAppTable PBK
-        $spkSat = DB::connection('dms')->table('salesAppTable as t')
-            ->leftJoin('pmKDP as p', 't.InquiryNumber', '=', 'p.InquiryNumber')
-            ->whereIn('t.BranchCode', ['641940101', '641940103', '641940104'])
-            ->whereNotNull('t.HID')
-            ->where('t.HID', 'like', 'PBK%')
-            ->where(function($q) use ($monthNum, $year) {
-                $q->where(function($s) use ($monthNum, $year) {
-                    $s->whereMonth('t.CreationDate', $monthNum)->whereYear('t.CreationDate', $year);
-                })->orWhere(function($s) {
-                    // Include Jatiasih cutoff
-                    $s->where('t.BranchCode', '641940104')->whereIn('t.InquiryNumber', [482285, 482811]);
-                });
-            })
-            ->select(['t.BranchCode', 't.InquiryNumber', 'p.TipeKendaraan', 't.TipeKendaraan2'])
-            ->get();
+        try {
+            // Cianjur, Cipanas from pmKDP 
+            $spkPmkdp = DB::connection('dms')->table('pmKDP')
+                ->whereIn('BranchCode', ['641940102', '641940106'])
+                ->whereMonth('SPKDate', $monthNum)
+                ->whereYear('SPKDate', $year)
+                ->select(['BranchCode', 'InquiryNumber', 'TipeKendaraan'])
+                ->get();
+
+            // Ciawi, Cinere , Jatiasih from salesAppTable 
+            $spkSat = DB::connection('dms')->table('salesAppTable as t')
+                ->leftJoin('pmKDP as p', 't.InquiryNumber', '=', 'p.InquiryNumber')
+                ->whereIn('t.BranchCode', ['641940101', '641940103', '641940104'])
+                ->whereNotNull('t.HID')
+                ->where('t.HID', 'like', 'PBK%')
+                ->where(function($q) use ($monthNum, $year) {
+                    $q->where(function($s) use ($monthNum, $year) {
+                        $s->whereMonth('t.CreationDate', $monthNum)->whereYear('t.CreationDate', $year);
+                    })->orWhere(function($s) {
+                        $s->where('t.BranchCode', '641940104')->whereIn('t.InquiryNumber', [482285, 482811]);
+                    });
+                })
+                ->select(['t.BranchCode', 't.InquiryNumber', 'p.TipeKendaraan', 't.TipeKendaraan2'])
+                ->get();
+
+            // DO Data pmKDP 
+            $doRecords = DB::connection('dms')->table('pmKDP')
+                ->whereMonth('LastUpdateStatus', $monthNum)
+                ->whereYear('LastUpdateStatus', $year)
+                ->where(function($q) {
+                    $q->whereIn(DB::raw("TRIM(UPPER(LastProgress))"), ['DELIVERY', 'DO'])
+                      ->orWhere('StatusProspek', '60');
+                })
+                ->select(['BranchCode', 'InquiryNumber', 'TipeKendaraan'])
+                ->get();
+        } catch (\Throwable $e) {
+        }
 
         $spkDataAll = collect();
         foreach ($spkPmkdp as $rec) {
@@ -181,17 +206,6 @@ class MainDashboardController extends Controller
                 'type_unit' => $tipe !== '' ? $tipe : 'UNKNOWN',
             ]);
         }
-
-        // DO Data directly from pmKDP (by LastUpdateStatus & LastProgress DELIVERY/DO)
-        $doRecords = DB::connection('dms')->table('pmKDP')
-            ->whereMonth('LastUpdateStatus', $monthNum)
-            ->whereYear('LastUpdateStatus', $year)
-            ->where(function($q) {
-                $q->whereIn(DB::raw("TRIM(UPPER(LastProgress))"), ['DELIVERY', 'DO'])
-                  ->orWhere('StatusProspek', '60');
-            })
-            ->select(['BranchCode', 'InquiryNumber', 'TipeKendaraan'])
-            ->get();
 
         $doDataAll = collect();
         foreach ($doRecords as $rec) {
@@ -241,11 +255,14 @@ class MainDashboardController extends Controller
             ];
         }
 
-
-        // --- DATA SERVICE AC ---
+        //DATA SERVICE AC, SPOORING & UNIT ENTRY 
         $m = $monthNum;
         $y = $year;
-        $filterDateStr = sprintf('%04d-%02d-01', $y, $m);
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $monthNum, $year);
+        $startDateMonth = sprintf("%04d-%02d-01 00:00:00", $year, $monthNum);
+        $endDateMonth   = sprintf("%04d-%02d-%02d 23:59:59", $year, $monthNum, $daysInMonth);
+        $todayStart     = date('Y-m-d 00:00:00');
+        $todayEnd       = date('Y-m-d 23:59:59');
 
         $branchServiceMap = [
             'CIAWI' => '641940101',
@@ -254,67 +271,147 @@ class MainDashboardController extends Controller
             'JATIASIH' => '641940104',
         ];
 
-        // 1. Fetch Targets from svMstTarget (Target referensi tahun 2025 sesuai data master DMS)
-        $targetYear = 2025;
-        $targets = DB::connection('dms')->table('svMstTarget')
-            ->where('PeriodYear', $targetYear)
-            ->where('PeriodMonth', $m)
-            ->whereIn('BranchCode', array_values($branchServiceMap))
-            ->get()
-            ->keyBy('BranchCode');
-
-        // 2. Fetch Month Service Units from svTrnService (tgl 1 s/d tgl berjalan)
-        $monthUnits = DB::connection('dms')->table('svTrnService')
-            ->whereYear('JobOrderDate', $y)
-            ->whereMonth('JobOrderDate', $m)
-            ->whereIn('BranchCode', array_values($branchServiceMap))
-            ->select('BranchCode', DB::raw('count(*) as total_bulan'))
-            ->groupBy('BranchCode')
-            ->get()
-            ->keyBy('BranchCode');
-
-        // 3. Fetch Today Service Units from svTrnService (hari ini)
         $isCurrentMonth = ($y == intval(date('Y')) && $m == intval(date('m')));
+
+        $targets = collect();
+        $monthUnits = collect();
         $todayUnits = collect();
-        if ($isCurrentMonth) {
-            $todayUnits = DB::connection('dms')->table('svTrnService')
-                ->whereDate('JobOrderDate', date('Y-m-d'))
+        $spooringMonthRows = collect();
+        $spooringTodayRows = collect();
+        $acMonthRows = collect();
+        $acTodayRows = collect();
+
+        try {
+            // 1. Fetch Targets for Unit Entry from svMstTarget
+            $targetYear = $y;
+            $targets = DB::connection('dms')->table('svMstTarget')
+                ->where('PeriodYear', $targetYear)
+                ->where('PeriodMonth', $m)
                 ->whereIn('BranchCode', array_values($branchServiceMap))
-                ->select('BranchCode', DB::raw('count(*) as total_hari_ini'))
+                ->get()
+                ->keyBy('BranchCode');
+
+            // 2. Fetch Month Service Units from svTrnService (Unit Entry)
+            $monthUnits = DB::connection('dms')->table('svTrnService')
+                ->whereBetween('JobOrderDate', [$startDateMonth, $endDateMonth])
+                ->whereIn('BranchCode', array_values($branchServiceMap))
+                ->where(function($q) {
+                    $q->whereNull('JobType')
+                      ->orWhere('JobType', '!=', 'PDI');
+                })
+                ->select('BranchCode', DB::raw('count(*) as total_bulan'))
                 ->groupBy('BranchCode')
                 ->get()
                 ->keyBy('BranchCode');
-        }
 
-        $soms = ServiceAc::where('periode', $filterDateStr)->get();
+            // 3. Fetch Today Service Units from svTrnService (Unit Entry)
+            if ($isCurrentMonth) {
+                $todayUnits = DB::connection('dms')->table('svTrnService')
+                    ->whereBetween('JobOrderDate', [$todayStart, $todayEnd])
+                    ->whereIn('BranchCode', array_values($branchServiceMap))
+                    ->where(function($q) {
+                        $q->whereNull('JobType')
+                          ->orWhere('JobType', '!=', 'PDI');
+                    })
+                    ->select('BranchCode', DB::raw('count(*) as total_hari_ini'))
+                    ->groupBy('BranchCode')
+                    ->get()
+                    ->keyBy('BranchCode');
+            }
+
+            // 4. Fetch UNIT SPOORING from svTrnPoSubCon
+            $spooringMonthRows = DB::connection('dms')->table('svTrnPoSubCon')
+                ->whereBetween('JobOrderDate', [$startDateMonth, $endDateMonth])
+                ->where(function($q) {
+                    $q->where(function($sub) {
+                        $sub->whereIn('BranchCode', ['641940101', '641940103', '641940104'])
+                            ->whereIn('SupplierCode', ['00007134', '00006763']);
+                    })->orWhere(function($sub) {
+                        $sub->where('BranchCode', '641940102')
+                            ->where('SupplierCode', '00007542');
+                    });
+                })
+                ->select('BranchCode', DB::raw('count(distinct JobOrderNo) as total_bulan'))
+                ->groupBy('BranchCode')
+                ->get()
+                ->keyBy('BranchCode');
+
+            if ($isCurrentMonth) {
+                $spooringTodayRows = DB::connection('dms')->table('svTrnPoSubCon')
+                    ->whereBetween('JobOrderDate', [$todayStart, $todayEnd])
+                    ->where(function($q) {
+                        $q->where(function($sub) {
+                            $sub->whereIn('BranchCode', ['641940101', '641940103', '641940104'])
+                                ->whereIn('SupplierCode', ['00007134', '00006763']);
+                        })->orWhere(function($sub) {
+                            $sub->where('BranchCode', '641940102')
+                                ->where('SupplierCode', '00007542');
+                        });
+                    })
+                    ->select('BranchCode', DB::raw('count(distinct JobOrderNo) as total_hari_ini'))
+                    ->groupBy('BranchCode')
+                    ->get()
+                    ->keyBy('BranchCode');
+            }
+
+            // 5. Fetch UNIT AC from svTrnPoSubCon
+            $acSuppliers = ['00009684', '00009681', '00009676'];
+
+            $acMonthRows = DB::connection('dms')->table('svTrnPoSubCon')
+                ->whereBetween('JobOrderDate', [$startDateMonth, $endDateMonth])
+                ->whereIn('BranchCode', array_values($branchServiceMap))
+                ->whereIn('SupplierCode', $acSuppliers)
+                ->select('BranchCode', DB::raw('count(distinct JobOrderNo) as total_bulan'))
+                ->groupBy('BranchCode')
+                ->get()
+                ->keyBy('BranchCode');
+
+            if ($isCurrentMonth) {
+                $acTodayRows = DB::connection('dms')->table('svTrnPoSubCon')
+                    ->whereBetween('JobOrderDate', [$todayStart, $todayEnd])
+                    ->whereIn('BranchCode', array_values($branchServiceMap))
+                    ->whereIn('SupplierCode', $acSuppliers)
+                    ->select('BranchCode', DB::raw('count(distinct JobOrderNo) as total_hari_ini'))
+                    ->groupBy('BranchCode')
+                    ->get()
+                    ->keyBy('BranchCode');
+            }
+        } catch (\Throwable $e) {}
+
         $dataCabangService = [
-            'CIAWI' => ['entry' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'spooring' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'ac' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0]],
-            'CIANJUR' => ['entry' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'spooring' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'ac' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0]],
-            'CINERE' => ['entry' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'spooring' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'ac' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0]],
-            'JATIASIH' => ['entry' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'spooring' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'ac' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0]],
+            'CIAWI' => ['entry' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'spooring' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 80], 'ac' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 80]],
+            'CIANJUR' => ['entry' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'spooring' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 80], 'ac' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 80]],
+            'CINERE' => ['entry' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'spooring' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 80], 'ac' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 80]],
+            'JATIASIH' => ['entry' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 0], 'spooring' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 80], 'ac' => ['bulan' => 0, 'hari_ini' => 0, 'target' => 80]],
         ];
 
-        foreach ($soms as $som) {
-            $cab = strtoupper($som->cabang);
-            if (isset($dataCabangService[$cab])) {
-                $dataCabangService[$cab] = [
-                    'entry' => ['bulan' => $som->unit_entry_bulan, 'hari_ini' => $som->unit_entry_hari_ini, 'target' => $som->unit_entry_target],
-                    'spooring' => ['bulan' => $som->unit_spooring_bulan, 'hari_ini' => $som->unit_spooring_hari_ini, 'target' => $som->unit_spooring_target],
-                    'ac' => ['bulan' => $som->unit_ac_bulan, 'hari_ini' => $som->unit_ac_hari_ini, 'target' => $som->unit_ac_target],
-                ];
-            }
-        }
-
-        // Set / Override UNIT ENTRY SERVICE from DMS (svTrnService & svMstTarget)
         foreach ($branchServiceMap as $cabName => $bCode) {
-            $targetVal = isset($targets[$bCode]) ? intval($targets[$bCode]->TotalUnitService) : ($dataCabangService[$cabName]['entry']['target'] ?? 0);
-            $bulanVal = isset($monthUnits[$bCode]) ? intval($monthUnits[$bCode]->total_bulan) : ($dataCabangService[$cabName]['entry']['bulan'] ?? 0);
-            $hariIniVal = isset($todayUnits[$bCode]) ? intval($todayUnits[$bCode]->total_hari_ini) : ($isCurrentMonth ? 0 : ($dataCabangService[$cabName]['entry']['hari_ini'] ?? 0));
+            $targetVal = isset($targets[$bCode]) ? intval($targets[$bCode]->TotalUnitService) : 0;
+            $bulanVal = isset($monthUnits[$bCode]) ? intval($monthUnits[$bCode]->total_bulan) : 0;
+            $hariIniVal = isset($todayUnits[$bCode]) ? intval($todayUnits[$bCode]->total_hari_ini) : 0;
 
-            $dataCabangService[$cabName]['entry'] = [
-                'bulan' => $bulanVal,
-                'hari_ini' => $hariIniVal,
-                'target' => $targetVal,
+            $spooringBulanVal = isset($spooringMonthRows[$bCode]) ? intval($spooringMonthRows[$bCode]->total_bulan) : 0;
+            $spooringHariIniVal = isset($spooringTodayRows[$bCode]) ? intval($spooringTodayRows[$bCode]->total_hari_ini) : 0;
+
+            $acBulanVal = isset($acMonthRows[$bCode]) ? intval($acMonthRows[$bCode]->total_bulan) : 0;
+            $acHariIniVal = isset($acTodayRows[$bCode]) ? intval($acTodayRows[$bCode]->total_hari_ini) : 0;
+
+            $dataCabangService[$cabName] = [
+                'entry' => [
+                    'bulan' => $bulanVal,
+                    'hari_ini' => $hariIniVal,
+                    'target' => $targetVal,
+                ],
+                'spooring' => [
+                    'bulan' => $spooringBulanVal,
+                    'hari_ini' => $spooringHariIniVal,
+                    'target' => 80,
+                ],
+                'ac' => [
+                    'bulan' => $acBulanVal,
+                    'hari_ini' => $acHariIniVal,
+                    'target' => 80,
+                ],
             ];
         }
 
@@ -327,13 +424,15 @@ class MainDashboardController extends Controller
             }
         }
 
-        return view('dashboard', [
+        $viewData = [
             'isPusat' => $isPusat,
             'cabang' => $cabang,
             'selectedBulan' => strtoupper($selectedBulan),
             'sections' => $sections,
             'bulanMap' => $bulanMap,
             'dataCabangService' => $dataCabangService,
-        ]);
+        ];
+
+        return view('dashboard', $viewData);
     }
 }

@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>OTE DCA</title>
     <link rel="icon" href="{{ asset('assets/dca.png') }}" type="image/jpeg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -171,13 +172,123 @@
 
         @media (max-width: 991px) {
             .main-content {
-                margin-left: 0;
-                width: 100%;
-                padding: 16px;
+                margin-left: 0 !important;
+                width: 100% !important;
+                padding: 14px 10px !important;
+            }
+            .sidebar {
+                width: 260px !important;
+                transform: translateX(-100%) !important;
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                z-index: 1050 !important;
+                box-shadow: 4px 0 24px rgba(0,0,0,0.18) !important;
+            }
+            .sidebar.sidebar-open {
+                transform: translateX(0) !important;
             }
         }
-    
-        /* Global Form Fixes */
+
+        /* Mobile Topbar */
+        .mobile-topbar {
+            display: none;
+            position: sticky;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 54px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 16px;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 99;
+            margin: -14px -10px 16px -10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+        @media (max-width: 991px) {
+            .mobile-topbar {
+                display: flex !important;
+            }
+        }
+        .mobile-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-main);
+            font-weight: 700;
+            font-size: 15px;
+        }
+        .mobile-toggle-btn {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            color: var(--text-main);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .mobile-toggle-btn:hover, .mobile-toggle-btn:active {
+            background: var(--accent-red);
+            color: #ffffff;
+            border-color: var(--accent-red);
+        }
+
+        /* Sidebar Overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(2px);
+            z-index: 1040;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .sidebar-overlay.active {
+            display: block !important;
+            opacity: 1 !important;
+        }
+        .sidebar-close-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            line-height: 1;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 8px;
+            margin-left: auto;
+        }
+        @media (max-width: 991px) {
+            .sidebar-close-btn {
+                display: block !important;
+            }
+        }
+        .sidebar-close-btn:hover {
+            color: var(--accent-red);
+        }
+
+        /* Global Universal Responsive Rules */
+        html, body {
+            overflow-x: hidden !important;
+            max-width: 100vw !important;
+            -webkit-text-size-adjust: 100%;
+        }
+        .app-wrapper {
+            width: 100% !important;
+            max-width: 100vw !important;
+            overflow-x: hidden !important;
+            box-sizing: border-box !important;
+        }
+
         *, *::before, *::after {
             box-sizing: border-box !important;
         }
@@ -188,29 +299,187 @@
         div {
             box-sizing: border-box;
         }
-        .form-card-container {
+
+        /* 1. Universal Table Scrolling for all pages */
+        .table-container,
+        .table-responsive,
+        .table-scroll,
+        div[style*="overflow-x: auto"],
+        div[style*="overflow-x:auto"],
+        div[style*="overflow-x: scroll"],
+        div[style*="overflow-x:scroll"] {
             width: 100% !important;
-            max-width: 1000px !important;
-            box-sizing: border-box !important;
-            padding: 35px !important;
-            overflow: hidden !important;
-        }
-            select, input, textarea {
-            min-width: 0 !important;
             max-width: 100% !important;
-            box-sizing: border-box !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            display: block !important;
         }
-        .form-card-container, form {
-            box-sizing: border-box !important;
-            max-width: 100% !important;
+
+        /* 2. Responsive Breakpoints */
+        @media (max-width: 991px) {
+            .page-header,
+            .page-header-responsive,
+            .modern-header-section {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 12px !important;
+            }
+
+            .toolbar,
+            .toolbar-right,
+            .toolbar-wrap,
+            div[style*="justify-content: space-between"],
+            div[style*="justify-content:space-between"],
+            div[style*="justify-content: flex-end"],
+            div[style*="justify-content:flex-end"] {
+                flex-wrap: wrap !important;
+                gap: 10px !important;
+                width: 100% !important;
+            }
+
+            /* Universal Header Button Bars (VSV, Stock, AR, Leads, Service) */
+            div[style*="display:flex; justify-content:space-between"],
+            div[style*="display: flex; justify-content: space-between"],
+            div[style*="display:flex;justify-content:space-between"] {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 12px !important;
+            }
+
+            div[style*="display:flex; gap:10px"],
+            div[style*="display: flex; gap: 10px"],
+            div[style*="display:flex; gap:12px"],
+            div[style*="display: flex; gap: 12px"],
+            div[style*="display:flex; gap:15px"],
+            div[style*="display: flex; gap: 15px"] {
+                flex-wrap: wrap !important;
+                width: 100% !important;
+            }
+
+            div[style*="display:flex"] > a[style*="padding:"],
+            div[style*="display: flex"] > a[style*="padding:"],
+            div[style*="display:flex"] > button[style*="padding:"],
+            div[style*="display: flex"] > button[style*="padding:"] {
+                flex: 1 1 auto !important;
+                text-align: center !important;
+                box-sizing: border-box !important;
+            }
+
+            form[style*="display: flex"],
+            form[style*="display:flex"] {
+                flex-wrap: wrap !important;
+                gap: 10px !important;
+                width: 100% !important;
+            }
+
+            .search-wrapper,
+            .search-input,
+            input[type="text"],
+            input[type="search"],
+            select {
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+
+            /* Responsive Submenu Cards (VSV RKA, Activity, Evaluasi, Summary) */
+            .rka-card,
+            div[style*="flex: 1 1 270px"],
+            div[style*="flex: 1 1 280px"],
+            div[style*="max-width: 1000px"] {
+                width: 100% !important;
+                max-width: 100% !important;
+                flex: 1 1 100% !important;
+            }
+
+            /* Responsive Form Layouts (Service AC, Leads, Finance AR, Stock) */
+            .form-row {
+                flex-direction: column !important;
+                gap: 12px !important;
+            }
+            .form-col {
+                width: 100% !important;
+                min-width: 100% !important;
+                flex: 1 1 100% !important;
+            }
+            .form-card-container,
+            .form-section {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 16px 12px !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
+
+            /* Tab Navigation (Service AC, Finance) */
+            .tab-wrapper {
+                width: 100% !important;
+                margin: 10px 0 20px 0 !important;
+            }
+            .tab-header {
+                width: 100% !important;
+                flex-wrap: wrap !important;
+                justify-content: center !important;
+                gap: 6px !important;
+                padding: 6px !important;
+                border-radius: 16px !important;
+            }
+            .tab-item {
+                padding: 8px 14px !important;
+                font-size: 13px !important;
+                border-radius: 12px !important;
+            }
+            .tab-content {
+                padding: 12px 6px !important;
+            }
+
+            /* Inspection Grid (Service AC) */
+            .inspection-grid {
+                grid-template-columns: 1fr !important;
+                gap: 12px !important;
+            }
+
+            /* Modal dialogs */
+            #createModal > div,
+            #editModal > div,
+            .modal-content,
+            div[style*="max-width: 600px"],
+            div[style*="max-width: 800px"],
+            div[style*="max-width: 900px"],
+            div[style*="max-width: 1000px"] {
+                width: 95% !important;
+                max-width: 95% !important;
+                max-height: 85vh !important;
+                overflow-y: auto !important;
+                padding: 16px !important;
+                margin: 10px auto !important;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .page-title {
+                font-size: 1.15rem !important;
+            }
+            .page-subtitle {
+                font-size: 0.8rem !important;
+            }
+            .btn-action-primary,
+            .btn-action-danger,
+            .btn-primary-top,
+            .btn-search,
+            .btn-submit {
+                padding: 8px 14px !important;
+                font-size: 0.82rem !important;
+            }
         }
     </style>
 </head>
 
 <body>
     <div class="app-wrapper">
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+
         <aside class="sidebar" id="sidebar">
-            <div class="sidebar-brand">
+            <a href="{{ auth()->check() && (auth()->user()->role === 'ho_unit' || strtolower(auth()->user()->email ?? '') === 'dcahounit') ? url('/sales/dashboard') : url('/dashboard') }}" class="sidebar-brand" style="text-decoration: none; color: inherit;">
                 <div class="brand-icon" style="width: 28px; height: 28px; flex-shrink: 0;">
                     <img src="{{ asset('assets/suzuki-icon.jpeg') }}" alt="Suzuki Logo"
                         style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
@@ -219,9 +488,11 @@
                     <span class="brand-name" style="display: block; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">OTE DCA</span>
                     <span class="brand-subtitle" style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
                 </div>
-            </div>
+                <button type="button" class="sidebar-close-btn" onclick="toggleMobileSidebar()" aria-label="Tutup Menu">&times;</button>
+            </a>
 
             <nav class="sidebar-nav">
+                @if(auth()->check() && auth()->user()->role !== 'ho_unit' && strtolower(auth()->user()->email ?? '') !== 'dcahounit')
                   <a href="{{ url('/dashboard') }}" class="nav-link {{ request()->is('dashboard') ? 'active' : '' }}" id="nav-dashboard">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;">
                           <rect x="3" y="3" width="7" height="7"></rect>
@@ -231,31 +502,24 @@
                       </svg>
                       <span>Dashboard</span>
                   </a>
-
-                @if(auth()->check() && auth()->user()->branch === 'bp')
-                <a href="{{ url('/bp') }}" class="nav-link {{ request()->is('bp*') ? 'active' : '' }}" id="nav-bp">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                    </svg>
-                    <span>BP</span>
-                </a>
                 @endif
+
+
 
                 
 
-                @if(in_array(auth()->user()->role, ['om', 'bm_sh', 'adh', 'ho_unit']) || auth()->user()->is_admin)
+                @if(auth()->user()->is_admin || auth()->user()->can_access_finance || auth()->user()->is_service || in_array(strtolower(auth()->user()->role ?? ''), ['om', 'bm_sh', 'adh', 'adh bp', 'adh_bp', 'ho_unit', 'service manager', 'service_manager', 'service advisor', 'service_advisor', 'service admin', 'service_admin']) || str_contains(strtolower(auth()->user()->role ?? ''), 'adh') || str_contains(strtolower(auth()->user()->role ?? ''), 'service') || str_contains(strtolower(auth()->user()->email ?? ''), 'adh') || str_contains(strtolower(auth()->user()->email ?? ''), 'sm') || str_contains(strtolower(auth()->user()->email ?? ''), 'sa'))
                     @php
                         $isVsvActive = request()->is('sales/vsv*') || request()->is('target*') || request()->is('actual*') || request()->is('rka*') || request()->is('leasing*') || request()->is('activity*') || request()->is('current*') || request()->is('evaluasi*') || request()->is('summary*');
                         $isSalesActive = request()->is('admin/stocks*') || request()->is('admin/units*') || request()->is('admin/warnas*') || request()->is('admin/varians*') || request()->is('admin/in-units*') || request()->is('admin/gudangs*') || request()->is('admin/cabangs*') || request()->is('sales/*') || $isVsvActive;
                         $isStockGroupActive = request()->is('admin/stocks*') || request()->is('admin/units*') || request()->is('admin/warnas*') || request()->is('admin/varians*') || request()->is('admin/in-units*') || request()->is('admin/gudangs*') || request()->is('admin/cabangs*') || request()->is('sales/dashboard');
                         $isUnitGroupActive = request()->is('admin/units*') || request()->is('admin/warnas*') || request()->is('admin/varians*');
-                        $isFinanceActive = request()->is('admin/users*') || request()->is('admin/asuransi*') || request()->is('admin/perusahaan*') || request()->is('finance/*') || request()->is('gr/*');
-                        $isArGroupActive = request()->is('admin/users*') || request()->is('admin/asuransi*') || request()->is('admin/perusahaan*') || request()->is('finance/*') || request()->is('gr/*');
+                        $isFinanceActive = request()->is('admin/users*') || request()->is('admin/asuransi*') || request()->is('admin/perusahaan*') || request()->is('finance/*') || request()->is('gr/*') || request()->is('bp*');
+                        $isArGroupActive = request()->is('admin/users*') || request()->is('admin/asuransi*') || request()->is('admin/perusahaan*') || request()->is('finance/*') || request()->is('gr/*') || request()->is('bp*');
                     @endphp
 
                     <!-- SALES (menu beranak) -->
-                      @if(in_array(auth()->user()->role, ['om', 'bm_sh', 'adh', 'ho_unit']) || auth()->user()->is_admin || auth()->user()->is_admin_stock)
+                    @if((auth()->user()->is_admin || auth()->user()->is_admin_stock || in_array(strtolower(auth()->user()->role ?? ''), ['om', 'bm_sh', 'adh', 'adh bp', 'adh_bp', 'ho_unit']) || str_contains(strtolower(auth()->user()->role ?? ''), 'adh') || str_contains(strtolower(auth()->user()->email ?? ''), 'adh')) && !auth()->user()->is_service && !in_array(strtolower(auth()->user()->role ?? ''), ['service manager', 'service_manager', 'service advisor', 'service_advisor', 'service admin', 'service_admin']) && !str_contains(strtolower(auth()->user()->role ?? ''), 'service'))
                     <div class="nav-group {{ $isSalesActive ? 'open' : '' }}" id="salesMenu">
                         <button class="nav-link nav-toggle" onclick="toggleSubmenu('salesMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;">
@@ -270,6 +534,7 @@
                         </button>
                         <div class="nav-submenu">
                             <!-- DASHBOARD SALES (Custom) -->
+                            @if(auth()->user()->role !== 'ho_unit' && strtolower(auth()->user()->email ?? '') !== 'dcahounit')
                               <a href="{{ url('/sales/dashboard_sales') }}" class="nav-sublink {{ request()->is('sales/dashboard_sales*') ? 'active' : '' }}">
                                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
                                       <rect x="3" y="3" width="7" height="7"></rect>
@@ -279,11 +544,18 @@
                                   </svg>
                                   Dashboard Sales
                               </a>
+                            @endif
 
                               <!-- LEADS (menu beranak) -->
-                            @if(in_array(auth()->user()->role, ['om', 'bm_sh']) || auth()->user()->is_admin)
+                            @if((in_array(auth()->user()->role, ['om', 'bm_sh']) || auth()->user()->is_admin) && strtolower(auth()->user()->email ?? '') !== 'dcasr')
                             <div class="nav-group {{ request()->is('sales/leads*') ? 'open' : '' }}" id="leadsMenu">
                                 <button class="nav-link nav-toggle nav-sublink-toggle" onclick="toggleSubmenu('leadsMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 6px 12px; font-size: 12px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="8.5" cy="7" r="4"></circle>
+                                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                                    </svg>
                                     <span>LEADS</span>
                                     <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-left: auto;">
                                         <polyline points="6 9 12 15 18 9"></polyline>
@@ -513,30 +785,96 @@
 
                             @endif
                             <!-- VSV (menu beranak) -->
-                            @if(in_array(auth()->user()->role, ['om', 'bm_sh']) || auth()->user()->is_admin)
-                            <div class="nav-group {{ request()->is('dashboard*') || request()->is('target*') || request()->is('actual*') || request()->is('rka*') || request()->is('leasing*') || request()->is('activity*') || request()->is('current*') || request()->is('evaluasi*') || request()->is('summary*') ? 'open' : '' }}" id="vsvMenu">
+                            @if((in_array(auth()->user()->role, ['om', 'bm_sh']) || auth()->user()->is_admin) && strtolower(auth()->user()->email ?? '') !== 'dcasr')
+                            <div class="nav-group {{ $isVsvActive ? 'open' : '' }}" id="vsvMenu">
                                 <button class="nav-link nav-toggle nav-sublink-toggle" onclick="toggleSubmenu('vsvMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 6px 12px; font-size: 12px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                        <path d="M18 20V10M12 20V4M6 20v-6"></path>
+                                    </svg>
                                     <span>VSV</span>
                                     <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-left: auto;">
                                         <polyline points="6 9 12 15 18 9"></polyline>
                                     </svg>
                                 </button>
                                 <div class="nav-submenu">
-                                    <a href="{{ url('/sales/vsv/dashboard/v1') }}" class="nav-sublink {{ request()->is('sales/vsv/dashboard/v1') ? 'active' : '' }}">Dashboard V1</a>
-                                    <a href="{{ url('/sales/vsv/dashboard/v2') }}" class="nav-sublink {{ request()->is('sales/vsv/dashboard/v2') || request()->is('dashboard') ? 'active' : '' }}">Dashboard V2</a>
-                                    <a href="{{ url('/rka/dashboard') }}" class="nav-sublink {{ request()->is('rka*') ? 'active' : '' }}">RKA</a>
-                                    <a href="{{ url('/leasing/dashboard') }}" class="nav-sublink {{ request()->is('leasing*') ? 'active' : '' }}">Leasing</a>
-                                    <a href="{{ url('/activity/dashboard') }}" class="nav-sublink {{ request()->is('activity*') ? 'active' : '' }}">Activity</a>
-                                    <a href="{{ url('/current/dashboard') }}" class="nav-sublink {{ request()->is('current*') ? 'active' : '' }}">Current</a>
-                                    <a href="{{ url('/evaluasi/dashboard') }}" class="nav-sublink {{ request()->is('evaluasi*') ? 'active' : '' }}">Evaluasi</a>
-                                    <a href="{{ url('/summary/dashboard') }}" class="nav-sublink {{ request()->is('summary*') ? 'active' : '' }}">Summary</a>
+                                    <a href="{{ url('/sales/vsv/dashboard/v1') }}" class="nav-sublink {{ request()->is('sales/vsv/dashboard/v1*') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                                        </svg>
+                                        Dashboard V1
+                                    </a>
+                                    <a href="{{ url('/sales/vsv/dashboard/v2') }}" class="nav-sublink {{ request()->is('sales/vsv/dashboard/v2*') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                        </svg>
+                                        Dashboard V2
+                                    </a>
+                                    <a href="{{ url('/sales/vsv/dashboard/v3') }}" class="nav-sublink {{ request()->is('sales/vsv/dashboard/v3*') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                                        </svg>
+                                        Dashboard V3
+                                    </a>
+                                    <a href="{{ url('/rka/dashboard') }}" class="nav-sublink {{ request()->is('rka*') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <circle cx="12" cy="12" r="6"></circle>
+                                            <circle cx="12" cy="12" r="2"></circle>
+                                        </svg>
+                                        RKA
+                                    </a>
+                                    <a href="{{ url('/leasing/dashboard') }}" class="nav-sublink {{ request()->is('leasing*') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                                        </svg>
+                                        Leasing
+                                    </a>
+                                    <a href="{{ url('/activity/dashboard') }}" class="nav-sublink {{ request()->is('activity*') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                                        </svg>
+                                        Activity
+                                    </a>
+                                    <a href="{{ url('/current/dashboard') }}" class="nav-sublink {{ request()->is('current*') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                            <polyline points="17 6 23 6 23 12"></polyline>
+                                        </svg>
+                                        Current
+                                    </a>
+                                    <a href="{{ url('/evaluasi/dashboard') }}" class="nav-sublink {{ request()->is('evaluasi*') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                            <path d="M9 15l2 2 4-4"></path>
+                                        </svg>
+                                        Evaluasi
+                                    </a>
+                                    <a href="{{ url('/summary/dashboard') }}" class="nav-sublink {{ request()->is('summary*') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                                            <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                                        </svg>
+                                        Summary
+                                    </a>
                                 </div>
                             </div>
-
                             @endif
                             <!-- STOCK (menu beranak) -->
+                            @if(strtolower(auth()->user()->email ?? '') !== 'dcasr')
                             <div class="nav-group {{ $isStockGroupActive ? 'open' : '' }}" id="salesStockMenu">
                                 <button class="nav-link nav-toggle nav-sublink-toggle" onclick="toggleSubmenu('salesStockMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 6px 12px; font-size: 12px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                    </svg>
                                     <span>STOCK</span>
                                     <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-left: auto;">
                                         <polyline points="6 9 12 15 18 9"></polyline>
@@ -544,52 +882,114 @@
                                 </button>
                                 <div class="nav-submenu">
                                       @if(auth()->user()->is_admin || auth()->user()->role === 'om' || auth()->user()->is_admin_stock || auth()->user()->role === 'ho_unit' || auth()->user()->role === 'bm_sh')
-                                      <a href="{{ url('/sales/dashboard') }}" class="nav-sublink {{ request()->is('sales/dashboard') ? 'active' : '' }}">Dashboard Stock</a>
-                                    <a href="{{ url('/admin/stocks') }}" class="nav-sublink {{ request()->is('admin/stocks') ? 'active' : '' }}">Stock</a>
+                                      <a href="{{ url('/sales/dashboard') }}" class="nav-sublink {{ request()->is('sales/dashboard') ? 'active' : '' }}">
+                                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                              <rect x="3" y="3" width="7" height="7"></rect>
+                                              <rect x="14" y="3" width="7" height="7"></rect>
+                                              <rect x="14" y="14" width="7" height="7"></rect>
+                                              <rect x="3" y="14" width="7" height="7"></rect>
+                                          </svg>
+                                          Dashboard Stock
+                                      </a>
+                                    <a href="{{ url('/admin/stocks') }}" class="nav-sublink {{ request()->is('admin/stocks') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                        </svg>
+                                        Stock
+                                    </a>
                                     @if(auth()->user()->role !== 'bm_sh')
-                                      <a href="{{ url('/admin/stocks/report') }}" class="nav-sublink {{ 
-request()->is('admin/stocks/report') ? 'active' : '' }}">Report Stock</a>
+                                      <a href="{{ url('/admin/stocks/report') }}" class="nav-sublink {{ request()->is('admin/stocks/report') ? 'active' : '' }}">
+                                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                              <polyline points="14 2 14 8 20 8"></polyline>
+                                              <line x1="16" y1="13" x2="8" y2="13"></line>
+                                              <line x1="16" y1="17" x2="8" y2="17"></line>
+                                          </svg>
+                                          Report Stock
+                                      </a>
                                       
                                       <!-- Unit (menu beranak inside STOCK) -->
                                       <div class="nav-group {{ $isUnitGroupActive ? 'open' : '' }}" id="salesUnitMenu">
-                                          <button class="nav-link nav-toggle nav-sublink-toggle" 
-onclick="toggleSubmenu('salesUnitMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: 
-pointer; padding: 6px 12px; font-size: 12px;">
+                                          <button class="nav-link nav-toggle nav-sublink-toggle" onclick="toggleSubmenu('salesUnitMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 6px 12px; font-size: 12px;">
+                                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                                  <rect x="3" y="9" width="18" height="11" rx="2" ry="2"></rect>
+                                                  <path d="M4 9l2-5h12l2 5"></path>
+                                                  <circle cx="7.5" cy="16.5" r="1.5"></circle>
+                                                  <circle cx="16.5" cy="16.5" r="1.5"></circle>
+                                              </svg>
                                               <span>Unit</span>
-                                              <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 
-24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
-style="width:12px; height:12px; margin-left: auto;">
+                                              <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-left: auto;">
                                                   <polyline points="6 9 12 15 18 9"></polyline>
                                               </svg>
                                           </button>
                                           <div class="nav-submenu">
-                                              <a href="{{ url('/admin/units') }}" class="nav-sublink {{ 
-request()->is('admin/units*') ? 'active' : '' }}">Unit</a>
-                                              <a href="{{ url('/admin/warnas') }}" class="nav-sublink {{ 
-request()->is('admin/warnas*') ? 'active' : '' }}">Warna</a>
-                                              <a href="{{ url('/admin/varians') }}" class="nav-sublink {{ 
-request()->is('admin/varians*') ? 'active' : '' }}">Varian</a>
+                                              <a href="{{ url('/admin/units') }}" class="nav-sublink {{ request()->is('admin/units*') ? 'active' : '' }}">
+                                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-right: 8px;"><circle cx="12" cy="12" r="10"></circle></svg>
+                                                  Unit
+                                              </a>
+                                              <a href="{{ url('/admin/warnas') }}" class="nav-sublink {{ request()->is('admin/warnas*') ? 'active' : '' }}">
+                                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-right: 8px;"><circle cx="12" cy="12" r="10"></circle></svg>
+                                                  Warna
+                                              </a>
+                                              <a href="{{ url('/admin/varians') }}" class="nav-sublink {{ request()->is('admin/varians*') ? 'active' : '' }}">
+                                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-right: 8px;"><circle cx="12" cy="12" r="10"></circle></svg>
+                                                  Varian
+                                              </a>
                                             </div>
                                         </div>
                                       @endif
                                         @endif
 
                                     @if(auth()->user()->role !== 'bm_sh')
-                                      <a href="{{ url('/admin/in-units') }}" class="nav-sublink {{ request()->is('admin/in-units*') ? 'active' : '' }}">IN UNIT</a>
+                                      <a href="{{ url('/admin/in-units') }}" class="nav-sublink {{ request()->is('admin/in-units*') ? 'active' : '' }}">
+                                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                              <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9C2.1 11.2 2 11.6 2 12v4c0 .6.4 1 1 1h2"></path>
+                                              <circle cx="7" cy="17" r="2"></circle>
+                                              <path d="M9 17h6"></path>
+                                              <circle cx="17" cy="17" r="2"></circle>
+                                          </svg>
+                                          IN UNIT
+                                      </a>
                                       @endif
                                       @if(auth()->user()->is_admin || auth()->user()->role === 'om' || auth()->user()->is_admin_stock || auth()->user()->role === 'ho_unit')
-                                    <a href="{{ url('/admin/gudangs') }}" class="nav-sublink {{ request()->is('admin/gudangs*') ? 'active' : '' }}">Gudang</a>
-                                    <a href="{{ url('/admin/cabangs') }}" class="nav-sublink {{ request()->is('admin/cabangs*') ? 'active' : '' }}">Cabang</a>
+                                    <a href="{{ url('/admin/gudangs') }}" class="nav-sublink {{ request()->is('admin/gudangs*') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v4M12 14v4M16 14v4"></path>
+                                        </svg>
+                                        Gudang
+                                    </a>
+                                    <a href="{{ url('/admin/cabangs') }}" class="nav-sublink {{ request()->is('admin/cabangs*') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                            <circle cx="12" cy="10" r="3"></circle>
+                                        </svg>
+                                        Cabang
+                                    </a>
                                       @endif
                                 </div>
                             </div>
+                            @endif
+
+                            <!-- FAKTUR -->
+                            <a href="{{ route('sales.faktur.index') }}" class="nav-sublink {{ request()->is('sales/faktur*') ? 'active' : '' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                <span>FAKTUR</span>
+                            </a>
                         </div>
                     </div>
 
                     @endif
 
                     <!-- FINANCE (menu beranak) -->
-                    @if(in_array(auth()->user()->role, ['om', 'adh']))
+                    @if(auth()->user()->is_admin || auth()->user()->role === 'om' || auth()->user()->is_adh || auth()->user()->is_service || auth()->user()->branch === 'bp' || in_array(strtolower(auth()->user()->role ?? ''), ['om', 'adh', 'adh bp', 'adh_bp', 'service manager', 'service_manager', 'service advisor', 'service_advisor', 'service admin', 'service_admin']) || str_contains(strtolower(auth()->user()->role ?? ''), 'adh') || str_contains(strtolower(auth()->user()->role ?? ''), 'service') || str_contains(strtolower(auth()->user()->email ?? ''), 'adh') || str_contains(strtolower(auth()->user()->email ?? ''), 'sm') || str_contains(strtolower(auth()->user()->email ?? ''), 'sa'))
                     <div class="nav-group {{ $isFinanceActive ? 'open' : '' }}" id="financeMenu">
                         <button class="nav-link nav-toggle" onclick="toggleSubmenu('financeMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;">
@@ -605,47 +1005,126 @@ request()->is('admin/varians*') ? 'active' : '' }}">Varian</a>
                             <!-- AR (menu beranak) -->
                             <div class="nav-group {{ $isArGroupActive ? 'open' : '' }}" id="financeArMenu">
                                 <button class="nav-link nav-toggle nav-sublink-toggle" onclick="toggleSubmenu('financeArMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 6px 12px; font-size: 12px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                                        <line x1="6" y1="8" x2="10" y2="8"></line>
+                                        <line x1="6" y1="12" x2="18" y2="12"></line>
+                                        <line x1="6" y1="16" x2="14" y2="16"></line>
+                                    </svg>
                                     <span>AR</span>
                                     <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-left: auto;">
                                         <polyline points="6 9 12 15 18 9"></polyline>
                                     </svg>
                                 </button>
                                 <div class="nav-submenu">
-                                    <a href="{{ url('/finance/dashboard') }}" class="nav-sublink {{ request()->is('finance/dashboard') ? 'active' : '' }}">Dashboard AR</a>
-                                    @if(auth()->user()->is_admin || auth()->user()->role === 'om')
-                                    <a href="{{ url('/admin/users') }}" class="nav-sublink {{ request()->is('admin/users*') ? 'active' : '' }}">Users</a>
-                                    <a href="{{ url('/admin/asuransi') }}" class="nav-sublink {{ request()->is('admin/asuransi*') ? 'active' : '' }}">Asuransi</a>
-                                    <a href="{{ url('/admin/perusahaan') }}" class="nav-sublink {{ request()->is('admin/perusahaan*') ? 'active' : '' }}">Perusahaan</a>
+                                    <a href="{{ url('/finance/dashboard') }}" class="nav-sublink {{ request()->is('finance/dashboard') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <rect x="3" y="3" width="7" height="7"></rect>
+                                            <rect x="14" y="3" width="7" height="7"></rect>
+                                            <rect x="14" y="14" width="7" height="7"></rect>
+                                            <rect x="3" y="14" width="7" height="7"></rect>
+                                        </svg>
+                                        Dashboard AR
+                                    </a>
+
+                                    @php
+                                        $usr = auth()->user();
+                                        $isAdhUser = $usr->is_adh || in_array(strtolower($usr->role ?? ''), ['adh', 'adh bp', 'adh_bp']) || str_contains(strtolower($usr->role ?? ''), 'adh');
+                                        $isServiceUser = $usr->is_service || in_array(strtolower($usr->role ?? ''), ['service manager', 'service_manager', 'service advisor', 'service_advisor', 'service admin', 'service_admin']) || str_contains(strtolower($usr->role ?? ''), 'service');
+                                        $isDcasr = strtolower($usr->email ?? '') === 'dcasr';
+                                        $canSeeAllAr = (($usr->is_admin && !$isAdhUser && !$isServiceUser) || strtolower($usr->role ?? '') === 'om') && !$isDcasr;
+                                        $userBranch = strtolower($usr->branch ?? '');
+                                    @endphp
+
+                                    {{-- Master Data: Users, Asuransi, Perusahaan HANYA untuk Superadmin / OM (Disembunyikan dari semua ADH, Service, dan DCASR) --}}
+                                    @if($canSeeAllAr)
+                                    <a href="{{ url('/admin/users') }}" class="nav-sublink {{ request()->is('admin/users*') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="9" cy="7" r="4"></circle>
+                                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                        </svg>
+                                        Users
+                                    </a>
+                                    <a href="{{ url('/admin/asuransi') }}" class="nav-sublink {{ request()->is('admin/asuransi*') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                        </svg>
+                                        Asuransi
+                                    </a>
+                                    <a href="{{ url('/admin/perusahaan') }}" class="nav-sublink {{ request()->is('admin/perusahaan*') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                                            <line x1="9" y1="22" x2="9" y2="22.01"></line>
+                                            <line x1="15" y1="22" x2="15" y2="22.01"></line>
+                                            <line x1="9" y1="6" x2="9" y2="6.01"></line>
+                                            <line x1="15" y1="6" x2="15" y2="6.01"></line>
+                                            <line x1="9" y1="10" x2="9" y2="10.01"></line>
+                                            <line x1="15" y1="10" x2="15" y2="10.01"></line>
+                                            <line x1="9" y1="14" x2="9" y2="14.01"></line>
+                                            <line x1="15" y1="14" x2="15" y2="14.01"></line>
+                                            <line x1="9" y1="18" x2="9" y2="18.01"></line>
+                                            <line x1="15" y1="18" x2="15" y2="18.01"></line>
+                                        </svg>
+                                        Perusahaan
+                                    </a>
+                                    @endif
+
+                                    <!-- BP Menu inside AR: hanya untuk OM/Admin ATAU ADH BP (branch === 'bp') -->
+                                    @if(($canSeeAllAr || $userBranch === 'bp') && !$isDcasr)
+                                    <a href="{{ url('/bp') }}" class="nav-sublink {{ request()->is('bp*') ? 'active' : '' }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9C2.1 11.2 2 11.6 2 12v4c0 .6.4 1 1 1h2"></path>
+                                            <circle cx="7" cy="17" r="2"></circle>
+                                            <path d="M9 17h6"></path>
+                                            <circle cx="17" cy="17" r="2"></circle>
+                                        </svg>
+                                        BP
+                                    </a>
                                     @endif
                                 
-                                    <!-- GR Menu inside AR -->
+                                    <!-- GR Menu inside AR: hanya untuk OM/Admin ATAU ADH GR (Cinere, Jatiasih, Cianjur, Ciawi) -->
+                                    @if(($canSeeAllAr || in_array($userBranch, ['cinere', 'jatiasih', 'cianjur', 'ciawi'])) && !$isDcasr)
                                     <div class="nav-group {{ request()->is('gr/*') ? 'open' : '' }}" id="grMenu">
                                         <button class="nav-link nav-toggle nav-sublink-toggle" onclick="toggleSubmenu('grMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 6px 12px; font-size: 12px;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                                            </svg>
                                             <span>GR</span>
                                             <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-left: auto;">
                                                 <polyline points="6 9 12 15 18 9"></polyline>
                                             </svg>
                                         </button>
                                         <div class="nav-submenu">
-                                            @php
-                                                $usr = auth()->user();
-                                                $canSeeAllGr = $usr->is_admin || $usr->role === 'om';
-                                            @endphp
-                                            @if($canSeeAllGr || $usr->branch === 'cinere')
-                                            <a href="{{ url('/gr/cinere') }}" class="nav-sublink {{ request()->is('gr/cinere*') ? 'active' : '' }}">CINERE</a>
+                                            @if($canSeeAllAr || $userBranch === 'cinere')
+                                            <a href="{{ url('/gr/cinere') }}" class="nav-sublink {{ request()->is('gr/cinere*') ? 'active' : '' }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-right: 8px;"><circle cx="12" cy="12" r="10"></circle></svg>
+                                                CINERE
+                                            </a>
                                             @endif
-                                            @if($canSeeAllGr || $usr->branch === 'jatiasih')
-                                            <a href="{{ url('/gr/jatiasih') }}" class="nav-sublink {{ request()->is('gr/jatiasih*') ? 'active' : '' }}">JATIASIH</a>
+                                            @if($canSeeAllAr || $userBranch === 'jatiasih')
+                                            <a href="{{ url('/gr/jatiasih') }}" class="nav-sublink {{ request()->is('gr/jatiasih*') ? 'active' : '' }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-right: 8px;"><circle cx="12" cy="12" r="10"></circle></svg>
+                                                JATIASIH
+                                            </a>
                                             @endif
-                                            @if($canSeeAllGr || $usr->branch === 'cianjur')
-                                            <a href="{{ url('/gr/cianjur') }}" class="nav-sublink {{ request()->is('gr/cianjur*') ? 'active' : '' }}">CIANJUR</a>
+                                            @if($canSeeAllAr || $userBranch === 'cianjur')
+                                            <a href="{{ url('/gr/cianjur') }}" class="nav-sublink {{ request()->is('gr/cianjur*') ? 'active' : '' }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-right: 8px;"><circle cx="12" cy="12" r="10"></circle></svg>
+                                                CIANJUR
+                                            </a>
                                             @endif
-                                            @if($canSeeAllGr || $usr->branch === 'ciawi')
-                                            <a href="{{ url('/gr/ciawi') }}" class="nav-sublink {{ request()->is('gr/ciawi*') ? 'active' : '' }}">CIAWI</a>
+                                            @if($canSeeAllAr || $userBranch === 'ciawi')
+                                            <a href="{{ url('/gr/ciawi') }}" class="nav-sublink {{ request()->is('gr/ciawi*') ? 'active' : '' }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-right: 8px;"><circle cx="12" cy="12" r="10"></circle></svg>
+                                                CIAWI
+                                            </a>
                                             @endif
                                         </div>
                                     </div>
-</div>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -653,6 +1132,7 @@ request()->is('admin/varians*') ? 'active' : '' }}">Varian</a>
                     @endif
 
                     <!-- SERVICE (menu beranak) -->
+                    @if(auth()->user()->role !== 'ho_unit' && strtolower(auth()->user()->email ?? '') !== 'dcahounit')
                     <div class="nav-group {{ request()->is('service/*') ? 'open' : '' }}" id="serviceMenu">
                         <button class="nav-link nav-toggle" onclick="toggleSubmenu('serviceMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer;">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;">
@@ -716,6 +1196,223 @@ request()->is('admin/varians*') ? 'active' : '' }}">Varian</a>
                             <span class="nav-sublink" style="opacity: 0.5; font-style: italic; cursor: default;">(kosong)</span>
                         </div>
                     </div>
+
+                    <!-- ASURANSI (menu beranak) -->
+                    <div class="nav-group {{ request()->is('asuransi/*') ? 'open' : '' }}" id="asuransiMenu">
+                        <button class="nav-link nav-toggle" onclick="toggleSubmenu('asuransiMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                            <span>ASURANSI</span>
+                            <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-left: auto;">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div class="nav-submenu">
+                            <a href="{{ route('asuransi.dashboard') }}" class="nav-sublink {{ request()->is('asuransi/dashboard*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; flex-shrink: 0;">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                <span>Dashboard Asuransi</span>
+                            </a>
+                            <a href="{{ route('asuransi.data') }}" class="nav-sublink {{ request()->is('asuransi/data*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; flex-shrink: 0;">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                </svg>
+                                <span>Data Asuransi</span>
+                            </a>
+                            <a href="{{ route('asuransi.tanpa_asuransi') }}" class="nav-sublink {{ request()->is('asuransi/tanpa-asuransi*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; flex-shrink: 0;">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                </svg>
+                                <span>Tanpa Asuransi</span>
+                            </a>
+                            <a href="{{ route('asuransi.master') }}" class="nav-sublink {{ request()->is('asuransi/master*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; flex-shrink: 0;">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                </svg>
+                                <span>Master Asuransi</span>
+                            </a>
+                            <a href="{{ route('asuransi.follow_up') }}" class="nav-sublink {{ request()->is('asuransi/follow-up*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; flex-shrink: 0;">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                </svg>
+                                <span>Follow-Up Asuransi</span>
+                            </a>
+                            <a href="{{ route('asuransi.monitoring_follow_up') }}" class="nav-sublink {{ request()->is('asuransi/monitoring-follow-up*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; flex-shrink: 0;">
+                                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                                </svg>
+                                <span>Monitoring Follow-Up</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- BODY & PAINT (menu beranak) -->
+                    <div class="nav-group {{ request()->is('body-paint/*') || request()->is('bp/*') ? 'open' : '' }}" id="bodyPaintMenu">
+                        <button class="nav-link nav-toggle" onclick="toggleSubmenu('bodyPaintMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;">
+                                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9C2.1 11.2 2 11.6 2 12v4c0 .6.4 1 1 1h2"></path>
+                                <circle cx="7" cy="17" r="2"></circle>
+                                <path d="M9 17h6"></path>
+                                <circle cx="17" cy="17" r="2"></circle>
+                            </svg>
+                            <span>BODY & PAINT</span>
+                            <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-left: auto;">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div class="nav-submenu">
+                            <!-- Leads GRWAC (Sub-menu beranak) -->
+                            <div class="nav-group {{ request()->is('body-paint/leads-grwac/*') ? 'open' : '' }}" id="leadsGrwacMenu">
+                                <button class="nav-link nav-toggle nav-sublink-toggle" onclick="toggleSubmenu('leadsGrwacMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 6px 12px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; flex-shrink: 0;">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                                        <line x1="12" y1="3" x2="12" y2="21"></line>
+                                    </svg>
+                                    <span>Leads GRWAC</span>
+                                    <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-left: auto;">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </button>
+                                <div class="nav-submenu">
+                                    <a href="{{ route('body_paint.leads.dashboard') }}" class="nav-sublink {{ request()->is('body-paint/leads-grwac/dashboard*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px; padding-left: 28px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; flex-shrink: 0;">
+                                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                                        </svg>
+                                        <span>Dashboard Leads BP</span>
+                                    </a>
+                                    <a href="{{ route('body_paint.leads.input_prospect') }}" class="nav-sublink {{ request()->is('body-paint/leads-grwac/input-prospect*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px; padding-left: 28px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; flex-shrink: 0;">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="8" x2="12" y2="16"></line>
+                                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                                        </svg>
+                                        <span>Input Prospect</span>
+                                    </a>
+                                    <a href="{{ route('body_paint.leads.daftar_prospect') }}" class="nav-sublink {{ request()->is('body-paint/leads-grwac/daftar-prospect*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px; padding-left: 28px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; flex-shrink: 0;">
+                                            <line x1="8" y1="6" x2="21" y2="6"></line>
+                                            <line x1="8" y1="12" x2="21" y2="12"></line>
+                                            <line x1="8" y1="18" x2="21" y2="18"></line>
+                                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                        </svg>
+                                        <span>Daftar Prospect</span>
+                                    </a>
+                                    <a href="{{ route('body_paint.leads.prospek_saya') }}" class="nav-sublink {{ request()->is('body-paint/leads-grwac/prospek-saya*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px; padding-left: 28px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; flex-shrink: 0;">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="12" cy="7" r="4"></circle>
+                                        </svg>
+                                        <span>Prospek Saya</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Monitoring Asuransi (Sub-menu beranak) -->
+                            <div class="nav-group {{ request()->is('body-paint/monitoring-asuransi/*') ? 'open' : '' }}" id="monitoringAsuransiBpMenu">
+                                <button class="nav-link nav-toggle nav-sublink-toggle" onclick="toggleSubmenu('monitoringAsuransiBpMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer; padding: 6px 12px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; flex-shrink: 0;">
+                                        <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9C2.1 11.2 2 11.6 2 12v4c0 .6.4 1 1 1h2"></path>
+                                        <circle cx="7" cy="17" r="2"></circle>
+                                        <path d="M9 17h6"></path>
+                                        <circle cx="17" cy="17" r="2"></circle>
+                                    </svg>
+                                    <span>Monitoring Asuransi</span>
+                                    <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; margin-left: auto;">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </button>
+                                <div class="nav-submenu">
+                                    <a href="{{ route('body_paint.monitoring.dashboard') }}" class="nav-sublink {{ request()->is('body-paint/monitoring-asuransi/dashboard*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px; padding-left: 28px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; flex-shrink: 0;">
+                                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                                        </svg>
+                                        <span>Dashboard Asuransi</span>
+                                    </a>
+                                    <a href="{{ route('body_paint.monitoring.follow_up') }}" class="nav-sublink {{ request()->is('body-paint/monitoring-asuransi/monitoring-follow-up*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px; padding-left: 28px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; flex-shrink: 0;">
+                                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                        </svg>
+                                        <span>Monitoring & Follow-up</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Master BP (Link) -->
+                            <a href="{{ route('body_paint.master') }}" class="nav-sublink {{ request()->is('body-paint/master*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; flex-shrink: 0;">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                </svg>
+                                <span>Master BP</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- CUSTOMER DATABASE (menu beranak) -->
+                    <div class="nav-group {{ request()->is('customer-database/*') || request()->is('customer/*') ? 'open' : '' }}" id="customerDatabaseMenu">
+                        <button class="nav-link nav-toggle" onclick="toggleSubmenu('customerDatabaseMenu')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px;">
+                                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                            </svg>
+                            <span>CUSTOMER DATABASE</span>
+                            <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-left: auto;">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div class="nav-submenu">
+                            <a href="{{ route('customer.list') }}" class="nav-sublink {{ request()->is('customer/list*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; flex-shrink: 0;">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                <span>Customer List</span>
+                            </a>
+                            <a href="{{ route('customer.vehicle_lookup') }}" class="nav-sublink {{ request()->is('customer/vehicle-lookup*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; flex-shrink: 0;">
+                                    <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9C2.1 11.2 2 11.6 2 12v4c0 .6.4 1 1 1h2"></path>
+                                    <circle cx="7" cy="17" r="2"></circle>
+                                    <path d="M9 17h6"></path>
+                                    <circle cx="17" cy="17" r="2"></circle>
+                                </svg>
+                                <span>Vehicle Lookup</span>
+                            </a>
+                            <a href="{{ route('customer.duplicate_review') }}" class="nav-sublink {{ request()->is('customer/duplicate-review*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; flex-shrink: 0;">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                <span>Duplicate Review</span>
+                            </a>
+                            <a href="{{ route('customer.sync_log') }}" class="nav-sublink {{ request()->is('customer/sync-log*') ? 'active' : '' }}" style="display: flex; align-items: center; gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; flex-shrink: 0;">
+                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                    <polyline points="1 20 1 14 7 14"></polyline>
+                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                                </svg>
+                                <span>Sync Log</span>
+                            </a>
+                        </div>
+                    </div>
+                    @endif
                 @endif
                     
 
@@ -729,7 +1426,7 @@ request()->is('admin/varians*') ? 'active' : '' }}">Varian</a>
                                 <polyline points="16 17 21 12 16 7"></polyline>
                                 <line x1="21" y1="12" x2="9" y2="12"></line>
                             </svg>
-                            <span>Logout ({{ auth()->user()->role === 'om' ? 'HEAD OFFICE' : 'DCA ' . strtoupper(auth()->user()->branch) }})</span>
+                            <span>Logout ({{ strtoupper(auth()->user()->email ?? auth()->user()->name) }})</span>
                         </button>
                     </form>
                 </div>
@@ -738,11 +1435,29 @@ request()->is('admin/varians*') ? 'active' : '' }}">Varian</a>
         </aside>
 
         <main class="main-content">
+            <div class="mobile-topbar">
+                <a href="{{ auth()->check() && (auth()->user()->role === 'ho_unit' || strtolower(auth()->user()->email ?? '') === 'dcahounit') ? url('/sales/dashboard') : url('/dashboard') }}" class="mobile-brand">
+                    <img src="{{ asset('assets/suzuki-icon.jpeg') }}" alt="Logo" style="width: 24px; height: 24px; border-radius: 4px; object-fit: cover;">
+                    <span>OTE DCA</span>
+                </a>
+                <button type="button" class="mobile-toggle-btn" onclick="toggleMobileSidebar()" aria-label="Buka Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
             @yield('content')
         </main>
     </div>
 
     <script>
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('sidebar-open');
+                overlay.classList.toggle('active');
+                document.body.style.overflow = sidebar.classList.contains('sidebar-open') ? 'hidden' : '';
+            }
+        }
         function toggleSubmenu(id) {
             const group = document.getElementById(id);
             group.classList.toggle('open');

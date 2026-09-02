@@ -19,7 +19,7 @@ class InUnitController extends Controller
 
     public function create()
     {
-        if (auth()->user()->role === 'adh') {
+        if (auth()->user()->is_adh) {
             abort(403, 'Anda hanya bisa melakukan edit data IN UNIT.');
         }
         $cabangs = Cabang::orderBy('nama')->get();
@@ -28,7 +28,7 @@ class InUnitController extends Controller
 
     public function store(Request $request)
     {
-        if (auth()->user()->role === 'adh') {
+        if (auth()->user()->is_adh) {
             abort(403, 'Anda hanya bisa melakukan edit data IN UNIT.');
         }
         $request->validate([
@@ -92,7 +92,7 @@ class InUnitController extends Controller
 
     public function destroy(InUnit $inUnit)
     {
-        if (auth()->user()->role === 'adh') {
+        if (auth()->user()->is_adh) {
             abort(403, 'Anda hanya bisa melakukan edit data IN UNIT.');
         }
         $inUnit->delete();

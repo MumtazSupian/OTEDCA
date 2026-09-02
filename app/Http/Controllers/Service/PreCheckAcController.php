@@ -16,11 +16,22 @@ class PreCheckAcController extends Controller
     {
         $tab = $request->query('tab', 'input'); // default tab is input
         
-        $preCheckAcs = PreCheckAc::orderBy('created_at', 'desc')->get();
+        $user = auth()->user();
+        $isPusat = $user && ($user->is_admin || strtolower($user->role ?? '') === 'om' || empty($user->branch));
+        $userBranch = $user ? strtoupper($user->branch ?? '') : '';
+        if ($userBranch === 'BP') {
+            $userBranch = 'JATIASIH';
+        }
+
+        $query = PreCheckAc::query();
+        if (!$isPusat && !empty($userBranch)) {
+            $query->where('cabang', $userBranch);
+        }
+        $preCheckAcs = $query->orderBy('created_at', 'desc')->get();
         $teknisis = Teknisi::orderBy('nama', 'asc')->get();
         
-        // Data dummy untuk dropdown
-        $cabangs = ['CIAWI', 'CIANJUR', 'CINERE', 'JATIASIH'];
+        // Data cabang untuk dropdown
+        $cabangs = (!$isPusat && !empty($userBranch)) ? [$userBranch] : ['CIAWI', 'CIANJUR', 'CINERE', 'JATIASIH'];
         
         $sas = [
             'CIAWI' => ['Asep Mulyadi', 'Rahmat', 'Nana'],

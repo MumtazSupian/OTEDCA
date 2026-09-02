@@ -25,7 +25,7 @@
 
     {{-- Filter Bulan --}}
     <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-        <form action="{{ url('/dashboard') }}" method="GET" id="filterForm" style="display: flex; align-items: center; gap: 10px; background: white; padding: 10px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <form action="{{ route('sales.dashboard_sales') }}" method="GET" id="filterForm" style="display: flex; align-items: center; gap: 10px; background: white; padding: 10px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <label for="bulan" style="font-size: 13px; font-weight: 600; color: #475569; margin: 0;">PERIODE DATA:</label>
             <select name="bulan" id="bulan" onchange="document.getElementById('filterForm').submit();" style="padding: 6px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #1e293b; background-color: #f8fafc; cursor: pointer; outline: none;">
                 @foreach($bulanMap as $num => $namaBulan)

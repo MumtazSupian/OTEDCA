@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Finance;
 use App\Http\Controllers\Controller;
 use App\Models\Finance\Piutang;
 use App\Models\Finance\Perusahaan;
+use App\Exports\PiutangExport;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -487,6 +490,7 @@ class PiutangController extends Controller
                     'tgl_bukti'       => $dms->tgl_bukti ? date('Y-m-d', strtotime($dms->tgl_bukti)) : now()->toDateString(),
                     'nama_konsumen'   => $namaKonsumen,
                     'tipe_konsumen'   => $tipeKonsumen,
+                    'perusahaan_id'   => null,
                     'nama_asuransi'   => $namaAsuransi,
                     'spk_type'        => $kategoriSpk,
                     'saldo_awal'      => $saldoAwal,
@@ -509,17 +513,20 @@ class PiutangController extends Controller
 
             } else {
                 $updateMaster = [];
-                if (($local->nama_konsumen === '-' || empty($local->nama_konsumen)) && $namaKonsumen !== '-') {
+                if ($namaKonsumen !== '-' && $local->nama_konsumen !== $namaKonsumen) {
                     $updateMaster['nama_konsumen'] = $namaKonsumen;
                 }
                 if ($local->no_bukti === '-' || empty($local->no_bukti)) {
                     $updateMaster['no_bukti'] = $inv ?: '-';
                 }
-                if ($local->no_polisi === '-' || empty($local->no_polisi)) {
-                    $updateMaster['no_polisi'] = $dms->no_polisi ?: '-';
+                if (!empty($dms->no_polisi) && $dms->no_polisi !== '-' && $local->no_polisi !== $dms->no_polisi) {
+                    $updateMaster['no_polisi'] = $dms->no_polisi;
                 }
-                if (empty($local->tipe_konsumen)) {
+                if ($local->tipe_konsumen !== $tipeKonsumen) {
                     $updateMaster['tipe_konsumen'] = $tipeKonsumen;
+                    if ($tipeKonsumen === 'reguler' && !empty($local->perusahaan_id)) {
+                        $updateMaster['perusahaan_id'] = null;
+                    }
                 }
                 if ($local->spk_type !== $kategoriSpk) {
                     $updateMaster['spk_type'] = $kategoriSpk;
@@ -866,5 +873,125 @@ class PiutangController extends Controller
             }
         }
         return $data;
+    }
+
+    public function exportExcelBp(Request $request)
+    {
+        $year = $request->input('year');
+        $query = Piutang::with('perusahaan')
+            ->where('branch', 'bp')
+            ->where('saldo_akhir', '>', 0)
+            ->where(function ($q) {
+                $q->where('no_bukti', 'LIKE', 'IC%')
+                  ->orWhere('no_bukti', 'LIKE', 'II%')
+                  ->orWhere('no_bukti', 'LIKE', 'IA%');
+            });
+
+        if (!empty($year) && is_numeric($year)) {
+            $query->whereYear('tgl_bukti', (int)$year);
+        }
+
+        $records = $query->orderByDesc('tgl_bukti')->orderByDesc('id')->get();
+        $branchTitle = 'BP';
+
+        return Excel::download(new PiutangExport($records, $branchTitle), 'Rekapitulasi_Piutang_BP_' . date('Ymd_His') . '.xlsx');
+    }
+
+    public function exportPdfBp(Request $request)
+    {
+        $year = $request->input('year');
+        $query = Piutang::with('perusahaan')
+            ->where('branch', 'bp')
+            ->where('saldo_akhir', '>', 0)
+            ->where(function ($q) {
+                $q->where('no_bukti', 'LIKE', 'IC%')
+                  ->orWhere('no_bukti', 'LIKE', 'II%')
+                  ->orWhere('no_bukti', 'LIKE', 'IA%');
+            });
+
+        if (!empty($year) && is_numeric($year)) {
+            $query->whereYear('tgl_bukti', (int)$year);
+        }
+
+        $records = $query->orderByDesc('tgl_bukti')->orderByDesc('id')->get();
+        $branchTitle = 'BP';
+        $title = 'Rekapitulasi Piutang - BP';
+        
+        $totalSaldoAwal  = $records->sum('saldo_awal');
+        $totalDebet      = $records->sum('debet');
+        $totalKredit     = $records->sum(fn ($item) => ($item->kredit ?? 0) + ($item->kredit_2 ?? 0) + ($item->kredit_3 ?? 0));
+        $totalSaldoAkhir = $records->sum('saldo_akhir');
+        $totalSelisih    = $records->sum(function ($item) {
+            $realKredit = ($item->kredit ?? 0) + ($item->kredit_2 ?? 0) + ($item->kredit_3 ?? 0);
+            return ($item->saldo_awal + $item->debet - $realKredit) - $item->saldo_akhir;
+        });
+
+        $pdf = Pdf::loadView('Finance.ar.pdf', compact(
+            'records', 'branchTitle', 'title', 'totalSaldoAwal', 'totalDebet', 'totalKredit', 'totalSaldoAkhir', 'totalSelisih', 'year'
+        ))->setPaper('a3', 'landscape');
+
+        return $pdf->download('Rekapitulasi_Piutang_BP_' . date('Ymd_His') . '.pdf');
+    }
+
+    public function exportExcelGr(Request $request, $branch)
+    {
+        $this->validateBranch($branch);
+        $year = $request->input('year');
+
+        $query = Piutang::with('perusahaan')
+            ->where('branch', $branch)
+            ->where('saldo_akhir', '>', 0)
+            ->where(function ($q) {
+                $q->where('no_bukti', 'LIKE', 'IC%')
+                  ->orWhere('no_bukti', 'LIKE', 'II%')
+                  ->orWhere('no_bukti', 'LIKE', 'IA%');
+            });
+
+        if (!empty($year) && is_numeric($year)) {
+            $query->whereYear('tgl_bukti', (int)$year);
+        }
+
+        $records = $query->orderByDesc('tgl_bukti')->orderByDesc('id')->get();
+        $branchTitle = 'GR ' . strtoupper($branch);
+
+        return Excel::download(new PiutangExport($records, $branchTitle), 'Rekapitulasi_Piutang_GR_' . strtoupper($branch) . '_' . date('Ymd_His') . '.xlsx');
+    }
+
+    public function exportPdfGr(Request $request, $branch)
+    {
+        $this->validateBranch($branch);
+        $year = $request->input('year');
+
+        $query = Piutang::with('perusahaan')
+            ->where('branch', $branch)
+            ->where('saldo_akhir', '>', 0)
+            ->where(function ($q) {
+                $q->where('no_bukti', 'LIKE', 'IC%')
+                  ->orWhere('no_bukti', 'LIKE', 'II%')
+                  ->orWhere('no_bukti', 'LIKE', 'IA%');
+            });
+
+        if (!empty($year) && is_numeric($year)) {
+            $query->whereYear('tgl_bukti', (int)$year);
+        }
+
+        $records = $query->orderByDesc('tgl_bukti')->orderByDesc('id')->get();
+        $branchTitle = 'GR ' . strtoupper($branch);
+        $title = 'Rekapitulasi Piutang - GR ' . strtoupper($branch);
+
+        $totalSaldoAwal  = $records->sum('saldo_awal');
+        $totalDebet      = $records->sum('debet');
+        $totalKredit     = $records->sum(fn ($item) => ($item->kredit ?? 0) + ($item->kredit_2 ?? 0) + ($item->kredit_3 ?? 0));
+        $totalSaldoAkhir = $records->sum('saldo_akhir');
+        $totalSelisih    = $records->sum(function ($item) {
+            $realKredit = ($item->kredit ?? 0) + ($item->kredit_2 ?? 0) + ($item->kredit_3 ?? 0);
+            return ($item->saldo_awal + $item->debet - $realKredit) - $item->saldo_akhir;
+        });
+
+        $pdf = Pdf::loadView('Finance.ar.pdf', compact(
+            'records', 'branchTitle', 'title', 'totalSaldoAwal', 'totalDebet', 'totalKredit', 'totalSaldoAkhir', 'totalSelisih', 'year'
+        ))->setPaper('a3', 'landscape');
+
+        return $pdf->download('Rekapitulasi_Piutang_GR_' . strtoupper($branch) . '_' . date('Ymd_His') . '.pdf');
     }
 }

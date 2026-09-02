@@ -24,6 +24,7 @@ class PlanActivity extends Model
         'target_p',
         'target_hp',
         'target_spk',
+        'target_do',
         'actual_p',
         'actual_hp',
         'actual_spk',

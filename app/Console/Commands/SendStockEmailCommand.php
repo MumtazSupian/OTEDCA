@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\Stock;
+use App\Models\Sales\Stock;
 use App\Mail\StockNotificationMail;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;

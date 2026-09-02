@@ -2,39 +2,56 @@
 
 @section('content')
 <style>
-    /* Modern Dashboard Styling */
     .dashboard-wrapper {
-        padding: 10px;
+        padding: 24px;
         background-color: #f8f9fc;
         min-height: calc(100vh - 100px);
         margin: -20px;
-        padding: 30px;
+    }
+    @media (max-width: 768px) {
+        .dashboard-wrapper {
+            padding: 12px !important;
+            margin: -14px -10px !important;
+        }
     }
 
     .modern-header-section {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 35px;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 30px;
         background: #fff;
-        padding: 20px 30px;
+        padding: 18px 24px;
         border-radius: 16px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+    @media (max-width: 576px) {
+        .modern-header-section {
+            padding: 14px !important;
+            margin-bottom: 20px !important;
+        }
     }
 
     .modern-title {
         margin: 0;
-        font-size: 24px;
+        font-size: 20px;
         font-weight: 800;
         color: #2c3e50;
         display: flex;
         align-items: center;
         gap: 12px;
     }
+    @media (max-width: 576px) {
+        .modern-title {
+            font-size: 17px !important;
+        }
+    }
 
     .modern-title i {
         color: #3498db;
-        font-size: 28px;
+        font-size: 24px;
         background: -webkit-linear-gradient(135deg, #3498db, #2ecc71);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
@@ -43,14 +60,14 @@
     .modern-filter {
         background: #f8f9fc;
         border: 1px solid #edf2f9;
-        padding: 10px 20px;
+        padding: 8px 16px;
         border-radius: 30px;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
         color: #555;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 13px;
         transition: all 0.3s ease;
         box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);
     }
@@ -67,20 +84,20 @@
         outline: none;
         color: #2c3e50;
         font-weight: 700;
-        font-size: 14px;
+        font-size: 13px;
         cursor: pointer;
         padding-right: 10px;
     }
 
     .cabang-section {
-        margin-bottom: 45px;
+        margin-bottom: 35px;
     }
 
     .modern-cabang-title {
-        font-size: 22px;
+        font-size: 20px;
         color: #1a237e;
         font-weight: 800;
-        margin-bottom: 25px;
+        margin-bottom: 18px;
         display: flex;
         align-items: center;
         gap: 12px;
@@ -91,24 +108,32 @@
     .modern-cabang-title::before {
         content: '';
         width: 6px;
-        height: 28px;
+        height: 24px;
         background: linear-gradient(to bottom, #3498db, #2ecc71);
         border-radius: 4px;
         display: inline-block;
     }
 
     .cards-row {
-        display: flex;
-        gap: 25px;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+    @media (max-width: 576px) {
+        .cards-row {
+            grid-template-columns: 1fr;
+            gap: 14px;
+        }
+        .service-card {
+            min-width: 0 !important;
+            padding: 16px !important;
+        }
     }
 
     .service-card {
-        flex: 1;
-        min-width: 320px;
         background: #fff;
-        border-radius: 20px;
-        padding: 25px;
+        border-radius: 16px;
+        padding: 20px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.04);
         border: 1px solid rgba(0,0,0,0.02);
         transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -187,19 +212,19 @@
         font-weight: 700;
     }
 
-    /* THEME: BLUE (ENTRY SERVICE) */
+    /* (ENTRY SERVICE) */
     .modern-blue::after { background: linear-gradient(to right, #1976d2, #64b5f6); }
     .modern-blue .icon-wrap { background: #e3f2fd; color: #1976d2; }
     .modern-blue h4 { color: #1565c0; }
     .modern-blue .stat-num { color: #1976d2; }
 
-    /* THEME: ORANGE (SPOORING BALANCING) */
+    /* (SPOORING BALANCING) */
     .modern-orange::after { background: linear-gradient(to right, #f57c00, #ffb74d); }
     .modern-orange .icon-wrap { background: #fff3e0; color: #f57c00; }
     .modern-orange h4 { color: #e65100; }
     .modern-orange .stat-num { color: #f57c00; }
 
-    /* THEME: GREEN (UNIT AC) */
+    /* (UNIT AC) */
     .modern-green::after { background: linear-gradient(to right, #388e3c, #81c784); }
     .modern-green .icon-wrap { background: #e8f5e9; color: #388e3c; }
     .modern-green h4 { color: #1b5e20; }
@@ -272,7 +297,7 @@
                         <span class="stat-text">Hari Ini</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-num">{{ $data['spooring']['target'] ?? 0 }}</span>
+                        <span class="stat-num">{{ $data['spooring']['target'] ?? 80 }}</span>
                         <span class="stat-text">Target</span>
                     </div>
                 </div>
@@ -294,7 +319,7 @@
                         <span class="stat-text">Hari Ini</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-num">{{ $data['ac']['target'] ?? 0 }}</span>
+                        <span class="stat-num">{{ $data['ac']['target'] ?? 80 }}</span>
                         <span class="stat-text">Target</span>
                     </div>
                 </div>

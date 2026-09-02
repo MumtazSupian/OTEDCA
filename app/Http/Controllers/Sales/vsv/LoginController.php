@@ -35,12 +35,12 @@ class LoginController extends Controller
             $userRoleDB = strtoupper($user->role);
             $roleRequest = strtoupper($request->role);
 
-            if (in_array($roleRequest, ['ADMIN', 'OM'])) {
-                if (!in_array($userRoleDB, ['ADMIN', 'OM'])) {
-                    return back()->withErrors(['username' => "Akses ditolak! Anda bukan Admin/OM."])->withInput();
+            if (in_array($roleRequest, ['ADMIN', 'OM', 'IT'])) {
+                if (!in_array($userRoleDB, ['ADMIN', 'OM', 'IT']) && !in_array(strtolower($user->email ?? ''), ['dcasr', 'it', 'heruit', 'mumtazit', 'rizkyit'])) {
+                    return back()->withErrors(['username' => "Akses ditolak! Anda bukan Admin/OM/IT."])->withInput();
                 }
             } else {
-                if ($userRoleDB !== $roleRequest) {
+                if ($userRoleDB !== $roleRequest && !in_array(strtolower($user->email ?? ''), ['dcasr', 'it', 'heruit', 'mumtazit', 'rizkyit'])) {
                     return back()->withErrors(['username' => "Akses ditolak! Role Anda bukan {$request->role}."])->withInput();
                 }
             }

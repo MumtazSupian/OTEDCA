@@ -15,6 +15,7 @@ use App\Http\Controllers\Sales\WarnaController;
 use App\Http\Controllers\Sales\GudangController;
 use App\Http\Controllers\Sales\CabangController;
 use App\Http\Controllers\Sales\InUnitController;
+use App\Http\Controllers\Sales\faktur\FakturController;
 use App\Http\Controllers\Service\ServiceAcController;
 use App\Http\Controllers\Service\PostCheckAcController;
 use App\Http\Controllers\Service\PreCheckAcController;
@@ -71,12 +72,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/finance/dashboard', [\App\Http\Controllers\Finance\DashboardController::class, 'index'])->name('finance.dashboard');
     Route::get('/sales/dashboard', [\App\Http\Controllers\Sales\DashboardController::class, 'index'])->name('sales.dashboard');
     Route::get('/sales/dashboard_sales', [\App\Http\Controllers\Sales\DashboardSalesController::class, 'index'])->name('sales.dashboard_sales');
+    Route::resource('/sales/faktur', FakturController::class)->names('sales.faktur');
 
     Route::get('/sales/vsv/dashboard/v1', [\App\Http\Controllers\Sales\vsv\DashboardController::class, 'v1'])->name('sales.vsv.dashboard.v1');
     Route::get('/sales/vsv/dashboard/v1/export-pdf', [\App\Http\Controllers\Sales\vsv\DashboardController::class, 'exportPdfV1'])->name('sales.vsv.dashboard.v1.export_pdf');
     Route::get('/sales/vsv/dashboard/v2', [\App\Http\Controllers\Sales\vsv\DashboardController::class, 'v2'])->name('sales.vsv.dashboard.v2');
+    Route::get('/sales/vsv/dashboard/v3', [\App\Http\Controllers\Sales\vsv\DashboardController::class, 'v3'])->name('sales.vsv.dashboard.v3');
 
     Route::get('/bp', [PiutangController::class, 'indexBp'])->name('bp.index');
+    Route::get('/bp/export-pdf', [PiutangController::class, 'exportPdfBp'])->name('bp.export_pdf');
+    Route::get('/bp/export-excel', [PiutangController::class, 'exportExcelBp'])->name('bp.export_excel');
     Route::post('/bp', [PiutangController::class, 'storeBp'])->name('bp.store');
     Route::get('/bp/{id}/edit', [PiutangController::class, 'editBp'])->whereNumber('id')->name('bp.edit');
     Route::put('/bp/{id}', [PiutangController::class, 'updateBp'])->whereNumber('id')->name('bp.update');
@@ -84,6 +89,8 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('gr/{branch}')->whereIn('branch', ['cinere', 'jatiasih', 'cianjur', 'ciawi'])->group(function () {
         Route::get('/', [PiutangController::class, 'indexGr'])->name('gr.index');
+        Route::get('/export-pdf', [PiutangController::class, 'exportPdfGr'])->name('gr.export_pdf');
+        Route::get('/export-excel', [PiutangController::class, 'exportExcelGr'])->name('gr.export_excel');
         Route::post('/', [PiutangController::class, 'storeGr'])->name('gr.store');
         Route::get('/{id}/edit', [PiutangController::class, 'editGr'])->whereNumber('id')->name('gr.edit');
         Route::put('/{id}', [PiutangController::class, 'updateGr'])->whereNumber('id')->name('gr.update');
@@ -365,9 +372,9 @@ Route::middleware(['auth', 'no-direct'])->group(function () {
         Route::get('/monitoring', [ServiceAcController::class, 'monitoring'])->name('monitoring');
         
         // Post Check AC Routes
-                                Route::get('/ac/post-check/get-spk-data', [PostCheckAcController::class, 'getSpkData'])->name('ac.post_check_get_spk_data');
+        Route::get('/ac/post-check/get-spk-data', [PostCheckAcController::class, 'getSpkData'])->name('ac.post_check_get_spk_data');
         Route::get('/ac/post-check/get-spk-list', [PostCheckAcController::class, 'getSpkList'])->name('ac.post_check_get_spk_list');
-Route::get('/ac/post-check', [PostCheckAcController::class, 'index'])->name('ac.post_check');
+        Route::get('/ac/post-check', [PostCheckAcController::class, 'index'])->name('ac.post_check');
         Route::post('/ac/post-check', [PostCheckAcController::class, 'store'])->name('ac.post_check_store');
         Route::get('/ac/post-check/{id}/edit', [PostCheckAcController::class, 'edit'])->name('ac.post_check_edit');
         Route::put('/ac/post-check/{id}', [PostCheckAcController::class, 'update'])->name('ac.post_check_update');
@@ -376,9 +383,9 @@ Route::get('/ac/post-check', [PostCheckAcController::class, 'index'])->name('ac.
         Route::delete('/ac/post-check/{id}', [PostCheckAcController::class, 'destroy'])->name('ac.post_check_destroy');
         
         // Pre Check AC Routes
-                Route::get('/ac/pre-check/get-spk-data', [PreCheckAcController::class, 'getSpkData'])->name('ac.pre_check_get_spk_data');
+        Route::get('/ac/pre-check/get-spk-data', [PreCheckAcController::class, 'getSpkData'])->name('ac.pre_check_get_spk_data');
         Route::get('/ac/pre-check/get-spk-list', [PreCheckAcController::class, 'getSpkList'])->name('ac.pre_check_get_spk_list');
-Route::get('/ac/pre-check', [PreCheckAcController::class, 'index'])->name('ac.pre_check');
+        Route::get('/ac/pre-check', [PreCheckAcController::class, 'index'])->name('ac.pre_check');
         Route::post('/ac/pre-check', [PreCheckAcController::class, 'store'])->name('ac.pre_check_store');
         Route::get('/ac/pre-check/{id}/edit', [PreCheckAcController::class, 'edit'])->name('ac.pre_check_edit');
         Route::put('/ac/pre-check/{id}', [PreCheckAcController::class, 'update'])->name('ac.pre_check_update');
@@ -392,6 +399,44 @@ Route::get('/ac/pre-check', [PreCheckAcController::class, 'index'])->name('ac.pr
         Route::put('/ac/teknisi/{id}', [App\Http\Controllers\Service\TeknisiController::class, 'update'])->name('ac.teknisi_update');
         Route::delete('/ac/teknisi/{id}', [App\Http\Controllers\Service\TeknisiController::class, 'destroy'])->name('ac.teknisi_destroy');
         Route::resource('data', ServiceAcController::class)->parameters(['data' => 'data']);
+    });
+
+    // Customer Database Routes
+    Route::prefix('customer')->group(function () {
+        Route::get('/list', [\App\Http\Controllers\Customer\CustomerListController::class, 'index'])->name('customer.list');
+        Route::get('/vehicle-lookup', [\App\Http\Controllers\Customer\VehicleLookupController::class, 'index'])->name('customer.vehicle_lookup');
+        Route::get('/duplicate-review', [\App\Http\Controllers\Customer\DuplicateReviewController::class, 'index'])->name('customer.duplicate_review');
+        Route::get('/sync-log', [\App\Http\Controllers\Customer\SyncLogController::class, 'index'])->name('customer.sync_log');
+    });
+
+    // Asuransi Routes
+    Route::prefix('asuransi')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Asuransi\DashboardAsuransiController::class, 'index'])->name('asuransi.dashboard');
+        Route::get('/data', [\App\Http\Controllers\Asuransi\DataAsuransiController::class, 'index'])->name('asuransi.data');
+        Route::get('/tanpa-asuransi', [\App\Http\Controllers\Asuransi\TanpaAsuransiController::class, 'index'])->name('asuransi.tanpa_asuransi');
+        Route::get('/master', [\App\Http\Controllers\Asuransi\MasterAsuransiController::class, 'index'])->name('asuransi.master');
+        Route::get('/follow-up', [\App\Http\Controllers\Asuransi\FollowUpAsuransiController::class, 'index'])->name('asuransi.follow_up');
+        Route::get('/monitoring-follow-up', [\App\Http\Controllers\Asuransi\MonitoringFollowUpController::class, 'index'])->name('asuransi.monitoring_follow_up');
+    });
+
+    // Body & Paint Routes
+    Route::prefix('body-paint')->group(function () {
+        // Leads GRWAC
+        Route::prefix('leads-grwac')->group(function () {
+            Route::get('/dashboard', [\App\Http\Controllers\BodyPaint\LeadsGrwacController::class, 'dashboard'])->name('body_paint.leads.dashboard');
+            Route::get('/input-prospect', [\App\Http\Controllers\BodyPaint\LeadsGrwacController::class, 'inputProspect'])->name('body_paint.leads.input_prospect');
+            Route::get('/daftar-prospect', [\App\Http\Controllers\BodyPaint\LeadsGrwacController::class, 'daftarProspect'])->name('body_paint.leads.daftar_prospect');
+            Route::get('/prospek-saya', [\App\Http\Controllers\BodyPaint\LeadsGrwacController::class, 'prospekSaya'])->name('body_paint.leads.prospek_saya');
+        });
+
+        // Monitoring Asuransi
+        Route::prefix('monitoring-asuransi')->group(function () {
+            Route::get('/dashboard', [\App\Http\Controllers\BodyPaint\MonitoringAsuransiBpController::class, 'dashboard'])->name('body_paint.monitoring.dashboard');
+            Route::get('/monitoring-follow-up', [\App\Http\Controllers\BodyPaint\MonitoringAsuransiBpController::class, 'followUp'])->name('body_paint.monitoring.follow_up');
+        });
+
+        // Master BP
+        Route::get('/master', [\App\Http\Controllers\BodyPaint\MasterBpController::class, 'index'])->name('body_paint.master');
     });
 
 });
@@ -460,8 +505,22 @@ Route::fallback(function () {
         });
 
         Route::get('/kirim-ar-sekarang', function() {
-            Artisan::call('app:send-weekly-branch-data-email');
-            return nl2br("=== Hasil Send Weekly Branch Data Email ===\n" . Artisan::output());
+            try {
+                Artisan::call('app:send-weekly-branch-data-email');
+                return nl2br("=== Hasil Send Weekly Branch Data Email ===\n" . Artisan::output());
+            } catch (\Throwable $e) {
+                return nl2br("=== Gagal Menjalankan Pengiriman Email ===\nError: " . $e->getMessage());
+            }
+        });
+
+        Route::get('/reset-perusahaan-ciawi', function () {
+            \App\Models\Finance\Piutang::where('branch', 'ciawi')->update(['perusahaan_id' => null]);
+            return "Berhasil! Seluruh kolom Perusahaan pada cabang Ciawi telah dikosongkan kembali menjadi (-).";
+        });
+
+        Route::get('/reset-perusahaan-semua', function () {
+            \App\Models\Finance\Piutang::query()->update(['perusahaan_id' => null]);
+            return "Berhasil! Seluruh kolom Perusahaan pada semua cabang telah dikosongkan kembali menjadi (-).";
         });
 
         Route::get('/clear-optimize', function () {
@@ -469,20 +528,62 @@ Route::fallback(function () {
             return '<pre>' . Artisan::output() . '</pre>';
         });
 
-
-        Route::get('/cek-schedule-file', function () {
-            return file_get_contents(base_path('routes/console.php'));
+        Route::get('/sync-dms-users', function () {
+            Artisan::call('dms:sync-users');
+            return '<pre>' . Artisan::output() . '</pre>';
         });
 
-        Route::get('/cek-jam', function () {
-            return [
-                'utc' => now()->toDateTimeString(),
-                'jakarta' => now('Asia/Jakarta')->toDateTimeString(),
-            ];
+        Route::get('/import-db-sql', function () {
+            $sqlFile = base_path('ote_dca.sql');
+            if (!file_exists($sqlFile)) {
+                return '<h3 style="color:red">File ote_dca.sql tidak ditemukan di ' . $sqlFile . '</h3>';
+            }
+            ini_set('max_execution_time', 600);
+            ini_set('memory_limit', '512M');
+            
+            try {
+                DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+                
+                // Drop existing tables to avoid duplicate table error
+                $tables = DB::select('SHOW FULL TABLES WHERE Table_type = "BASE TABLE"');
+                foreach ($tables as $t) {
+                    $tName = array_values((array)$t)[0];
+                    DB::statement("DROP TABLE IF EXISTS `{$tName}`;");
+                }
+                
+                $sql = file_get_contents($sqlFile);
+                DB::unprepared($sql);
+                DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+                
+                $stocks = DB::table('stocks')->count();
+                $inUnits = DB::table('in_units')->count();
+                $users = DB::table('users')->count();
+                
+                return '<div style="font-family:sans-serif; padding:30px; line-height:1.6;">'
+                    . '<h2 style="color:#16a34a;">✅ SUKSES BESAR! Database ote_dca.sql berhasil di-import ke server.</h2>'
+                    . '<ul>'
+                    . '<li><strong>Data Stocks:</strong> ' . $stocks . ' rows</li>'
+                    . '<li><strong>Data In Units:</strong> ' . $inUnits . ' rows</li>'
+                    . '<li><strong>Data Users:</strong> ' . $users . ' rows</li>'
+                    . '</ul>'
+                    . '<br><a href="/dashboard" style="display:inline-block; padding:10px 20px; background:#2563eb; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold;">🚀 Kembali ke Dashboard</a>'
+                    . '</div>';
+            } catch (\Exception $e) {
+                return '<div style="font-family:sans-serif; padding:30px; color:#b91c1c;">'
+                    . '<h2>Gagal Import:</h2>'
+                    . '<p>' . $e->getMessage() . '</p>'
+                    . '</div>';
+            }
         });
 
-
-
+        Route::get('/clear-cache', function () {
+            \Illuminate\Support\Facades\Artisan::call('optimize:clear');
+            return '<div style="font-family:sans-serif; padding:30px; line-height:1.6; color:#16a34a;">'
+                . '<h2>✅ Cache Server Berhasil Dibersihkan!</h2>'
+                . '<p>View cache, route cache, dan config cache telah di-clear.</p>'
+                . '<a href="/customer/list" style="display:inline-block; padding:10px 18px; background:#dc2626; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold;">Buka Customer List</a>'
+                . '</div>';
+        });
     });
 
 });

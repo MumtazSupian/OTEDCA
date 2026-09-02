@@ -78,10 +78,10 @@ class ActualDoSalesForceController extends Controller
                 ->join('HrEmployee', 'pmKDP.EmployeeID', '=', 'HrEmployee.EmployeeID')
                 ->where('pmKDP.LastProgress', 'DELIVERY')
                 ->where('HrEmployee.IsDeleted', '0')
-                ->whereYear('pmKDP.LastUpdateDate', $year)
+                ->whereYear('pmKDP.LastUpdateStatus', $year)
                 ->whereIn('pmKDP.BranchCode', array_keys($allowedBranches))
-                ->selectRaw('pmKDP.BranchCode, HrEmployee.EmployeeID, HrEmployee.EmployeeName, HrEmployee.Grade, MONTH(pmKDP.LastUpdateDate) as m_num, COUNT(*) as total')
-                ->groupBy('pmKDP.BranchCode', 'HrEmployee.EmployeeID', 'HrEmployee.EmployeeName', 'HrEmployee.Grade', DB::raw('MONTH(pmKDP.LastUpdateDate)'))
+                ->selectRaw('pmKDP.BranchCode, HrEmployee.EmployeeID, HrEmployee.EmployeeName, HrEmployee.Grade, MONTH(pmKDP.LastUpdateStatus) as m_num, COUNT(*) as total')
+                ->groupBy('pmKDP.BranchCode', 'HrEmployee.EmployeeID', 'HrEmployee.EmployeeName', 'HrEmployee.Grade', DB::raw('MONTH(pmKDP.LastUpdateStatus)'))
                 ->get();
 
             $salesMatrix = [];
@@ -221,10 +221,10 @@ class ActualDoSalesForceController extends Controller
             ->join('HrEmployee', 'pmKDP.EmployeeID', '=', 'HrEmployee.EmployeeID')
             ->where('pmKDP.LastProgress', 'DELIVERY')
             ->where('HrEmployee.IsDeleted', '0')
-            ->whereYear('pmKDP.LastUpdateDate', $year)
+            ->whereYear('pmKDP.LastUpdateStatus', $year)
             ->whereIn('pmKDP.BranchCode', array_keys($allowedBranches))
-            ->selectRaw('pmKDP.BranchCode, HrEmployee.EmployeeID, HrEmployee.EmployeeName, HrEmployee.Grade, MONTH(pmKDP.LastUpdateDate) as m_num, COUNT(*) as total')
-            ->groupBy('pmKDP.BranchCode', 'HrEmployee.EmployeeID', 'HrEmployee.EmployeeName', 'HrEmployee.Grade', DB::raw('MONTH(pmKDP.LastUpdateDate)'))
+            ->selectRaw('pmKDP.BranchCode, HrEmployee.EmployeeID, HrEmployee.EmployeeName, HrEmployee.Grade, MONTH(pmKDP.LastUpdateStatus) as m_num, COUNT(*) as total')
+            ->groupBy('pmKDP.BranchCode', 'HrEmployee.EmployeeID', 'HrEmployee.EmployeeName', 'HrEmployee.Grade', DB::raw('MONTH(pmKDP.LastUpdateStatus)'))
             ->get();
 
         $salesMatrix = [];

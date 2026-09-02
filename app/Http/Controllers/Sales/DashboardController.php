@@ -63,7 +63,7 @@ class DashboardController extends Controller
         $stockByStatus = [];
         $stockByMobil = collect();
 
-        if (! empty($user) && (($user->is_admin ?? false) || ($user->is_admin_stock ?? false))) {
+        if (! empty($user) && (($user->is_admin ?? false) || ($user->is_admin_stock ?? false) || in_array(strtolower($user->role ?? ''), ['ho_unit', 'admin_stock', 'stock']) || strtolower($user->email ?? '') === 'dcahounit')) {
             $parseStockDate = function ($value) {
                 if ($value instanceof \Carbon\Carbon) {
                     return $value;

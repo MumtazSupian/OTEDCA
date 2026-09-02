@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\Piutang;
+use App\Models\Finance\Piutang;
 use App\Mail\WeeklyBranchDataMail;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
@@ -103,7 +103,7 @@ class SendWeeklyBranchDataEmail extends Command
             ],
             'Cinere' => [
                 'sender' => 'adh.cnr@suzukidutacendana.com', 
-                // 'password' => 'lxupzvinvkxvjlxr', // Dimatikan sementara agar pakai akun AR
+                'password' => 'muckzbdjguwbvoit',
                 'recipients' => [
                     'adh.cnr@suzukidutacendana.com',
                     'admsvc.cnr.dca@gmail.com',
@@ -140,7 +140,9 @@ class SendWeeklyBranchDataEmail extends Command
             'it@dutacendana.com',
             'finance@suzukidutacendana.com',
             'fineke99@gmail.com',
-            'om@suzukidutacendana.com'
+            'om@suzukidutacendana.com',
+            'accstaff.dca@gmail.com',
+            'mumtazztaaa@gmail.com'
         ];
         
         foreach ($daftarEmailCabang as $namaCabang => $konfigurasi) {
@@ -156,21 +158,33 @@ class SendWeeklyBranchDataEmail extends Command
                 $sendToBranchData = collect([$namaCabang => $dataKhususCabang]);
                 $mailable = new WeeklyBranchDataMail($sendToBranchData, "Cabang {$namaCabang}", $senderEmail);
 
-                // Menggunakan login SMTP khusus untuk cabang jika password tersedia
-                if ($senderEmail && $senderPassword) {
-                    $mailer = Mail::build([
-                        'transport' => 'smtp',
-                        'host' => config('mail.mailers.smtp.host'),
-                        'port' => config('mail.mailers.smtp.port'),
-                        'encryption' => config('mail.mailers.smtp.encryption'),
-                        'username' => $senderEmail,
-                        'password' => $senderPassword,
-                    ]);
-                    // $mailer->to($paraPenerima)->send($mailable);
-                    $mailer->to($paraPenerima)->cc($emailAdminPusat)->send($mailable);
-                } else {
-                    // Mail::to($paraPenerima)->send($mailable);
-                    Mail::to($paraPenerima)->cc($emailAdminPusat)->send($mailable);
+                try {
+                    // Menggunakan login SMTP khusus untuk cabang jika password tersedia
+                    if ($senderEmail && $senderPassword) {
+                        $mailer = Mail::build([
+                            'transport' => 'smtp',
+                            'host' => 'smtp.gmail.com',
+                            'port' => 465,
+                            'encryption' => 'ssl',
+                            'username' => $senderEmail,
+                            'password' => $senderPassword,
+                        ]);
+                        $mailer->to($paraPenerima)->cc($emailAdminPusat)->send($mailable);
+                    } else {
+                        $fallbackHost = config('mail.mailers.smtp.host', 'smtp.gmail.com');
+                        $mailer = Mail::build([
+                            'transport' => 'smtp',
+                            'host' => ($fallbackHost === '127.0.0.1' || empty($fallbackHost)) ? 'smtp.gmail.com' : $fallbackHost,
+                            'port' => (config('mail.mailers.smtp.port') == 2525 || empty(config('mail.mailers.smtp.port'))) ? 465 : config('mail.mailers.smtp.port'),
+                            'encryption' => config('mail.mailers.smtp.encryption') ?: 'ssl',
+                            'username' => config('mail.mailers.smtp.username'),
+                            'password' => config('mail.mailers.smtp.password'),
+                        ]);
+                        $mailer->to($paraPenerima)->cc($emailAdminPusat)->send($mailable);
+                    }
+                    $this->info("Berhasil mengirim email ke Cabang {$namaCabang}.");
+                } catch (\Throwable $e) {
+                    $this->error("Gagal mengirim email ke Cabang {$namaCabang}: " . $e->getMessage());
                 }
             }
         }

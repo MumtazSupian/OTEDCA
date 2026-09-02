@@ -24,24 +24,34 @@
             </div>
         </div>
 
-        <div class="toolbar" style="margin-bottom: 20px;">
-            <div class="search-wrapper">
-                <input type="text" class="search-input" placeholder="Cari konsumen, no. bukti, plat/no. polisi, polis..."
-                    id="searchInput">
-                <span class="search-shortcut">Ctrl+K</span>
+        <div class="toolbar" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <div class="toolbar-left" style="display: flex; gap: 10px; align-items: center; flex-wrap: nowrap;">
+                <div class="search-wrapper" style="width: 320px; position: relative;">
+                    <input type="text" class="search-input" placeholder="Cari konsumen, no. bukti, plat/no. polisi, polis..."
+                        id="searchInput">
+                    <span class="search-shortcut">Ctrl+K</span>
+                </div>
+                <a href="{{ route('bp.export_pdf', ['year' => request('year')]) }}" class="btn-export-pdf" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background-color: #dc2626; color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 13px; box-shadow: 0 2px 4px rgba(220,38,38,0.2); transition: all 0.2s; white-space: nowrap; height: 38px; box-sizing: border-box;" onmouseover="this.style.backgroundColor='#b91c1c'" onmouseout="this.style.backgroundColor='#dc2626'">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>Export PDF</span>
+                </a>
+                <a href="{{ route('bp.export_excel', ['year' => request('year')]) }}" class="btn-export-excel" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background-color: #16a34a; color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 13px; box-shadow: 0 2px 4px rgba(22,163,74,0.2); transition: all 0.2s; white-space: nowrap; height: 38px; box-sizing: border-box;" onmouseover="this.style.backgroundColor='#15803d'" onmouseout="this.style.backgroundColor='#16a34a'">
+                    <i class="fas fa-file-excel"></i>
+                    <span>Export Excel</span>
+                </a>
             </div>
             <div class="toolbar-right">
-            <span class="toolbar-label">Tampilkan:</span>
-            <select class="toolbar-select" id="rowsPerPage">
-                <option value="50">50 Baris</option>
-                <option value="100">100 Baris</option>
-                <option value="200">200 Baris</option>
-            </select>
+                <span class="toolbar-label">Tampilkan:</span>
+                <select class="toolbar-select" id="rowsPerPage">
+                    <option value="50">50 Baris</option>
+                    <option value="100">100 Baris</option>
+                    <option value="200">200 Baris</option>
+                </select>
                 {{-- @if(optional(Auth::user())->is_admin)
-            <button class="btn-primary" onclick="openModal()" id="btnTambahData"
-                style="background-color: var(--accent-red); border-color: var(--accent-red); color: #ffffff;">Tambah Data</button>
-        @endif --}}
-        </div>
+                <button class="btn-primary" onclick="openModal()" id="btnTambahData"
+                    style="background-color: var(--accent-red); border-color: var(--accent-red); color: #ffffff;">Tambah Data</button>
+                @endif --}}
+            </div>
         </div>
 
         {{-- Style Khusus: Tabel (Merah-Putih) & Modal (Putih-Merah) --}}

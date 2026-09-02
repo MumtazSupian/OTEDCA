@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Sales (Stock)')
+@section('title', 'Dashboard(Stock)')
 
 @section('content')
     <div class="page-header">
         <div>
-            <h1 class="page-title">Dashboard Sales (Stock)</h1>
+            <h1 class="page-title">Dashboard(Stock)</h1>
             <p class="page-subtitle">Ringkasan Unit & Status Stock Kendaraan DCA</p>
         </div>
         <div class="server-time">

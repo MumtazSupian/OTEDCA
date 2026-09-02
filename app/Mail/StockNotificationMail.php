@@ -38,7 +38,7 @@ class StockNotificationMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            from: new Address(env('MAIL_STOCK_FROM_ADDRESS', 'no-reply@arunit.com'), env('MAIL_STOCK_FROM_NAME', 'ArUnit')),
+            from: new Address(env('MAIL_STOCK_FROM_ADDRESS', 'stockdcasystem@gmail.com'), env('MAIL_STOCK_FROM_NAME', 'Suzuki Duta Cendana')),
             subject: $this->subject,
         );
     }

@@ -1,222 +1,571 @@
 @extends('layouts.app')
+@section('title', 'Edit Target & Budget - Activity Plan')
+
 @section('content')
-    <div style="padding: 40px 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh;">
-        <div style="text-align: center; margin-bottom: 30px;">
-            <h2 style="font-weight: 800; color: #1e293b !important; text-transform: uppercase; margin: 0;">EDIT ACTIVITY PLAN</h2>
-            <div style="width: 50px; height: 4px; background: #dc2626; margin: 10px auto; border-radius: 10px;"></div>
-            <p style="color: #64748b; margin: 5px 0 0 0; font-size: 14px;">Sesuaikan kembali seluruh rincian rencana aktivitas</p>
-            <br>
-            <p style="text-align:center; color: #475569; font-weight: 600; font-size: 13px; margin-bottom: 15px;">
-                Mengedit data untuk Cabang: <strong style="color: #dc2626 !important; font-weight: 800;">{{ $plan->cabang ?: Auth::user()->cabang ?: "Pusat" }}</strong>
-            </p>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+    .target-matrix-wrapper {
+        padding: 24px 16px;
+        max-width: 1380px;
+        margin: 0 auto;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .page-title {
+        text-align: center;
+        font-weight: 900;
+        color: #0f172a;
+        text-shadow: 0px 4px 15px rgba(220, 38, 38, 0.2);
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        font-size: 1.6rem;
+    }
+    .page-subtitle {
+        text-align: center;
+        color: #64748b;
+        margin-bottom: 22px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    /* CONTROL FILTER BAR */
+    .control-card {
+        background: #0f172a;
+        padding: 16px 24px;
+        border-radius: 14px;
+        border: 1px solid #1e293b;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .filter-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .filter-label {
+        color: #94a3b8;
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .filter-select {
+        background: #1e293b;
+        color: #ffffff;
+        border: 1.5px solid #475569;
+        border-radius: 8px;
+        padding: 8px 14px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        outline: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .filter-select:focus {
+        border-color: #dc2626;
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.3);
+    }
+
+    .btn-back {
+        padding: 8px 16px;
+        background: #1e293b;
+        color: #e2e8f0;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        border: 1px solid #334155;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-back:hover {
+        background: #334155;
+        color: #ffffff;
+        transform: translateY(-1px);
+    }
+
+    /* SECTION MATRIX CARDS */
+    .matrix-section {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 22px;
+        box-shadow: 0 10px 30px -5px rgba(0,0,0,0.06);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 24px;
+        overflow-x: auto;
+    }
+
+    .section-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        padding: 6px 16px;
+        border-radius: 8px;
+        font-weight: 800;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        margin-bottom: 16px;
+    }
+    .section-badge-purple {
+        background: #f5f3ff;
+        border-color: #ddd6fe;
+        color: #6d28d9;
+    }
+
+    .table-matrix {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.8rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .table-matrix th {
+        background: #f8fafc;
+        color: #1e293b;
+        font-weight: 800;
+        text-align: center;
+        padding: 11px 12px;
+        border-bottom: 1.5px solid #cbd5e1;
+        border-right: 1px solid #e2e8f0;
+        font-size: 0.76rem;
+        letter-spacing: 0.5px;
+    }
+    .table-matrix th.th-highlight {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-bottom: 2px solid #3b82f6;
+    }
+    .table-matrix th.th-highlight-purple {
+        background: #f5f3ff;
+        color: #6d28d9;
+        border-bottom: 2px solid #8b5cf6;
+    }
+
+    .table-matrix td {
+        padding: 9px 12px;
+        border-bottom: 1px solid #e2e8f0;
+        border-right: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+    .table-matrix tr:last-child td {
+        border-bottom: none;
+    }
+    .table-matrix tr:nth-child(even) {
+        background: #fbfcfd;
+    }
+    .table-matrix tr:hover {
+        background: #f1f5f9;
+    }
+
+    .item-name {
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: 0.3px;
+    }
+
+    /* INPUT STYLING */
+    .input-matrix {
+        width: 100%;
+        min-width: 90px;
+        background: #ffffff;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 7px 10px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-align: center;
+        color: #0f172a;
+        outline: none;
+        transition: all 0.2s ease;
+        font-family: inherit;
+    }
+    .input-matrix:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        background: #ffffff;
+    }
+    .input-matrix.input-budget {
+        text-align: right;
+        min-width: 135px;
+        color: #6d28d9;
+        font-weight: 800;
+    }
+    .input-matrix.input-budget:focus {
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25);
+    }
+    .input-matrix.input-highlight {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+
+    .per-spk-badge {
+        display: inline-block;
+        width: 100%;
+        text-align: right;
+        font-weight: 800;
+        color: #6d28d9;
+        font-size: 0.8rem;
+        padding: 6px 10px;
+        background: #f5f3ff;
+        border-radius: 6px;
+        border: 1px solid #ddd6fe;
+    }
+
+    /* SUBMIT BAR */
+    .submit-bar {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 12px;
+        margin-top: 10px;
+        margin-bottom: 40px;
+    }
+    .btn-save {
+        padding: 12px 28px;
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        color: #ffffff;
+        font-weight: 800;
+        font-size: 0.9rem;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 15px rgba(220, 38, 38, 0.35);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-save:hover {
+        background: linear-gradient(135deg, #b91c1c, #991b1b);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(220, 38, 38, 0.45);
+    }
+</style>
+
+<div class="target-matrix-wrapper">
+    <h1 class="page-title">EDIT TARGET & BUDGET (PLAN)</h1>
+    <p class="page-subtitle">Sesuaikan Rencana Target (INQ, SPK, DO) & Total Budget per Model serta Kategori Aktivitas</p>
+
+    {{-- FILTER HEADER --}}
+    <div class="control-card">
+        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <div class="filter-item">
+                <span class="filter-label">📍 CABANG:</span>
+                <select id="cabangSelector" class="filter-select" onchange="reloadTargetForm()">
+                    @foreach(['Ciawi', 'Cianjur', 'Cinere', 'Jatiasih', 'Cipanas'] as $cb)
+                        <option value="{{ $cb }}" {{ ($cabang == $cb) ? 'selected' : '' }}>Cabang {{ $cb }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <span class="filter-label">📅 BULAN:</span>
+                <select id="bulanSelector" class="filter-select" onchange="reloadTargetForm()">
+                    @php
+                        $months = [
+                            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                        ];
+                    @endphp
+                    @foreach($months as $mNum => $mName)
+                        <option value="{{ $mNum }}" {{ ($currMonthNum == $mNum) ? 'selected' : '' }}>{{ $mName }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <span class="filter-label">🗓️ TAHUN:</span>
+                <select id="tahunSelector" class="filter-select" onchange="reloadTargetForm()">
+                    @foreach([2025, 2026, 2027] as $y)
+                        <option value="{{ $y }}" {{ ($currYear == $y) ? 'selected' : '' }}>{{ $y }}</option>
+                    @endforeach
+                </select>
+            </div>
         </div>
 
-        <div style="background: #ffffff; border-radius: 20px; padding: 30px; color: #333; box-shadow: 0 15px 35px rgba(0,0,0,0.15); width: 100%; max-width: 900px; box-sizing: border-box; overflow: hidden;">
-            <form id="formEditPlan" action="{{ route('activity.plan.update', $plan->id) }}" method="POST">
-                @csrf
-                @method('PUT')
-                
-                <div style="display: grid; width: 100%; box-sizing: border-box; gap: 25px;">
-                    
-                    {{-- Jenis & Activity --}}
-                    <div style="display: flex; gap: 20px; width: 100%; box-sizing: border-box;">
-                        <div style="flex: 1; min-width: 0;">
-                            <label style="display: block; margin-bottom: 8px; color: #2d3748; font-weight: 700; font-size: 13px; text-transform: uppercase;">Jenis Activity</label>
-                            <select name="jenis_activity" required style="width: 100%; padding: 12px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; color: #2d3748; font-size: 14px;">
-                                <option value="Offline" {{ old('jenis_activity', $plan->jenis_activity) == 'Offline' ? 'selected' : '' }}>Offline</option>
-                                <option value="Online" {{ old('jenis_activity', $plan->jenis_activity) == 'Online' ? 'selected' : '' }}>Online</option>
-                            </select>
-                        </div>
-                        <div style="flex: 1; min-width: 0;">
-                            <label style="display: block; margin-bottom: 8px; color: #2d3748; font-weight: 700; font-size: 13px; text-transform: uppercase;">Activity</label>
-                            <select name="activity" required style="width: 100%; padding: 12px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; color: #2d3748; font-size: 14px;">
-                                @foreach(['D_MARKETING', 'EXHIBITION', 'MOVING_EXHIBITION', 'SHOWROOM_EVENT', 'GROUP_PRESENTATION', 'EVENT_TEST_DRIVE', 'OPEN_TABLE', 'CETAK_FLYER'] as $act)
-                                    <option value="{{ $act }}" {{ old('activity', $plan->activity) == $act ? 'selected' : '' }}>{{ str_replace('_', ' ', $act) }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-
-                    {{-- Platform / Lokasi --}}
-                    <div>
-                        <label style="display: block; margin-bottom: 8px; color: #2d3748; font-weight: 700; font-size: 13px; text-transform: uppercase;">Platform / Lokasi</label>
-                        <input type="text" name="platform_lokasi" value="{{ old('platform_lokasi', $plan->platform_lokasi) }}" required
-                            style="width: 100%; box-sizing: border-box; padding: 12px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px;"
-                            placeholder="Masukkan lokasi kegiatan atau platform online">
-                    </div>
-
-                    {{-- Display Unit --}}
-                    <div style="background: #f0f9ff; padding: 20px; border-radius: 15px; border: 1px solid #bee3f8;">
-                        <h3 style="color: #dc2626; margin-top: 0; font-size: 14px; margin-bottom: 15px; font-weight: 800; border-bottom: 2px solid #bee3f8; padding-bottom: 8px; display: inline-block; text-transform: uppercase;">DISPLAY UNIT</h3>
-                        <div style="display: flex; gap: 20px; width: 100%; box-sizing: border-box;">
-                            <div style="flex: 1; min-width: 0;">
-                                <label style="display: block; margin-bottom: 6px; font-size: 13px; font-weight: 700; color: #4a5568;">Jenis Unit</label>
-                                <select id="jenis_unit" name="jenis_unit" required style="width: 100%; padding: 10px; background: white; border: 1px solid #cbd5e0; border-radius: 8px;">
-                                    <option value="Commercial" {{ old('jenis_unit', $plan->jenis_unit) == 'Commercial' ? 'selected' : '' }}>Commercial</option>
-                                    <option value="Passenger" {{ old('jenis_unit', $plan->jenis_unit) == 'Passenger' ? 'selected' : '' }}>Passenger</option>
-                                </select>
-                            </div>
-                            <div style="flex: 1; min-width: 0;">
-                                <label style="display: block; margin-bottom: 6px; font-size: 13px; font-weight: 700; color: #4a5568;">Type Unit</label>
-                                <select id="type_unit" name="type_unit" required style="width: 100%; padding: 10px; background: white; border: 1px solid #cbd5e0; border-radius: 8px;"></select>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Tanggal, Jam, Sales/Shift --}}
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-                        <div>
-                            <label style="display: block; margin-bottom: 8px; color: #2d3748; font-weight: 700; font-size: 13px;">TANGGAL</label>
-                            <input type="date" name="tanggal" value="{{ old('tanggal', $plan->tanggal) }}" required
-                                style="width: 100%; box-sizing: border-box; padding: 10px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 8px; color: #2d3748; font-weight: 700; font-size: 13px;">JAM</label>
-                            <input type="time" name="jam" value="{{ old('jam', $plan->jam) }}" required
-                                style="width: 100%; box-sizing: border-box; padding: 10px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 8px; color: #2d3748; font-weight: 700; font-size: 13px;">SALES / SHIFT</label>
-                            <input type="number" name="jml_sales_shift" value="{{ old('jml_sales_shift', $plan->jml_sales_shift) }}" required min="1"
-                                style="width: 100%; box-sizing: border-box; padding: 10px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px;">
-                        </div>
-                    </div>
-
-                    {{-- PIC Kegiatan --}}
-                    <div>
-                        <label style="display: block; margin-bottom: 8px; color: #2d3748; font-weight: 700; font-size: 13px;">PIC KEGIATAN</label>
-                        <input type="text" name="pic" value="{{ old('pic', $plan->pic) }}" required
-                            style="width: 100%; box-sizing: border-box; padding: 12px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px;"
-                            placeholder="Masukkan nama penanggung jawab">
-                    </div>
-
-                    {{-- Target & Actual Grid --}}
-                    <div style="background: #fff5f5; padding: 20px; border-radius: 15px; border: 1px solid #fed7d7;">
-                        <h3 style="color: #c53030; font-size: 14px; margin-bottom: 15px; font-weight: 800; border-bottom: 2px solid #fed7d7; padding-bottom: 8px; display: inline-block; text-transform: uppercase;">TARGET & ACTUAL</h3>
-                        
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px;">
-                            <div>
-                                <span style="font-size: 11px; font-weight: 800; color: #c53030;">TARGET P</span>
-                                <input type="number" name="target_p" value="{{ old('target_p', $plan->target_p) }}" required min="0"
-                                    style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #feb2b2; border-radius: 8px; margin-top: 4px;">
-                            </div>
-                            <div>
-                                <span style="font-size: 11px; font-weight: 800; color: #c53030;">TARGET HP</span>
-                                <input type="number" name="target_hp" value="{{ old('target_hp', $plan->target_hp) }}" required min="0"
-                                    style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #feb2b2; border-radius: 8px; margin-top: 4px;">
-                            </div>
-                            <div>
-                                <span style="font-size: 11px; font-weight: 800; color: #c53030;">TARGET SPK</span>
-                                <input type="number" name="target_spk" value="{{ old('target_spk', $plan->target_spk) }}" required min="0"
-                                    style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #feb2b2; border-radius: 8px; margin-top: 4px;">
-                            </div>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-                            <div>
-                                <span style="font-size: 11px; font-weight: 700; color: #4a5568;">ACTUAL P</span>
-                                <input type="number" name="actual_p" value="{{ old('actual_p', $plan->actual_p) }}" min="0"
-                                    style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; background: white; margin-top: 4px;">
-                            </div>
-                            <div>
-                                <span style="font-size: 11px; font-weight: 700; color: #4a5568;">ACTUAL HP</span>
-                                <input type="number" name="actual_hp" value="{{ old('actual_hp', $plan->actual_hp) }}" min="0"
-                                    style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; background: white; margin-top: 4px;">
-                            </div>
-                            <div>
-                                <span style="font-size: 11px; font-weight: 700; color: #4a5568;">ACTUAL SPK</span>
-                                <input type="number" name="actual_spk" value="{{ old('actual_spk', $plan->actual_spk) }}" min="0"
-                                    style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; background: white; margin-top: 4px;">
-                            </div>
-                            <div>
-                                <span style="font-size: 11px; font-weight: 700; color: #4a5568;">ACTUAL DO</span>
-                                <input type="number" name="actual_do" value="{{ old('actual_do', $plan->actual_do) }}" min="0"
-                                    style="width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; background: white; margin-top: 4px;">
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Cost & Keterangan --}}
-                    <div style="display: flex; gap: 20px; width: 100%; box-sizing: border-box;">
-                        <div style="flex: 1; min-width: 0;">
-                            <label style="display: block; margin-bottom: 8px; color: #2d3748; font-weight: 700; font-size: 13px;">TOTAL COST (Rp)</label>
-                            <input type="number" name="total_cost" value="{{ old('total_cost', $plan->total_cost) }}" required
-                                style="width: 100%; box-sizing: border-box; padding: 12px; background: #fffaf0; border: 2px solid #feebc8; border-radius: 10px;"
-                                placeholder="0">
-                        </div>
-                        <div style="flex: 2;">
-                            <label style="display: block; margin-bottom: 8px; color: #2d3748; font-weight: 700; font-size: 13px;">KETERANGAN</label>
-                            <textarea name="keterangan" rows="2"
-                                style="width: 100%; box-sizing: border-box; padding: 12px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; font-family: inherit;"
-                                placeholder="Keterangan tambahan...">{{ old('keterangan', $plan->keterangan) }}</textarea>
-                        </div>
-                    </div>
-
-                    {{-- Form Actions --}}
-                    <div style="display: flex; justify-content: flex-end; gap: 15px; margin-top: 10px; border-top: 2px solid #f7fafc; padding-top: 25px;">
-                        <a href="{{ route('activity.plan.index') }}"
-                            style="padding: 14px 30px; background: #e2e8f0; color: #4a5568; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 14px;">BATAL</a>
-                        <button type="button" onclick="confirmUpdatePlan()"
-                            style="padding: 14px 45px; background: #dc2626; color: #ffffff !important; font-weight: 800; border-radius: 10px; border: none; font-size: 14px; cursor: pointer; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3); text-transform: uppercase;">
-                            UPDATE RENCANA
-                        </button>
-                    </div>
-
-                </div>
-            </form>
+        <div>
+            <a href="{{ route('activity.plan.index', ['cabang' => $cabang, 'bulan' => $currMonthNum, 'tahun' => $currYear]) }}" class="btn-back">
+                ← Kembali ke Summary
+            </a>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const unitOptions = {
-                'Commercial': ['CARRY_PU', 'APV_BLIND_VAN'],
-                'Passenger': ['S_PRESSO', 'BALENO', 'IGNIS', 'XL7', 'ALL_NEW_ERTIGA', 'GRAND_VITARA', 'JIMNY_3_DOOR', 'JIMNY_5_DOOR', 'FRONX']
-            };
+    <form action="{{ route('activity.plan.store') }}" method="POST" id="formTargetMatrix">
+        @csrf
+        <input type="hidden" name="cabang" value="{{ $cabang }}">
+        <input type="hidden" name="bulan" value="{{ $currMonthNum }}">
+        <input type="hidden" name="tahun" value="{{ $currYear }}">
 
-            const jenisSelect = document.getElementById('jenis_unit');
-            const typeSelect = document.getElementById('type_unit');
-            const selectedType = "{{ old('type_unit', $plan->type_unit) }}";
+        {{-- ========================================================================= --}}
+        {{-- SECTION 1: TARGET & BUDGET # BY TYPE (8 MODEL)                            --}}
+        {{-- ========================================================================= --}}
+        <div class="matrix-section">
+            <div class="section-badge">
+                🚗 TARGET & BUDGET # BY TYPE (8 MODEL UNIT)
+            </div>
 
-            function updateTypeOptions() {
-                const jenis = jenisSelect.value;
-                typeSelect.innerHTML = '';
-                if (unitOptions[jenis]) {
-                    unitOptions[jenis].forEach(function (unit) {
-                        const option = document.createElement('option');
-                        option.value = unit;
-                        option.textContent = unit.replace(/_/g, ' ');
-                        if (unit === selectedType) option.selected = true;
-                        typeSelect.appendChild(option);
-                    });
-                }
-            }
+            <table class="table-matrix">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">NO</th>
+                        <th style="text-align: left; min-width: 180px; padding-left: 16px;">MODEL UNIT</th>
+                        <th class="{{ $targetFocus == 'qty' ? 'th-highlight' : '' }}" style="width: 120px;">QTY ACT</th>
+                        <th class="{{ $targetFocus == 'inq' ? 'th-highlight' : '' }}" style="width: 130px;">TGT INQ</th>
+                        <th class="{{ $targetFocus == 'spk' ? 'th-highlight' : '' }}" style="width: 130px;">TGT SPK</th>
+                        <th class="{{ $targetFocus == 'do' ? 'th-highlight' : '' }}" style="width: 130px;">TGT DO</th>
+                        <th class="{{ in_array($targetFocus, ['budget', 'perspk']) ? 'th-highlight-purple' : '' }}" style="width: 190px;">TOTAL BUDGET (Rp)</th>
+                        <th style="width: 170px;">EST. COST / SPK</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($unitModels as $model)
+                        @php
+                            $rec = $existingByType[$model] ?? null;
+                            $valQty    = $rec ? ($rec->jml_sales_shift > 0 ? $rec->jml_sales_shift : '') : '';
+                            $valInq    = $rec ? $rec->target_p : '';
+                            $valSpk    = $rec ? $rec->target_spk : '';
+                            $valDo     = $rec ? $rec->target_do : '';
+                            $valBudget = ($rec && $rec->total_cost > 0) ? number_format($rec->total_cost, 0, ',', '.') : '';
+                        @endphp
+                        <tr>
+                            <td style="text-align: center; font-weight: 700; color: #64748b;">{{ $loop->iteration }}</td>
+                            <td class="item-name">{{ $model }}</td>
+                            
+                            {{-- QTY ACTIVITIES --}}
+                            <td>
+                                <input type="number" 
+                                       name="targets_type[{{ $model }}][jml_sales_shift]" 
+                                       value="{{ $valQty }}" 
+                                       placeholder="0" 
+                                       min="0"
+                                       class="input-matrix {{ $targetFocus == 'qty' ? 'input-highlight' : '' }}">
+                            </td>
 
-            jenisSelect.addEventListener('change', updateTypeOptions);
-            updateTypeOptions();
-        });
+                            {{-- TGT INQ --}}
+                            <td>
+                                <input type="number" 
+                                       name="targets_type[{{ $model }}][target_p]" 
+                                       value="{{ $valInq }}" 
+                                       placeholder="0" 
+                                       min="0"
+                                       class="input-matrix {{ $targetFocus == 'inq' ? 'input-highlight' : '' }}">
+                            </td>
 
-        function confirmUpdatePlan() {
-            const form = document.getElementById('formEditPlan');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-            Swal.fire({
-                title: 'Update Activity Plan?',
-                text: 'Pastikan data perubahan sudah benar.',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#64748b',
-                confirmButtonText: 'Ya, Update!',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
-                }
-            });
+                            {{-- TGT SPK --}}
+                            <td>
+                                <input type="number" 
+                                       name="targets_type[{{ $model }}][target_spk]" 
+                                       value="{{ $valSpk }}" 
+                                       placeholder="0" 
+                                       min="0"
+                                       id="type-spk-{{ $loop->index }}"
+                                       oninput="calcPerSpk('type', {{ $loop->index }})"
+                                       class="input-matrix {{ $targetFocus == 'spk' ? 'input-highlight' : '' }}">
+                            </td>
+
+                            {{-- TGT DO --}}
+                            <td>
+                                <input type="number" 
+                                       name="targets_type[{{ $model }}][target_do]" 
+                                       value="{{ $valDo }}" 
+                                       placeholder="0" 
+                                       min="0"
+                                       class="input-matrix {{ $targetFocus == 'do' ? 'input-highlight' : '' }}">
+                            </td>
+
+                            {{-- TOTAL BUDGET --}}
+                            <td>
+                                <input type="text" 
+                                       name="targets_type[{{ $model }}][total_cost]" 
+                                       value="{{ $valBudget }}" 
+                                       placeholder="0" 
+                                       id="type-budget-{{ $loop->index }}"
+                                       oninput="formatCurrency(this); calcPerSpk('type', {{ $loop->index }})"
+                                       class="input-matrix input-budget {{ in_array($targetFocus, ['budget', 'perspk']) ? 'input-highlight' : '' }}">
+                            </td>
+
+                            {{-- ESTIMASI PER SPK --}}
+                            <td>
+                                <span class="per-spk-badge" id="type-perspk-{{ $loop->index }}">
+                                    Rp -
+                                </span>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        {{-- ========================================================================= --}}
+        {{-- SECTION 2: TARGET & BUDGET # BY ACTIVITY (10 KATEGORI)                    --}}
+        {{-- ========================================================================= --}}
+        <div class="matrix-section">
+            <div class="section-badge section-badge-purple">
+                📢 TARGET & BUDGET # BY ACTIVITY (10 KATEGORI AKTIVITAS)
+            </div>
+
+            <table class="table-matrix">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">NO</th>
+                        <th style="text-align: left; min-width: 180px; padding-left: 16px;">KATEGORI AKTIVITAS</th>
+                        <th class="{{ $targetFocus == 'qty' ? 'th-highlight' : '' }}" style="width: 120px;">QTY ACT</th>
+                        <th class="{{ $targetFocus == 'inq' ? 'th-highlight' : '' }}" style="width: 130px;">TGT INQ</th>
+                        <th class="{{ $targetFocus == 'spk' ? 'th-highlight' : '' }}" style="width: 130px;">TGT SPK</th>
+                        <th class="{{ $targetFocus == 'do' ? 'th-highlight' : '' }}" style="width: 130px;">TGT DO</th>
+                        <th class="{{ in_array($targetFocus, ['budget', 'perspk']) ? 'th-highlight-purple' : '' }}" style="width: 190px;">TOTAL BUDGET (Rp)</th>
+                        <th style="width: 170px;">EST. COST / SPK</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($activityList as $act)
+                        @php
+                            $rec = $existingByAct[$act] ?? null;
+                            $valQty    = $rec ? ($rec->jml_sales_shift > 0 ? $rec->jml_sales_shift : '') : '';
+                            $valInq    = $rec ? $rec->target_p : '';
+                            $valSpk    = $rec ? $rec->target_spk : '';
+                            $valDo     = $rec ? $rec->target_do : '';
+                            $valBudget = ($rec && $rec->total_cost > 0) ? number_format($rec->total_cost, 0, ',', '.') : '';
+                        @endphp
+                        <tr>
+                            <td style="text-align: center; font-weight: 700; color: #64748b;">{{ $loop->iteration }}</td>
+                            <td class="item-name">{{ $act }}</td>
+                            
+                            {{-- QTY ACTIVITIES --}}
+                            <td>
+                                <input type="number" 
+                                       name="targets_act[{{ $act }}][jml_sales_shift]" 
+                                       value="{{ $valQty }}" 
+                                       placeholder="0" 
+                                       min="0"
+                                       class="input-matrix {{ $targetFocus == 'qty' ? 'input-highlight' : '' }}">
+                            </td>
+
+                            {{-- TGT INQ --}}
+                            <td>
+                                <input type="number" 
+                                       name="targets_act[{{ $act }}][target_p]" 
+                                       value="{{ $valInq }}" 
+                                       placeholder="0" 
+                                       min="0"
+                                       class="input-matrix {{ $targetFocus == 'inq' ? 'input-highlight' : '' }}">
+                            </td>
+
+                            {{-- TGT SPK --}}
+                            <td>
+                                <input type="number" 
+                                       name="targets_act[{{ $act }}][target_spk]" 
+                                       value="{{ $valSpk }}" 
+                                       placeholder="0" 
+                                       min="0"
+                                       id="act-spk-{{ $loop->index }}"
+                                       oninput="calcPerSpk('act', {{ $loop->index }})"
+                                       class="input-matrix {{ $targetFocus == 'spk' ? 'input-highlight' : '' }}">
+                            </td>
+
+                            {{-- TGT DO --}}
+                            <td>
+                                <input type="number" 
+                                       name="targets_act[{{ $act }}][target_do]" 
+                                       value="{{ $valDo }}" 
+                                       placeholder="0" 
+                                       min="0"
+                                       class="input-matrix {{ $targetFocus == 'do' ? 'input-highlight' : '' }}">
+                            </td>
+
+                            {{-- TOTAL BUDGET --}}
+                            <td>
+                                <input type="text" 
+                                       name="targets_act[{{ $act }}][total_cost]" 
+                                       value="{{ $valBudget }}" 
+                                       placeholder="0" 
+                                       id="act-budget-{{ $loop->index }}"
+                                       oninput="formatCurrency(this); calcPerSpk('act', {{ $loop->index }})"
+                                       class="input-matrix input-budget {{ in_array($targetFocus, ['budget', 'perspk']) ? 'input-highlight' : '' }}">
+                            </td>
+
+                            {{-- ESTIMASI PER SPK --}}
+                            <td>
+                                <span class="per-spk-badge" id="act-perspk-{{ $loop->index }}">
+                                    Rp -
+                                </span>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        <div class="submit-bar">
+            <a href="{{ route('activity.plan.index', ['cabang' => $cabang, 'bulan' => $currMonthNum, 'tahun' => $currYear]) }}" class="btn-back">
+                Batal
+            </a>
+            <button type="submit" class="btn-save">
+                💾 SIMPAN TARGET & BUDGET
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function reloadTargetForm() {
+        var cabang = document.getElementById('cabangSelector').value;
+        var bulan  = document.getElementById('bulanSelector').value;
+        var tahun  = document.getElementById('tahunSelector').value;
+        window.location.href = "{{ route('activity.plan.create') }}?cabang=" + encodeURIComponent(cabang) + "&bulan=" + bulan + "&tahun=" + tahun;
+    }
+
+    function formatCurrency(input) {
+        var num = input.value.replace(/[^0-9]/g, '');
+        if (num === '') {
+            input.value = '';
+            return;
         }
-    </script>
+        input.value = new Intl.NumberFormat('id-ID').format(num);
+    }
+
+    function calcPerSpk(prefix, idx) {
+        var spkElem = document.getElementById(prefix + '-spk-' + idx);
+        var budgetElem = document.getElementById(prefix + '-budget-' + idx);
+        var resElem = document.getElementById(prefix + '-perspk-' + idx);
+
+        if (!spkElem || !budgetElem || !resElem) return;
+
+        var spkVal = parseInt(spkElem.value) || 0;
+        var budgetVal = parseFloat(budgetElem.value.replace(/\./g, '').replace(/,/g, '')) || 0;
+
+        if (budgetVal > 0 && spkVal > 0) {
+            var perSpk = Math.round(budgetVal / spkVal);
+            resElem.innerText = 'Rp ' + new Intl.NumberFormat('id-ID').format(perSpk);
+        } else {
+            resElem.innerText = 'Rp -';
+        }
+    }
+
+    // Init auto-calculations on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        for (var i = 0; i < 8; i++) {
+            calcPerSpk('type', i);
+        }
+        for (var j = 0; j < 10; j++) {
+            calcPerSpk('act', j);
+        }
+    });
+</script>
 @endsection

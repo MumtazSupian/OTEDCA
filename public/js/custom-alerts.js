@@ -435,9 +435,12 @@
     // 5. AUTO-UPGRADE SESSION SUCCESS MESSAGES
     // =============================================
     document.addEventListener('DOMContentLoaded', function () {
-        // Find all success session alerts (they typically have green background)
-        var alerts = document.querySelectorAll('[style*="dff0d8"], [style*="d4edda"], [style*="dcfce7"]');
+        // Find all success session alerts (only div elements outside tables)
+        var alerts = document.querySelectorAll('div[style*="dff0d8"], div[style*="d4edda"], div[style*="dcfce7"], .alert-success');
         alerts.forEach(function (alert) {
+            if (alert.closest('table') || ['TH', 'TD', 'TR', 'TBODY', 'THEAD', 'TABLE'].includes(alert.tagName)) {
+                return;
+            }
             var message = alert.textContent.trim();
             if (!message) return;
 

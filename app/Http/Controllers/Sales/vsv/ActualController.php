@@ -234,8 +234,8 @@ class ActualController extends Controller
             $masterTypes = $this->getAllMasterVehicleTypes();
 
             if ($viewType === 'spk') {
-                // 1. Cianjur (641940102) & Cipanas (641940106) from pmKDP SPKDate
-                // 2. Ciawi (641940101), Cinere (641940103), Jatiasih (641940104) from salesAppTable with PBK
+                // 1. Cianjur, Cipanas pmKDP SPKDate
+                // 2. Ciawi, Cinere, Jatiasih salesAppTable with PBK
                 $q1 = DB::connection('dms')->table('pmKDP')
                     ->whereIn('BranchCode', ['641940102', '641940106']);
                 if (!empty($fromDate) && !empty($toDate)) {

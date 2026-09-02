@@ -183,7 +183,7 @@ class DashboardController extends Controller
                     \Illuminate\Support\Facades\Log::error("Dashboard v1 Inquiry Error: " . $e->getMessage());
                 }
 
-                // 2. DATA SPK: Sesuai logika MainDashboardController (pmKDP SPKDate & salesAppTable PBK)
+                // 2. DATA SPK(pmKDP SPKDate & salesAppTable PBK)
                 try {
                     // Previous Month SPK
                     $spkPmkdpPrev = \Illuminate\Support\Facades\DB::connection('dms')->table('pmKDP')
@@ -559,8 +559,7 @@ class DashboardController extends Controller
 
     public function v2(Request $request)
     {
-        @set_time_limit(300);
-        @ini_set('max_execution_time', '300');
+        @set_time_limit(0);
         $user = Auth::user();
         $tahunSekarang = 2026;
 
@@ -635,10 +634,10 @@ class DashboardController extends Controller
         $nextMonthNum   = ($currMonthNum < 12) ? $currMonthNum + 1 : 12;
 
         $cabangUserForCache = $user->branch ?? $user->cabang ?? '';
-        $cacheKeyV2 = 'dash_v2_pure_server_fix_ertiga_v15_' . $tahunSekarang . '_' . $currMonthNum . '_' . ($isPusat ? 'pusat' : $cabangUserForCache);
+        $cacheKeyV2 = 'dash_v2_pure_server_fix_ertiga_v36_' . $tahunSekarang . '_' . $currMonthNum . '_' . ($isPusat ? 'pusat' : $cabangUserForCache);
 
-        $viewDataV2 = Cache::remember($cacheKeyV2, 60, function() use (
-            $cabangs, $branchCodeMap, $modelList, $tahunSekarang, $currMonthNum, $startDateMonth, $endDateMonth,
+        $viewDataV2 = Cache::remember($cacheKeyV2, 600, function() use (
+            $cabangs, $branchCodeMap, $modelList, $tahunSekarang, $currMonthNum, $daysInMonth, $startDateMonth, $endDateMonth,
             $nextMonthStartDate, $ytdStartDate, $nextMonthNum, $bulan, $bulanMap, $isSH, $user, $shUserIds
         ) {
             $allBranchCodes = [];
@@ -661,15 +660,44 @@ class DashboardController extends Controller
                     ->get(['BranchCode', 'Year', 'Month', 'SourceName', 'DetailName', 'DetailCode', 'DO_Week1', 'DO_Week2', 'DO_Week3', 'DO_Week4', 'DO_Week5', 'SPK_Week1', 'SPK_Week2', 'SPK_Week3', 'SPK_Week4', 'SPK_Week5', 'INQ_Week1', 'INQ_Week2', 'INQ_Week3', 'INQ_Week4', 'INQ_Week5']);
 
                 // 1. INQUIRY Bulan Berjalan (InquiryDate)
-                $qInq = \App\Models\Sales\vsv\Kdp::whereBetween('InquiryDate', [$startDateMonth, $endDateMonth]);
+                $qInq = \Illuminate\Support\Facades\DB::connection('dms')->table('pmKDP as p')
+                    ->whereBetween('p.InquiryDate', [$startDateMonth, $endDateMonth]);
                 if (!empty($allBranchCodes)) {
-                    $qInq->whereIn('BranchCode', $allBranchCodes);
+                    $qInq->whereIn('p.BranchCode', $allBranchCodes);
                 }
-                $allInquiryRecords = $qInq->get(['BranchCode', 'TipeKendaraan', 'Variant', 'InquiryDate', 'PerolehanData']);
+                $allInquiryRecords = $qInq->select([
+                    'p.BranchCode',
+                    'p.TipeKendaraan',
+                    'p.Variant',
+                    'p.InquiryDate',
+                    'p.PerolehanData'
+                ])->get();
+
+                // b. TEST DRIVE Bulan Berjalan (salesAppTable.CreationDate)
+                $allTdRecordsV2 = \Illuminate\Support\Facades\DB::connection('dms')->table('salesAppTable as s')
+                    ->leftJoin('pmKDP as p', 's.InquiryNumber', '=', 'p.InquiryNumber')
+                    ->whereBetween('s.CreationDate', [$startDateMonth, $endDateMonth]);
+                if (!empty($allBranchCodes)) {
+                    $allTdRecordsV2->whereIn('s.BranchCode', $allBranchCodes);
+                }
+                $allTdRecordsV2 = $allTdRecordsV2->select([
+                    's.InquiryNumber',
+                    's.CreationDate',
+                    's.BranchCode',
+                    'p.TipeKendaraan',
+                    'p.Variant',
+                    's.TipeKendaraan2',
+                    's.DurasiTestDrive',
+                    's.JarakTestDrive'
+                ])->get();
 
                 // 2. DO Bulan Berjalan (LastUpdateStatus >= StartOfMonth AND LastUpdateStatus < StartOfNextMonth)
                 $qDo = \App\Models\Sales\vsv\Kdp::where('LastUpdateStatus', '>=', $startDateMonth)
-                    ->where('LastUpdateStatus', '<', $nextMonthStartDate);
+                    ->where('LastUpdateStatus', '<', $nextMonthStartDate)
+                    ->where(function($q) {
+                        $q->whereIn(\Illuminate\Support\Facades\DB::raw("UPPER(TRIM(LastProgress))"), ['DELIVERY', 'DO'])
+                          ->orWhere('StatusProspek', '60');
+                    });
                 if (!empty($allBranchCodes)) {
                     $qDo->whereIn('BranchCode', $allBranchCodes);
                 }
@@ -677,17 +705,20 @@ class DashboardController extends Controller
 
                 // 3. DO YTD (LastUpdateStatus >= YtdStartDate AND LastUpdateStatus < StartOfNextMonth)
                 $qDoYtd = \App\Models\Sales\vsv\Kdp::where('LastUpdateStatus', '>=', $ytdStartDate)
-                    ->where('LastUpdateStatus', '<', $nextMonthStartDate);
+                    ->where('LastUpdateStatus', '<', $nextMonthStartDate)
+                    ->where(function($q) {
+                        $q->whereIn(\Illuminate\Support\Facades\DB::raw("UPPER(TRIM(LastProgress))"), ['DELIVERY', 'DO'])
+                          ->orWhere('StatusProspek', '60');
+                    });
                 if (!empty($allBranchCodes)) {
                     $qDoYtd->whereIn('BranchCode', $allBranchCodes);
                 }
                 $allDoYtdRecords = $qDoYtd->get(['BranchCode', 'TipeKendaraan', 'Variant', 'LastProgress', 'StatusProspek', 'LastUpdateStatus']);
 
-                // 4. SPK Data: Sesuai logika MainDashboardController (pmKDP SPKDate & salesAppTable PBK)
+                // 4. SPK Data pmKDP SPKDate & salesAppTable PBK
                 $spkPmkdpV2 = \Illuminate\Support\Facades\DB::connection('dms')->table('pmKDP')
                     ->whereIn('BranchCode', ['641940102', '641940106'])
-                    ->whereMonth('SPKDate', $currMonthNum)
-                    ->whereYear('SPKDate', $currYear);
+                    ->whereBetween('SPKDate', [substr($startDateMonth, 0, 10), substr($endDateMonth, 0, 10)]);
                 if (!empty($allBranchCodes)) {
                     $spkPmkdpV2->whereIn('BranchCode', $allBranchCodes);
                 }
@@ -698,13 +729,7 @@ class DashboardController extends Controller
                     ->whereIn('t.BranchCode', ['641940101', '641940103', '641940104'])
                     ->whereNotNull('t.HID')
                     ->where('t.HID', 'like', 'PBK%')
-                    ->where(function($q) use ($currMonthNum, $currYear) {
-                        $q->where(function($s) use ($currMonthNum, $currYear) {
-                            $s->whereMonth('t.CreationDate', $currMonthNum)->whereYear('t.CreationDate', $currYear);
-                        })->orWhere(function($s) {
-                            $s->where('t.BranchCode', '641940104')->whereIn('t.InquiryNumber', [482285, 482811]);
-                        });
-                    });
+                    ->whereBetween('t.CreationDate', [$startDateMonth, $endDateMonth]);
                 if (!empty($allBranchCodes)) {
                     $spkSatV2->whereIn('t.BranchCode', $allBranchCodes);
                 }
@@ -731,6 +756,65 @@ class DashboardController extends Controller
                         'SPKDate' => $r->SPKDate,
                     ]);
                 }
+
+                // 5. DATA FAKTUR POLISI: omTrSalesReqDetail LEFT JOIN omTrSalesSOModel
+                $allFpRecordsV2 = collect();
+                try {
+                    $qFpV2 = \Illuminate\Support\Facades\DB::connection('dms')->table('omTrSalesReqDetail as d')
+                        ->leftJoin('omTrSalesSOModel as m', function($join) {
+                            $join->on('d.SONo', '=', 'm.SONo')
+                                 ->on('d.BranchCode', '=', 'm.BranchCode');
+                        })
+                        ->whereBetween('d.CreatedDate', [$startDateMonth, $endDateMonth]);
+                    if (!empty($allBranchCodes)) {
+                        $qFpV2->whereIn('d.BranchCode', $allBranchCodes);
+                    }
+                    $allFpRecordsV2 = $qFpV2->select([
+                        'd.BranchCode',
+                        'd.FakturPolisiNo',
+                        'd.CreatedDate',
+                        'm.SalesModelCode'
+                    ])->get();
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error("Dashboard v2 FP Error: " . $e->getMessage());
+                }
+
+                // 6. DATA 13 BULAN MURNI DMS UNTUK ITS RESULT
+                $startDate13Months = date('Y-m-01 00:00:00', strtotime("-12 months", mktime(0, 0, 0, $currMonthNum, 1, $tahunSekarang)));
+                $endDate13Months   = date('Y-m-t 23:59:59', mktime(0, 0, 0, $currMonthNum, 1, $tahunSekarang));
+
+                $q13Inq = \Illuminate\Support\Facades\DB::connection('dms')->table('pmKDP')
+                    ->whereBetween('InquiryDate', [$startDate13Months, $endDate13Months]);
+                if (!empty($allBranchCodes)) {
+                    $q13Inq->whereIn('BranchCode', $allBranchCodes);
+                }
+                $all13mInq = $q13Inq->select(['BranchCode', 'InquiryDate', 'TipeKendaraan', 'Variant'])->get();
+
+                $q13Td = \Illuminate\Support\Facades\DB::connection('dms')->table('salesAppTable as s')
+                    ->leftJoin('pmKDP as p', 's.InquiryNumber', '=', 'p.InquiryNumber')
+                    ->whereBetween('s.CreationDate', [$startDate13Months, $endDate13Months]);
+                if (!empty($allBranchCodes)) {
+                    $q13Td->whereIn('s.BranchCode', $allBranchCodes);
+                }
+                $all13mTd = $q13Td->select(['s.BranchCode', 's.CreationDate', 'p.TipeKendaraan', 'p.Variant', 's.TipeKendaraan2', 's.DurasiTestDrive', 's.JarakTestDrive'])->get();
+
+                $q13Spk = \Illuminate\Support\Facades\DB::connection('dms')->table('pmKDP')
+                    ->whereBetween('SPKDate', [substr($startDate13Months, 0, 10), substr($endDate13Months, 0, 10)]);
+                if (!empty($allBranchCodes)) {
+                    $q13Spk->whereIn('BranchCode', $allBranchCodes);
+                }
+                $all13mSpk = $q13Spk->select(['BranchCode', 'SPKDate', 'TipeKendaraan', 'Variant'])->get();
+
+                $q13Fp = \Illuminate\Support\Facades\DB::connection('dms')->table('omTrSalesReqDetail as d')
+                    ->leftJoin('omTrSalesSOModel as m', function($join) {
+                        $join->on('d.SONo', '=', 'm.SONo')
+                             ->on('d.BranchCode', '=', 'm.BranchCode');
+                    })
+                    ->whereBetween('d.CreatedDate', [$startDate13Months, $endDate13Months]);
+                if (!empty($allBranchCodes)) {
+                    $q13Fp->whereIn('d.BranchCode', $allBranchCodes);
+                }
+                $all13mFp = $q13Fp->select(['d.BranchCode', 'd.CreatedDate', 'm.SalesModelCode'])->get();
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error("Dashboard v2 DMS Error: " . $e->getMessage());
             }
@@ -753,10 +837,37 @@ class DashboardController extends Controller
             $allLocalSfAct = ActualSalesForce::where('tahun', $tahunSekarang)->get();
             $allLocalSfDo  = ActualDoSalesForce::where('tahun', $tahunSekarang)->get();
 
-            $all_branch_data = [];
-            $keys = array_values($bulanMap);
-            $currentIndex = array_search($bulan, $keys);
-            $nextMonthKey = ($currentIndex < 11) ? $keys[$currentIndex + 1] : 'des';
+            // ITS RESULT Setup (13-month rolling window)
+            $itsMonths = [];
+            for ($i = 12; $i >= 0; $i--) {
+                $time = strtotime("-$i months", mktime(0, 0, 0, $currMonthNum, 1, $tahunSekarang));
+                $mNum = (int)date('n', $time);
+                $yNum = (int)date('Y', $time);
+                $mLabel = date('M-y', $time);
+                $itsMonths[] = [
+                    'month' => $mNum,
+                    'year'  => $yNum,
+                    'label' => $mLabel,
+                    'is_current' => ($i === 0),
+                    'index' => 12 - $i,
+                ];
+            }
+
+            $itsModelDefsLeft = [
+                'NEW CARRY' => ['patterns' => ['NEW CARRY', 'CARRY', 'DC', 'AEV', 'FD', 'WD', 'CHASSIS', 'PU', 'PICK UP', 'BOX', 'MOKO']],
+                'APV'       => ['patterns' => ['APV BLIND VAN', 'APV', 'GC4', 'VAN', 'GC415']],
+                'ERTIGA'    => ['patterns' => ['ALL NEW ERTIGA', 'ERTIGA', 'A3L', 'ERTIGA-HYBRID']],
+                'XL7'       => ['patterns' => ['XL7', 'XL-7', 'XL 7', 'ZETA', 'BETA', 'ALPHA', 'NEW XL-7']],
+            ];
+
+            $itsModelDefsRight = [
+                'GRAND VITARA' => ['patterns' => ['GRAND VITARA', 'VITARA', 'GV', 'GRAND-VITARA']],
+                'JIMNY'        => ['patterns' => ['JIMNY 3D', 'JIMNY 5D', 'JIMNY', 'JIMMY', 'JB74', 'JB674', '6N415']],
+                'FRONX'        => ['patterns' => ['FRONX', 'BU4']],
+                'SPRESSO'      => ['patterns' => ['S-PRESSO', 'SPRESO', 'S PRESSO', 'DN4']],
+            ];
+
+            
 
             foreach ($cabangs as $cabang) {
                 $branchCodes = $branchCodeMap[$cabang] ?? [];
@@ -886,26 +997,51 @@ class DashboardController extends Controller
                 $all_sources = [
                     'Call In (dari Iklan)', 'Canvasing', 'Data Base', 'Digital Hyperlocal',
                     'Digital Non Hyperlocal', 'Exhibition', 'Media Digital', 'Media Elektronik',
-                    'Mediator', 'Referensi', 'Referensi Customer', 'Showroom Activity',
-                    'Showroom Walk-in', 'Website Dealer'
+                    'Mediator', 'Referensi Customer', 'Showroom Activity',
+                    'Showroom Walk-in', 'Website Dealer', 'Workshop Inquiry'
                 ];
 
                 $soiPatternsMap = [
                     'Call In (dari Iklan)'   => ['CALL IN', 'CALL-IN', 'CALLIN', 'IKLAN', 'TELEPON', 'PHONE', 'TELP'],
                     'Canvasing'              => ['CANVASING', 'KANVASING', 'CANVAS', 'FLYERING', 'SEBAR BROSUR', 'BROSUR', 'CANVASING/FLYERING'],
-                    'Data Base'              => ['DATABASE', 'DATA BASE', 'DB', 'CUSTOMER LAMA', 'RO', 'DATA BASE SERVICE', 'DB SERVICE'],
+                    'Data Base'              => ['DATABASE', 'DATA BASE', 'DATA BASE SERVICE', 'DB SERVICE'],
                     'Digital Hyperlocal'     => ['DIGITAL HYPERLOCAL', 'HYPERLOCAL', 'HYPER LOCAL', 'HYPER-LOCAL'],
                     'Digital Non Hyperlocal' => ['DIGITAL NON-HYPERLOCAL', 'DIGITAL NON HYPERLOCAL', 'NON-HYPERLOCAL', 'NON HYPERLOCAL', 'NON-HYPER LOCAL', 'NON HYPER'],
                     'Exhibition'             => ['EXHIBITION', 'PAMERAN', 'EVENT', 'EXPO', 'MALL', 'BAZAAR', 'DISPLAY', 'AUTO SHOW'],
                     'Media Digital'          => ['MEDIA DIGITAL', 'DIGITAL', 'SOSMED', 'INSTAGRAM', 'IG', 'FACEBOOK', 'FB', 'TIKTOK', 'GOOGLE', 'ADS', 'YOUTUBE', 'MEDSOS'],
                     'Media Elektronik'       => ['MEDIA ELEKTRONIK', 'ELEKTRONIK', 'RADIO', 'TV', 'BILLBOARD', 'KORAN', 'MAJALAH', 'CETAK'],
                     'Mediator'               => ['MEDIATOR', 'BROKER', 'PERANTARA', 'PIHAK KETIGA', 'AGENT', 'AGEN', 'SHOWROOM MOBIL BEKAS'],
-                    'Referensi'              => ['REFERENSI CUSTOMER', 'REFERENSI', 'REF', 'TEMAN', 'KENALAN', 'KELUARGA', 'RELASI'],
-                    'Referensi Customer'     => ['REFERENSI CUSTOMER', 'REF CUSTOMER', 'REF CUST', 'RO CUSTOMER', 'REKOMENDASI'],
+                    'Referensi Customer'     => ['REFERENSI CUSTOMER', 'REFERENSI', 'RELASI', 'REKOMENDASI', 'REF CUSTOMER', 'REF CUST', 'RO CUSTOMER', 'TEMAN', 'KENALAN', 'KELUARGA'],
                     'Showroom Activity'      => ['SHOWROOM ACTIVITY', 'SHOWROOM EVENT', 'WEEKEND SALES', 'CUSTOMER GATHERING', 'GATHERING', 'SHOWROOM EVENT / GATHERING'],
                     'Showroom Walk-in'       => ['SHOWROOM WALK-IN', 'SHOWROOM WALK IN', 'WALK-IN', 'WALK IN', 'WALKIN', 'SHOWROOM', 'DATANG LANGSUNG', 'KUNJUNGAN', 'WALK-IN SHOWROOM', 'WALK IN SHOWROOM'],
                     'Website Dealer'         => ['WEBSITE DEALER', 'WEBSITE', 'WEB', 'PORTAL', 'LANDING PAGE', 'WEB DEALER', 'WEBSITE RESMI'],
+                    'Workshop Inquiry'       => ['WORKSHOP', 'BENGKEL', 'SERVICE', 'AFTER SALES', 'AFTERSALES', 'WORKSHOP INQUIRY'],
                 ];
+
+                // Unique mapping function ke tepat 1 Source of Inquiry (mencegah duplikasi data)
+                $mapToSoiFunc = function($perolehanStr) use ($soiPatternsMap) {
+                    $str = strtoupper(trim($perolehanStr ?? ''));
+                    if (empty($str)) return null;
+
+                    foreach ($soiPatternsMap as $sourceName => $patterns) {
+                        if (strtoupper($sourceName) === $str) return $sourceName;
+                    }
+
+                    foreach ($soiPatternsMap as $sourceName => $patterns) {
+                        foreach ($patterns as $pat) {
+                            if (stripos($str, strtoupper($pat)) !== false) {
+                                return $sourceName;
+                            }
+                        }
+                    }
+                    return null;
+                };
+
+                $inqBySoi = $inqForBranch->map(fn($k) => $mapToSoiFunc($k->PerolehanData))->filter()->countBy();
+                $doBySoi  = $doForBranch->filter(function($k) {
+                    $prog = strtoupper(trim($k->LastProgress ?? ''));
+                    return in_array($prog, ['DELIVERY', 'DO']);
+                })->map(fn($k) => $mapToSoiFunc($k->PerolehanData))->filter()->countBy();
 
                 $soi_performance_data = [];
 
@@ -937,29 +1073,8 @@ class DashboardController extends Controller
                     });
 
                     $trg_do = $serverTrgDo;
-
-                    $serverActInq = $inqForBranch->filter(function($k) use ($patterns) {
-                        $perolehan = strtoupper(trim($k->PerolehanData ?? ''));
-                        foreach ($patterns as $pat) {
-                            if (stripos($perolehan, strtoupper($pat)) !== false) return true;
-                        }
-                        return false;
-                    })->count();
-
-                    $act_inq = $serverActInq;
-
-                    $serverActDo = $doForBranch->filter(function($k) use ($patterns) {
-                        $perolehan = strtoupper(trim($k->PerolehanData ?? ''));
-                        $prog = strtoupper(trim($k->LastProgress ?? ''));
-                        if (!in_array($prog, ['DELIVERY', 'DO'])) return false;
-
-                        foreach ($patterns as $pat) {
-                            if (stripos($perolehan, strtoupper($pat)) !== false) return true;
-                        }
-                        return false;
-                    })->count();
-
-                    $act_do = $serverActDo;
+                    $act_inq = $inqBySoi->get($source, 0);
+                    $act_do  = $doBySoi->get($source, 0);
 
                     $soi_performance_data[] = (object)[
                         'source_name' => $source,
@@ -1026,18 +1141,92 @@ class DashboardController extends Controller
                     ];
                 }
 
+                $bCodes = $branchCodeMap[$cabang] ?? [];
+                $cb13Inq = isset($all13mInq) ? $all13mInq->whereIn('BranchCode', $bCodes) : collect();
+                $cb13Td  = isset($all13mTd) ? $all13mTd->whereIn('BranchCode', $bCodes) : collect();
+                $cb13Spk = isset($all13mSpk) ? $all13mSpk->whereIn('BranchCode', $bCodes) : collect();
+                $cb13Fp  = isset($all13mFp) ? $all13mFp->whereIn('BranchCode', $bCodes) : collect();
+
+                $buildBranchItsRows = function($modelDefs) use ($itsMonths, $cb13Inq, $cb13Td, $cb13Spk, $cb13Fp) {
+                    $result = [];
+                    foreach ($modelDefs as $modelName => $def) {
+                        $rows = [];
+                        $patterns = $def['patterns'];
+
+                        foreach ($itsMonths as $m) {
+                            $label = $m['label'];
+                            $isCurrent = $m['is_current'];
+
+                            // 1. INQUIRY (pmKDP.InquiryDate)
+                            $inqCount = $cb13Inq->filter(function($r) use ($label, $modelName, $patterns) {
+                                if (date('M-y', strtotime($r->InquiryDate)) !== $label) return false;
+                                return $this->isModelMatch($r->TipeKendaraan ?? '', $modelName, $patterns, $r->Variant ?? '');
+                            })->count();
+
+                            // 2. TEST DRIVE (salesAppTable.CreationDate, DurasiTestDrive > 0, JarakTestDrive > 0)
+                            $inqTdCount = $cb13Td->filter(function($r) use ($label, $modelName, $patterns) {
+                                if (date('M-y', strtotime($r->CreationDate)) !== $label) return false;
+                                $durasi = floatval(str_replace(',', '.', trim((string)($r->DurasiTestDrive ?? '0'))));
+                                $jarak = floatval(str_replace(',', '.', trim((string)($r->JarakTestDrive ?? '0'))));
+                                if ($durasi <= 0 || $jarak <= 0) return false;
+                                $tipe = trim($r->TipeKendaraan ?? ($r->TipeKendaraan2 ?? ''));
+                                return $this->isModelMatch($tipe, $modelName, $patterns, $r->Variant ?? '');
+                            })->count();
+
+                            // 3. SPK (pmKDP.SPKDate)
+                            $spkCount = $cb13Spk->filter(function($r) use ($label, $modelName, $patterns) {
+                                if (date('M-y', strtotime($r->SPKDate)) !== $label) return false;
+                                return $this->isModelMatch($r->TipeKendaraan ?? '', $modelName, $patterns, $r->Variant ?? '');
+                            })->count();
+
+                            // 4. FAKTUR POLISI (omTrSalesReqDetail LEFT JOIN omTrSalesSOModel)
+                            $fpCount = $cb13Fp->filter(function($r) use ($label, $patterns) {
+                                if (date('M-y', strtotime($r->CreatedDate)) !== $label) return false;
+                                $code = strtoupper(trim($r->SalesModelCode ?? ''));
+                                if (empty($code)) return false;
+                                foreach ($patterns as $pat) {
+                                    if (stripos($code, strtoupper($pat)) !== false) return true;
+                                }
+                                return false;
+                            })->count();
+
+                            $inqToSpk = $inqCount > 0 ? round(($spkCount / $inqCount) * 100, 1) : 0.0;
+                            $spkToFp = $spkCount > 0 ? round(($fpCount / $spkCount) * 100, 1) : 0.0;
+
+                            $rows[] = [
+                                'label'       => $label,
+                                'is_current'  => $isCurrent,
+                                'inq'         => $inqCount,
+                                'inq_td'      => $inqTdCount,
+                                'spk'         => $spkCount,
+                                'fp'          => $fpCount,
+                                'inq_to_spk'  => $inqToSpk,
+                                'spk_to_fp'   => $spkToFp,
+                            ];
+                        }
+                        $result[$modelName] = $rows;
+                    }
+                    return $result;
+                };
+
+                $branchItsResult = [
+                    'left'  => $buildBranchItsRows($itsModelDefsLeft),
+                    'right' => $buildBranchItsRows($itsModelDefsRight),
+                ];
+
                 $all_branch_data[$cabang] = [
                     'performance'          => collect($performance),
                     'salesforce'           => collect($salesforce_performance),
                     'soi_performance_data' => collect($soi_performance_data),
                     'leasing_performance'  => collect($leasing_performance),
+                    'its_result_data'      => $branchItsResult,
                 ];
             }
 
             return [
                 'all_branch_data' => $all_branch_data,
                 'bulan'           => $bulan,
-                'bulan_list'      => $bulanMap
+                'bulan_list'      => $bulanMap,
             ];
         });
 
@@ -1070,5 +1259,307 @@ class DashboardController extends Controller
     {
         $request->merge(['export' => 'pdf']);
         return $this->v1($request);
+    }
+
+    public function v3(Request $request)
+    {
+        @set_time_limit(300);
+        @ini_set('max_execution_time', '300');
+        $user = Auth::user();
+        $tahunSekarang = (int)$request->get('tahun', 2026);
+
+        $isPusat = ($user->is_admin ?? false) || 
+                   in_array(strtolower($user->branch ?? ''), ['admin', 'pusat']) ||
+                   in_array(strtolower($user->role ?? ''), ['admin', 'om', 'admin dca', 'om dca', 'ho_unit']);
+
+        $bulanMap = [
+            1 => 'jan', 2 => 'feb', 3 => 'mar', 4 => 'apr', 5 => 'mei', 6 => 'jun',
+            7 => 'jul', 8 => 'agu', 9 => 'sep', 10 => 'okt', 11 => 'nov', 12 => 'des'
+        ];
+
+        $bulanSekarangAngka = (int)date('n');
+        $bulanDefault = $bulanMap[$bulanSekarangAngka] ?? 'sep';
+        $bulan = strtolower($request->get('filter_bulan', $request->get('bulan', $bulanDefault)));
+        $currMonthNum = (int)(array_search($bulan, $bulanMap) ?: $bulanSekarangAngka);
+
+        $cabangListAll = ['Ciawi', 'Cianjur', 'Cinere', 'Jatiasih', 'Cipanas'];
+        
+        $branchCodeMap = [
+            'Ciawi'    => ['641940101', '01.19.08.102', 'CIAWI', 'DCA CIAWI', 'CW'],
+            'Cianjur'  => ['641940102', '06.24.11.005', 'CIANJUR', 'DCA CIANJUR', 'CJR'],
+            'Cinere'   => ['641940103', '03.24.02.001', 'CINERE', 'DCA CINERE', 'CNR', 'CIN'],
+            'Jatiasih' => ['641940104', '06.25.11.001', 'JATIASIH', 'JATI ASIH', 'DCA JATIASIH', 'DCA JATI ASIH', 'JTA'],
+            'Cipanas'  => ['641940106', '14.26.01.549', 'CIPANAS', 'DCA CIPANAS', 'CPN'],
+        ];
+
+        $cabangMap = [
+            'ciawi'    => 'Ciawi',
+            'cianjur'  => 'Cianjur',
+            'cinere'   => 'Cinere',
+            'jatiasih' => 'Jatiasih',
+            'cipanas'  => 'Cipanas',
+        ];
+
+        if ($isPusat) {
+            $cabangs = $cabangListAll;
+            $selectedCabang = $request->get('cabang', 'Ciawi');
+            if (!in_array($selectedCabang, $cabangs)) {
+                $selectedCabang = 'Ciawi';
+            }
+        } else {
+            $cabangUser = $user->branch ?? $user->cabang ?? 'Ciawi';
+            $userCabangKey = strtolower(trim($cabangUser));
+            $matchedCabang = $cabangMap[$userCabangKey] ?? ($cabangUser ?: 'Ciawi');
+            $cabangs = [$matchedCabang];
+            $selectedCabang = $matchedCabang;
+        }
+
+        // Resolusi 15 Sales Head Resmi per cabang (Jatiasih: 3 SH, Cinere: 3 SH termasuk Adrian, Ciawi: 4 SH, Cianjur: 4 SH, Cipanas: 1 SH)
+        $officialBranchShMap = [
+            'Ciawi' => [
+                '11.21.07.005' => 'HENNARDY DERMAWAN',
+                '01.12.01.023' => 'REDDY SUWANTO',
+                '01.12.01.001' => 'ROPIK ARROHMAN',
+                '11.22.06.001' => 'RYAN D SAPUTRA',
+            ],
+            'Cianjur' => [
+                '04.18.01.069' => 'ADE RIDWAN',
+                '04.17.01.036' => 'HENDRIX SANTOSA',
+                '04.18.01.074' => 'IQBAL AULIA RAHMAN',
+                '14.25.06.490' => 'Taufik Ali Akbar',
+            ],
+            'Cinere' => [
+                '13.21.01.001' => 'ILMAN KAHFI',
+                '13.25.11.018' => 'Irfan Kurniawan',
+                '13.26.07.002' => 'Adi Adrian SE',
+            ],
+            'Jatiasih' => [
+                '16.26.06.005' => 'Gatot',
+                '16.26.04.003' => 'I Gusti Made Uki adiyana',
+                '16.22.08.004' => 'Pran Yudi Setiawan',
+            ],
+            'Cipanas' => [
+                'DCACPSSHBM'   => 'EDI SUMARDI X',
+            ],
+        ];
+
+        $spvsForBranch = $officialBranchShMap[$selectedCabang] ?? [];
+        $selectedSpv = $request->get('spv', '');
+
+        // 13-month rolling timeline
+        $itsMonths = [];
+        for ($i = 12; $i >= 0; $i--) {
+            $time = strtotime("-$i months", mktime(0, 0, 0, $currMonthNum, 1, $tahunSekarang));
+            $mNum = (int)date('n', $time);
+            $yNum = (int)date('Y', $time);
+            $mLabel = date('M-y', $time);
+            $itsMonths[] = [
+                'month'      => $mNum,
+                'year'       => $yNum,
+                'label'      => $mLabel,
+                'is_current' => ($i === 0),
+            ];
+        }
+
+        $startDate13Months = date('Y-m-01 00:00:00', strtotime("-12 months", mktime(0, 0, 0, $currMonthNum, 1, $tahunSekarang)));
+        $endDate13Months   = date('Y-m-t 23:59:59', mktime(0, 0, 0, $currMonthNum, 1, $tahunSekarang));
+
+        $bCodes = $branchCodeMap[$selectedCabang] ?? [];
+
+        $all13mInq = collect();
+        $all13mTd  = collect();
+        $all13mSpk = collect();
+        $all13mFp  = collect();
+
+        try {
+            // 1. INQUIRY
+            $q13Inq = \Illuminate\Support\Facades\DB::connection('dms')->table('pmKDP')
+                ->whereBetween('InquiryDate', [$startDate13Months, $endDate13Months]);
+            if (!empty($bCodes)) {
+                $q13Inq->whereIn('BranchCode', $bCodes);
+            }
+            if (!empty($selectedSpv)) {
+                $q13Inq->where('SpvEmployeeID', $selectedSpv);
+            }
+            $all13mInq = $q13Inq->select(['BranchCode', 'InquiryDate', 'TipeKendaraan', 'Variant', 'SpvEmployeeID'])->get();
+
+            // 2. TEST DRIVE
+            $q13Td = \Illuminate\Support\Facades\DB::connection('dms')->table('salesAppTable as s')
+                ->leftJoin('pmKDP as p', 's.InquiryNumber', '=', 'p.InquiryNumber')
+                ->whereBetween('s.CreationDate', [$startDate13Months, $endDate13Months]);
+            if (!empty($bCodes)) {
+                $q13Td->whereIn('s.BranchCode', $bCodes);
+            }
+            if (!empty($selectedSpv)) {
+                $q13Td->where('p.SpvEmployeeID', $selectedSpv);
+            }
+            $all13mTd = $q13Td->select(['s.BranchCode', 's.CreationDate', 'p.TipeKendaraan', 'p.Variant', 's.TipeKendaraan2', 's.DurasiTestDrive', 's.JarakTestDrive', 'p.SpvEmployeeID'])->get();
+
+            // 3. SPK
+            // Dari pmKDP
+            $q13SpkPmkdp = \Illuminate\Support\Facades\DB::connection('dms')->table('pmKDP')
+                ->whereIn('BranchCode', ['641940102', '641940106'])
+                ->whereBetween('SPKDate', [substr($startDate13Months, 0, 10), substr($endDate13Months, 0, 10)]);
+            if (!empty($bCodes)) {
+                $q13SpkPmkdp->whereIn('BranchCode', $bCodes);
+            }
+            if (!empty($selectedSpv)) {
+                $q13SpkPmkdp->where('SpvEmployeeID', $selectedSpv);
+            }
+            $spkPmkdpRows = $q13SpkPmkdp->select(['BranchCode', 'SPKDate', 'TipeKendaraan', 'Variant', 'SpvEmployeeID'])->get();
+
+            // Dari salesAppTable untuk Ciawi, Cinere, Jatiasih
+            $q13SpkSat = \Illuminate\Support\Facades\DB::connection('dms')->table('salesAppTable as t')
+                ->leftJoin('pmKDP as p', 't.InquiryNumber', '=', 'p.InquiryNumber')
+                ->whereIn('t.BranchCode', ['641940101', '641940103', '641940104'])
+                ->whereNotNull('t.HID')
+                ->where('t.HID', 'like', 'PBK%')
+                ->whereBetween('t.CreationDate', [$startDate13Months, $endDate13Months]);
+            if (!empty($bCodes)) {
+                $q13SpkSat->whereIn('t.BranchCode', $bCodes);
+            }
+            if (!empty($selectedSpv)) {
+                $q13SpkSat->where('p.SpvEmployeeID', $selectedSpv);
+            }
+            $spkSatRows = $q13SpkSat->select(['t.BranchCode', 't.InquiryNumber', 'p.TipeKendaraan', 'p.Variant', 't.TipeKendaraan2', 't.CreationDate as SPKDate', 'p.SpvEmployeeID'])->get();
+
+            $all13mSpk = collect();
+            foreach ($spkPmkdpRows as $r) {
+                $all13mSpk->push((object)[
+                    'BranchCode'    => $r->BranchCode,
+                    'SPKDate'       => $r->SPKDate,
+                    'TipeKendaraan' => $r->TipeKendaraan,
+                    'Variant'       => $r->Variant,
+                    'SpvEmployeeID' => $r->SpvEmployeeID ?? '',
+                ]);
+            }
+            foreach ($spkSatRows as $r) {
+                $tipe = trim($r->TipeKendaraan ?? ($r->TipeKendaraan2 ?? ''));
+                if (empty($tipe)) $tipe = trim($r->TipeKendaraan2 ?? '');
+                $all13mSpk->push((object)[
+                    'BranchCode'    => $r->BranchCode,
+                    'SPKDate'       => $r->SPKDate,
+                    'TipeKendaraan' => $tipe,
+                    'Variant'       => $r->Variant,
+                    'SpvEmployeeID' => $r->SpvEmployeeID ?? '',
+                ]);
+            }
+
+            // 4. FAKTUR POLISI
+            $q13Fp = \Illuminate\Support\Facades\DB::connection('dms')->table('omTrSalesReqDetail as d')
+                ->leftJoin('omTrSalesSOModel as m', function($join) {
+                    $join->on('d.SONo', '=', 'm.SONo')
+                         ->on('d.BranchCode', '=', 'm.BranchCode');
+                })
+                ->whereBetween('d.CreatedDate', [$startDate13Months, $endDate13Months]);
+            if (!empty($bCodes)) {
+                $q13Fp->whereIn('d.BranchCode', $bCodes);
+            }
+            $all13mFp = $q13Fp->select(['d.BranchCode', 'd.CreatedDate', 'm.SalesModelCode'])->get();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Dashboard v3 DMS Error: " . $e->getMessage());
+        }
+
+        $itsModelDefsLeft = [
+            'NEW CARRY' => ['patterns' => ['NEW CARRY', 'CARRY', 'DC', 'AEV', 'FD', 'WD', 'CHASSIS', 'PU', 'PICK UP', 'BOX', 'MOKO']],
+            'APV'       => ['patterns' => ['APV BLIND VAN', 'APV', 'GC4', 'VAN', 'GC415']],
+            'ERTIGA'    => ['patterns' => ['ALL NEW ERTIGA', 'ERTIGA', 'A3L']],
+            'XL7'       => ['patterns' => ['XL7', 'XL-7', 'XL 7', 'ZETA', 'BETA', 'ALPHA']],
+        ];
+
+        $itsModelDefsRight = [
+            'GRAND VITARA' => ['patterns' => ['GRAND VITARA', 'VITARA', 'GV']],
+            'JIMNY'        => ['patterns' => ['JIMNY 3D', 'JIMNY 5D', 'JIMNY', '6N415', 'JB74']],
+            'FRONX'        => ['patterns' => ['FRONX', 'BU4']],
+            'SPRESSO'      => ['patterns' => ['S-PRESSO', 'SPRESO', 'S PRESSO', 'DN4']],
+        ];
+
+        $buildItsRows = function($modelDefs) use ($itsMonths, $all13mInq, $all13mTd, $all13mSpk, $all13mFp) {
+            $result = [];
+            foreach ($modelDefs as $modelName => $def) {
+                $rows = [];
+                $patterns = $def['patterns'];
+
+                foreach ($itsMonths as $m) {
+                    $label = $m['label'];
+                    $isCurrent = $m['is_current'];
+
+                    // 1. INQ
+                    $inqCount = $all13mInq->filter(function($r) use ($label, $modelName, $patterns) {
+                        if (date('M-y', strtotime($r->InquiryDate)) !== $label) return false;
+                        return $this->isModelMatch($r->TipeKendaraan ?? '', $modelName, $patterns, $r->Variant ?? '');
+                    })->count();
+
+                    // 2. INQ TD
+                    $inqTdCount = $all13mTd->filter(function($r) use ($label, $modelName, $patterns) {
+                        if (date('M-y', strtotime($r->CreationDate)) !== $label) return false;
+                        $durasi = floatval(str_replace(',', '.', trim((string)($r->DurasiTestDrive ?? '0'))));
+                        $jarak = floatval(str_replace(',', '.', trim((string)($r->JarakTestDrive ?? '0'))));
+                        if ($durasi <= 0 || $jarak <= 0) return false;
+                        $tipe = trim($r->TipeKendaraan ?? ($r->TipeKendaraan2 ?? ''));
+                        return $this->isModelMatch($tipe, $modelName, $patterns, $r->Variant ?? '');
+                    })->count();
+
+                    // 3. SPK
+                    $spkCount = $all13mSpk->filter(function($r) use ($label, $modelName, $patterns) {
+                        if (date('M-y', strtotime($r->SPKDate)) !== $label) return false;
+                        return $this->isModelMatch($r->TipeKendaraan ?? '', $modelName, $patterns, $r->Variant ?? '');
+                    })->count();
+
+                    // 4. FP (DMS Faktur Polisi)
+                    $fpCount = $all13mFp->filter(function($r) use ($label, $patterns) {
+                        if (date('M-y', strtotime($r->CreatedDate)) !== $label) return false;
+                        $code = strtoupper(trim($r->SalesModelCode ?? ''));
+                        if (empty($code)) return false;
+                        foreach ($patterns as $pat) {
+                            if (stripos($code, strtoupper($pat)) !== false) return true;
+                        }
+                        return false;
+                    })->count();
+
+                    $inqToSpk = $inqCount > 0 ? round(($spkCount / $inqCount) * 100, 1) : 0.0;
+                    $spkToFp  = $spkCount > 0 ? round(($fpCount / $spkCount) * 100, 1) : 0.0;
+
+                    $rows[] = [
+                        'label'      => $label,
+                        'is_current' => $isCurrent,
+                        'inq'        => $inqCount,
+                        'inq_td'     => $inqTdCount,
+                        'spk'        => $spkCount,
+                        'fp'         => $fpCount,
+                        'inq_to_spk' => $inqToSpk,
+                        'spk_to_fp'  => $spkToFp,
+                    ];
+                }
+                $result[$modelName] = $rows;
+            }
+            return $result;
+        };
+
+        $its_result_data = [
+            'left'  => $buildItsRows($itsModelDefsLeft),
+            'right' => $buildItsRows($itsModelDefsRight),
+        ];
+
+        $viewData = [
+            'selectedCabang'  => $selectedCabang,
+            'cabangs'         => $cabangs,
+            'isPusat'         => $isPusat,
+            'spvsForBranch'   => $spvsForBranch,
+            'selectedSpv'     => $selectedSpv,
+            'bulan'           => $bulan,
+            'bulanMap'        => $bulanMap,
+            'tahun'           => $tahunSekarang,
+            'its_result_data' => $its_result_data,
+        ];
+
+        if ($request->get('export') === 'pdf' || $request->is('*export-pdf*')) {
+            $viewName = view()->exists('Sales.vsv.pdf.dashboard_v3_pdf') ? 'Sales.vsv.pdf.dashboard_v3_pdf' : 'pdf.dashboard_v3_pdf';
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, $viewData)->setPaper('a4', 'landscape');
+            $filename = 'ITS_RESULT_' . strtoupper($selectedCabang) . '_' . strtoupper($bulan) . '_' . $tahunSekarang . '.pdf';
+            return $pdf->download($filename);
+        }
+
+        return view('Sales.vsv.dashboard_v3', $viewData);
     }
 }

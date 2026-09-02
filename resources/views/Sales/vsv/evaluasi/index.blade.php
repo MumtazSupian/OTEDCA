@@ -3,184 +3,366 @@
 @section('title', 'Evaluasi Wiraniaga')
 
 @section('content')
-    <div style="padding: 20px;">
-        <h2
-            style="text-align:center; font-weight:800; color:#1e293b; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:5px;">
-            📊 EVALUASI WIRANIAGA
-        </h2>
-        <p style="text-align:center; color: #64748b; margin-bottom:20px;">Monitoring kinerja wiraniaga secara periodik</p>
-        
-        <div style="display:flex; justify-content:flex-end; align-items:center; gap:8px; margin:0 auto 15px auto; width:98%;">
-            {{-- Tombol Export Excel --}}
-            <a href="{{ route('evaluasi.excel') }}"
-                style="padding:8px 16px; background: #16a34a; color: #ffffff !important; border-radius:6px; font-size:13px; font-weight:600; text-decoration:none; box-shadow:0 2px 5px rgba(0,0,0,0.1); transition:0.3s;"
-                onmouseover="this.style.background='#1b5e20'" onmouseout="this.style.background='#2e7d32'">
-                📗 Export Excel
-            </a>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-            {{-- Tombol Export PDF --}}
-            <a href="{{ route('evaluasi.pdf') }}"
-                style="padding:8px 16px; background: #dc2626; color: #ffffff !important; border-radius:6px; font-size:13px; font-weight:600; text-decoration:none; box-shadow:0 2px 5px rgba(0,0,0,0.1); transition:0.3s;"
-                onmouseover="this.style.background='#b71c1c'" onmouseout="this.style.background='#c62828'">
-                📕 Export PDF
-            </a>
+    .page-wrapper {
+        padding: 24px 16px;
+        max-width: 1400px;
+        margin: 0 auto;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* JUDUL GLOWING MERAH */
+    .page-title {
+        text-align: center;
+        font-weight: 900;
+        color: #1e293b;
+        text-shadow: 0px 4px 15px rgba(220, 38, 38, 0.45);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        font-size: 1.6rem;
+    }
+    .page-subtitle {
+        text-align: center;
+        color: #64748b;
+        margin-bottom: 20px;
+        font-size: 0.85rem;
+    }
+    
+    /* TOOLBAR */
+    .toolbar-wrap {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+        background: #0f172a;
+        padding: 12px 18px;
+        border-radius: 12px;
+        border: 1px solid #1e293b;
+    }
+    .btn-nav {
+        padding: 7px 14px;
+        background: #1e293b;
+        color: #e2e8f0;
+        text-decoration: none;
+        border-radius: 7px;
+        font-weight: 600;
+        font-size: 0.78rem;
+        border: 1px solid #334155;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-nav:hover { background: #334155; color: #ffffff; transform: translateY(-1px); }
+    .btn-pdf { background: #dc2626; border-color: #ef4444; color: #ffffff; }
+    .btn-pdf:hover { background: #b91c1c; color: #ffffff; }
+    .btn-excel { background: #16a34a; border-color: #22c55e; color: #ffffff; }
+    .btn-excel:hover { background: #15803d; color: #ffffff; }
+    
+    .filter-select {
+        background: #1e293b;
+        color: #e2e8f0;
+        border: 1px solid #334155;
+        border-radius: 7px;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        outline: none;
+        cursor: pointer;
+    }
+
+    /* KARTU CABANG */
+    .branch-card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        margin-bottom: 24px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+    }
+    .branch-header {
+        background: #1e293b;
+        color: #ffffff;
+        padding: 12px 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 3px solid #dc2626;
+    }
+    .branch-title {
+        font-size: 0.95rem;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+    }
+    .branch-badge {
+        background: rgba(255,255,255,0.15);
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    /* TABEL SALESFORCE SANGAT RAPIH */
+    .table-sf {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+        color: #1e293b;
+    }
+    .table-sf th, .table-sf td {
+        border: 1px solid #e2e8f0;
+        padding: 10px 12px;
+        text-align: center;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .table-sf thead th {
+        background: #fee2e2;
+        color: #991b1b;
+        font-weight: 700;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        border-color: #fca5a5;
+    }
+    .table-sf tbody tr:nth-child(even) { background-color: #f8fafc; }
+    .table-sf tbody tr:hover { background-color: #f1f5f9; }
+    .table-sf tbody td.text-left { text-align: left; padding-left: 16px; }
+    
+    /* KOLOM TOTAL YANG KONSISTEN */
+    .table-sf .col-total {
+        background: #fff5f5;
+        color: #dc2626;
+        font-weight: 800;
+    }
+    .table-sf tfoot td {
+        background: #fef2f2;
+        color: #991b1b;
+        font-weight: 800;
+        border-color: #fca5a5;
+        padding: 12px 12px;
+    }
+    .table-sf tfoot td.col-total {
+        background: #fca5a5;
+        color: #7f1d1d;
+    }
+
+    /* BADGE GRADING */
+    .grade-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-weight: 800;
+        font-size: 0.72rem;
+        letter-spacing: 0.5px;
+        text-align: center;
+    }
+    .grade-PLATINUM { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+    .grade-GOLD     { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .grade-SILVER   { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+    .grade-TRAINEE  { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+
+    /* GRAND TOTAL KESELURUHAN */
+    .grand-card {
+        background: #1e293b;
+        border-radius: 12px;
+        padding: 18px 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border: 1px solid #334155;
+        margin-top: 10px;
+    }
+    .grand-table {
+        width: 100%;
+        border-collapse: collapse;
+        color: #ffffff;
+        font-size: 0.82rem;
+    }
+    .grand-table th, .grand-table td {
+        border: 1px solid #334155;
+        padding: 12px 10px;
+        text-align: center;
+        white-space: nowrap;
+    }
+    .grand-table th {
+        background: #0f172a;
+        color: #94a3b8;
+        font-size: 0.72rem;
+    }
+    .grand-table td {
+        background: #1e293b;
+        font-weight: 700;
+    }
+    .grand-table .col-total {
+        background: #dc2626;
+        color: #ffffff;
+    }
+</style>
+
+<div class="page-wrapper">
+    <h1 class="page-title">📊 EVALUASI WIRANIAGA</h1>
+    <p class="page-subtitle">Monitoring pencapaian delivery order berdasarkan grading salesforce aktif</p>
+
+    <div class="toolbar-wrap">
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <a href="{{ url('/sales/vsv/dashboard/v2') }}" class="btn-nav">← Dashboard</a>
+            <a href="{{ url()->current() }}?year={{ $year ?? date('Y') }}" class="btn-nav">🔄 Refresh</a>
+            <a href="{{ route('evaluasi.pdf', ['year' => $year ?? date('Y'), 'cabang' => request('cabang')]) }}" class="btn-nav btn-pdf">📄 Export PDF</a>
+            <a href="{{ route('evaluasi.excel', ['year' => $year ?? date('Y'), 'cabang' => request('cabang')]) }}" class="btn-nav btn-excel">📊 Excel</a>
         </div>
-        
-        <div style="display:flex; justify-content:flex-end; align-items:center; gap:8px; margin:0 auto 15px auto; width:98%;">
-            <a href="{{ route('evaluasi.create') }}"
-                style="padding:8px 16px; background: #dc2626; color: #ffffff !important; border-radius:6px; font-size:13px; font-weight:600; text-decoration:none; box-shadow:0 2px 5px rgba(0,0,0,0.1); transition:0.3s;"
-                onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
-                + Tambah Data
-            </a>
-        </div>
 
-        {{-- alert --}}
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-        {{-- Notif --}}
-        @if (session('success'))
-            <script>
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil!',
-                    text: "{{ session('success') }}",
-                    showConfirmButton: false,
-                    timer: 2000,
-                    customClass: {
-                        popup: 'rounded-4'
-                    }
-                });
-            </script>
-        @endif
-
-        <div style="background:#fff; padding:20px; border-radius:14px; box-shadow:0 6px 20px rgba(0,0,0,0.08); overflow-x:auto;">
-            <table width="100%" cellpadding="8" cellspacing="0"
-                style="width:100%; border-collapse:collapse; font-family:'Segoe UI',sans-serif; font-size:12px; text-align:center; border: 1px solid #cbd5e1;">
-                <thead style="background:#fee2e2; color:#991b1b;">
-                    <tr style="border-bottom:2px solid #f87171;">
-                        <th style="border: 1px solid #cbd5e1;">NO</th>
-                        <th style="border: 1px solid #cbd5e1; padding:8px;">CABANG</th>
-                        <th style="border: 1px solid #cbd5e1;">SALES HEAD</th>
-                        <th style="border: 1px solid #cbd5e1;">NAMA SALES</th>
-                        <th style="border: 1px solid #cbd5e1;">TGL MASUK</th>
-                        <th style="border: 1px solid #cbd5e1;">TGL EVALUASI</th>
-                        <th style="border: 1px solid #cbd5e1;">GRADING</th>
-                        <th style="border: 1px solid #cbd5e1;">JAN</th>
-                        <th style="border: 1px solid #cbd5e1;">FEB</th>
-                        <th style="border: 1px solid #cbd5e1;">MAR</th>
-                        <th style="border: 1px solid #cbd5e1;">APR</th>
-                        <th style="border: 1px solid #cbd5e1;">MEI</th>
-                        <th style="border: 1px solid #cbd5e1;">JUN</th>
-                        <th style="border: 1px solid #cbd5e1;">JUL</th>
-                        <th style="border: 1px solid #cbd5e1;">AGU</th>
-                        <th style="border: 1px solid #cbd5e1;">SEP</th>
-                        <th style="border: 1px solid #cbd5e1;">OKT</th>
-                        <th style="border: 1px solid #cbd5e1;">NOV</th>
-                        <th style="border: 1px solid #cbd5e1;">DES</th>
-                        <th style="border: 1px solid #cbd5e1;">TOTAL</th>
-                        <th style="border: 1px solid #cbd5e1;">EVALUASI</th>
-                        <th style="border: 1px solid #cbd5e1;">TGL KELUAR</th>
-                        <th style="border: 1px solid #cbd5e1;">AKSI</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($data as $i => $d)
-                        <tr style="background:{{ $loop->iteration % 2 == 0 ? '#f8fafc' : '#ffffff' }}; border-bottom: 1px solid var(--border-color, #e2e8f0);">
-                            <td style="border: 1px solid #cbd5e1;">{{ $i + 1 }}</td>
-                            <td style="border: 1px solid #cbd5e1; font-weight:bold; color:#dc2626;">{{ $d->cabang }}</td>
-                            <td style="border: 1px solid #cbd5e1;">{{ $d->nama_sales_head }}</td>
-                            <td style="border: 1px solid #cbd5e1; font-weight:600;">{{ $d->nama_sales }}</td>
-                            <td style="border: 1px solid #cbd5e1; white-space:nowrap;">{{ $d->tanggal_masuk }}</td>
-                            <td style="border: 1px solid #cbd5e1; white-space:nowrap;">{{ $d->tanggal_evaluasi }}</td>
-
-                            {{-- Kolom Grading: Mengambil langsung dari Database --}}
-                            <td style="border: 1px solid #cbd5e1; text-align:center;">
-                                @php
-                                    // Logika warna berdasarkan teks grading dari database
-                                    $color = '#f44336'; // Default Merah (Evaluasi)
-
-                                    if ($d->grading == 'PLATINUM') {
-                                        $color = '#1a237e'; // Biru Tua
-                                    } elseif (str_contains($d->grading, 'KADAR PLATINUM')) {
-                                        $color = '#ff9800'; // Oranye
-                                    } elseif (str_contains($d->grading, 'KADAR GOLD')) {
-                                        $color = '#78909c'; // Abu-abu kebiruan (Silver/Gold)
-                                    } elseif (str_contains($d->grading, 'KADAR SILVER')) {
-                                        $color = '#4caf50'; // Hijau
-                                    }
-                                @endphp
-
-                                <span
-                                    style="padding: 4px 8px; border-radius: 4px; color: #ffffff; font-weight: bold; font-size: 9px; background: {{ $color }}; white-space: nowrap; display: inline-block;">
-                                    {{ $d->grading ?? 'TRAINEE->EVALUASI' }}
-                                </span>
-                            </td>
-
-                            <td style="border: 1px solid #cbd5e1;">{{ $d->jan }}</td>
-                            <td style="border: 1px solid #cbd5e1;">{{ $d->feb }}</td>
-                            <td style="border: 1px solid #cbd5e1;">{{ $d->mar }}</td>
-                            <td style="border: 1px solid #cbd5e1;">{{ $d->apr }}</td>
-                            <td style="border: 1px solid #cbd5e1;">{{ $d->mei }}</td>
-                            <td style="border: 1px solid #cbd5e1;">{{ $d->jun }}</td>
-                            <td style="border: 1px solid #cbd5e1;">{{ $d->jul }}</td>
-                            <td style="border: 1px solid #cbd5e1;">{{ $d->agu }}</td>
-                            <td style="border: 1px solid #cbd5e1;">{{ $d->sep }}</td>
-                            <td style="border: 1px solid #cbd5e1;">{{ $d->okt }}</td>
-                            <td style="border: 1px solid #cbd5e1;">{{ $d->nov }}</td>
-                            <td style="border: 1px solid #cbd5e1;">{{ $d->des }}</td>
-                            <td style="border: 1px solid #cbd5e1; font-weight: 700;">{{ $d->total }}</td>
-                            <td style="border: 1px solid #cbd5e1;">{{ Str::limit($d->evaluasi, 20) }}</td>
-                            <td style="border: 1px solid #cbd5e1; white-space:nowrap;">{{ $d->tanggal_keluar }}</td>
-                            <td style="border: 1px solid #cbd5e1; white-space:nowrap;">
-                                {{-- Tombol Aksi --}}
-                                <a href="{{ route('evaluasi.edit', $d->id) }}"
-                                    style="color:#1976d2; font-weight:700; text-decoration:none; margin-right:8px;">Edit</a>
-                                <form action="{{ route('evaluasi.destroy', $d->id) }}" method="POST"
-                                    style="display:inline;" id="delete-form-{{ $d->id }}">
-                                    @csrf @method('DELETE')
-                                    <button type="button" onclick="confirmDelete('{{ $d->id }}')"
-                                        style="background:#e53935; color:#ffffff; border:none; padding:4px 8px; border-radius:4px; font-weight:600; font-size:11px; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#c62828'" onmouseout="this.style.background='#e53935'">
-                                        Hapus
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <form method="GET" action="{{ url()->current() }}" style="display:flex; gap:10px; align-items:center; margin:0;">
+                @if(!empty($isPusat))
+                <select name="cabang" class="filter-select" onchange="this.form.submit()">
+                    <option value="">-- Semua Cabang --</option>
+                    @foreach($allowedBranches ?? [] as $bName)
+                        <option value="{{ $bName }}" {{ (request('cabang') == $bName || ($selectedCabang ?? '') == $bName) ? 'selected' : '' }}>
+                            Cabang {{ $bName }}
+                        </option>
                     @endforeach
-                </tbody>
-                <tfoot style="background:#fef2f2; font-weight:bold; color:#991b1b;">
-                    <tr>
-                        <td colspan="19" style="border: 1px solid #cbd5e1; text-align: center; letter-spacing:1px;">GRAND TOTAL</td>
-                        <td style="border: 1px solid #cbd5e1; background:#fee2e2;">{{ $grandTotal }}</td>
-                        <td colspan="3" style="border: 1px solid #cbd5e1;">-</td>
-                    </tr>
-                </tfoot>
-            </table>
+                </select>
+                @endif
+
+                <select name="year" class="filter-select" onchange="this.form.submit()">
+                    @for($y = date('Y'); $y >= 2022; $y--)
+                        <option value="{{ $y }}" {{ ($year ?? date('Y')) == $y ? 'selected' : '' }}>Tahun {{ $y }}</option>
+                    @endfor
+                </select>
+            </form>
         </div>
     </div>
 
-    {{-- Script Konfirmasi Hapus --}}
-    <script>
-        function confirmDelete(id) {
-            Swal.fire({
-                title: 'Apakah Anda yakin?',
-                text: "Data yang dihapus tidak dapat dikembalikan!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#e53935',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Ya, Hapus!',
-                cancelButtonText: 'Batal',
-                reverseButtons: true,
-                background: '#ffffff',
-                customClass: {
-                    title: 'text-dark',
-                    popup: 'rounded-4'
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('delete-form-' + id).submit();
-                }
-            })
-        }
-    </script>
+    @php
+        $monthCols = ['jan', 'feb', 'mar', 'apr', 'mei', 'jun', 'jul', 'agu', 'sep', 'okt', 'nov', 'des'];
+        $isNotSH = (strtoupper(Auth::user()->role ?? '') !== 'SH');
+    @endphp
+
+    {{-- LIST TABEL PER CABANG --}}
+    @forelse($dataByBranch ?? [] as $bData)
+        <div class="branch-card">
+            <div class="branch-header">
+                <h3 class="branch-title">
+                    🏢 CABANG {{ strtoupper($bData['branch_name']) }}
+                </h3>
+                <span class="branch-badge">TAHUN {{ $year }}</span>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table class="table-sf">
+                    <thead>
+                        <tr>
+                            <th style="width:40px;">NO</th>
+                            <th class="text-left" style="min-width: 180px;">NAMA SALESMAN</th>
+                            <th>GRADING</th>
+                            <th>CABANG</th>
+                            @if($isNotSH)
+                                <th>NAMA PENGINPUT</th>
+                            @endif
+                            <th>TAHUN</th>
+                            @foreach($monthCols as $m)
+                                <th style="width:50px;">{{ strtoupper($m) }}</th>
+                            @endforeach
+                            <th class="col-total" style="width:70px;">TOTAL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($bData['rows'] as $idx => $row)
+                            <tr>
+                                <td style="color:#64748b; font-weight:600;">
+                                    {{ $loop->iteration }}
+                                </td>
+                                <td class="text-left" style="font-weight:700; color:#1e293b;">
+                                    {{ $row->salesman_name ?? $row->user->name ?? $row->employee_id ?? '-' }}
+                                </td>
+                                <td>
+                                    <span class="grade-badge grade-{{ $row->grading }}">{{ $row->grading }}</span>
+                                </td>
+                                <td style="font-weight:600; color:#475569;">{{ $row->cabang }}</td>
+                                
+                                @if($isNotSH)
+                                    <td style="font-style:italic; color:#64748b; font-size: 0.75rem;">
+                                        {{ $row->user->name ?? 'Sistem' }}
+                                    </td>
+                                @endif
+
+                                <td style="color:#64748b;">{{ $row->tahun }}</td>
+                                
+                                @foreach($monthCols as $m)
+                                    <td>{{ number_format($row->$m ?? 0, 0, ',', '.') }}</td>
+                                @endforeach
+                                
+                                <td class="col-total">{{ number_format($row->total ?? 0, 0, ',', '.') }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="{{ $isNotSH ? 19 : 18 }}" style="padding:20px; color:#94a3b8; white-space:normal;">
+                                    Belum ada transaksi salesforce untuk cabang ini pada tahun {{ $year }}.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="{{ $isNotSH ? 6 : 5 }}" style="text-align:right; padding-right:16px;">
+                                TOTAL CABANG {{ strtoupper($bData['branch_name']) }}
+                            </td>
+                            @foreach($monthCols as $m)
+                                <td>{{ number_format($bData['subtotal'][$m] ?? 0, 0, ',', '.') }}</td>
+                            @endforeach
+                            <td class="col-total" style="font-size:0.85rem;">
+                                {{ number_format($bData['subtotal']['total'] ?? 0, 0, ',', '.') }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    @empty
+        <div style="background:#1e293b; padding:40px; text-align:center; border-radius:12px; color:#94a3b8;">
+            📭 Data Evaluasi Wiraniaga tidak ditemukan untuk periode tahun {{ $year }}.
+        </div>
+    @endforelse
+
+    {{-- GRAND TOTAL KESELURUHAN (JIKA MENAMPILKAN LEBIH DARI 1 CABANG) --}}
+    @if(isset($dataByBranch) && count($dataByBranch) > 1)
+        <div class="grand-card">
+            <h4 style="margin:0 0 12px 0; color:#ffffff; font-weight:800; font-size:0.9rem; text-transform:uppercase; letter-spacing:0.5px;">
+                GRAND TOTAL KESELURUHAN (SEMUA CABANG) - TAHUN {{ $year }}
+            </h4>
+            <div style="overflow-x:auto;">
+                <table class="grand-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left; padding-left:16px;">DESKRIPSI</th>
+                            @foreach($monthCols as $m)
+                                <th>{{ strtoupper($m) }}</th>
+                            @endforeach
+                            <th class="col-total">TOTAL AKUMULASI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="text-align:left; padding-left:16px; color:#f8fafc;">TOTAL UNIT DELIVERY ORDER (DO)</td>
+                            @foreach($monthCols as $m)
+                                <td>{{ number_format($grandTotals[$m] ?? 0, 0, ',', '.') }}</td>
+                            @endforeach
+                            <td class="col-total" style="font-size:0.95rem;">
+                                {{ number_format($grandTotalAll ?? 0, 0, ',', '.') }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+</div>
 @endsection

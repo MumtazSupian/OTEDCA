@@ -3,18 +3,18 @@
 @section('title', 'Main Dashboard')
 
 @section('content')
-    <div style="padding: 10px; color: var(--text-main);">
+    <div style="padding: 4px; color: var(--text-main);">
 
         {{-- HEADER & FILTER --}}
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 2px solid var(--accent-red); padding-bottom: 15px;">
-            <h2 style="font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin: 0; color: var(--text-main);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 24px; border-bottom: 2px solid var(--accent-red); padding-bottom: 15px;">
+            <h2 style="font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin: 0; color: var(--text-main); font-size: 1.25rem;">
                 DASHBOARD PERFORMANCE
             </h2>
 
-            <form action="{{ url()->current() }}" method="GET" id="filterForm" style="display: flex; align-items: center; gap: 10px;">
-                <label style="font-weight: bold; font-size: 14px;">PERIODE DATA:</label>
+            <form action="{{ url()->current() }}" method="GET" id="filterForm" style="display: flex; align-items: center; gap: 10px; background: white; padding: 6px 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <label style="font-weight: bold; font-size: 13px; margin: 0; white-space: nowrap;">PERIODE DATA:</label>
                 <select name="filter_bulan" onchange="document.getElementById('filterForm').submit()"
-                    style="padding: 8px 15px; border-radius: 5px; border: none; font-weight: bold; color: #001f3f; cursor: pointer; outline: none;">
+                    style="padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0; font-weight: bold; color: #001f3f; cursor: pointer; outline: none; background: #f8fafc;">
                     @foreach ($bulan_list as $angka => $nama)
                         <option value="{{ $nama }}" {{ $bulan == $nama ? 'selected' : '' }}>
                             {{ strtoupper($nama) }}
@@ -27,15 +27,15 @@
         @foreach($all_branch_data as $nama_cabang => $data)
 
             {{-- JUDUL CABANG --}}
-            <div style="margin-top: 40px; margin-bottom: 20px; border-bottom: 3px solid #dc2626; padding-bottom: 10px;">
-                <h2 style="color: #ffff; font-weight:800; background-color: #dc2626; padding: 10px 20px; border-radius: 5px; display: inline-block; font-weight: bold; text-transform: uppercase;">
+            <div style="margin-top: 30px; margin-bottom: 16px; border-bottom: 3px solid #dc2626; padding-bottom: 10px;">
+                <h2 style="color: #ffff; font-weight:800; background-color: #dc2626; padding: 8px 16px; border-radius: 6px; display: inline-flex; align-items: center; gap: 8px; font-weight: bold; text-transform: uppercase; font-size: 1rem; margin: 0;">
                     <i class="fas fa-building"></i> DATA CABANG: {{ $nama_cabang }}
                 </h2>
             </div>
 
             {{-- 1. TABLE SALES PERFORMANCE --}}
-            <div style="background: white; border-radius: 8px; padding: 15px; margin-bottom: 25px; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                <h4 style="color: #dc2626; margin-bottom: 10px; font-weight: bold;">
+            <div class="table-responsive" style="background: white; border-radius: 8px; padding: 15px; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.06); width: 100%; border: 1px solid #e2e8f0;">
+                <h4 style="color: #dc2626; margin: 0 0 12px 0; font-weight: bold; font-size: 14px;">
                     📊 SALES PERFORMANCE (N) {{ strtoupper($bulan) }} 2026
                 </h4>
                 <table style="width:100%; border-collapse: collapse; color: black; font-size: 11px; text-align: center;">
@@ -124,8 +124,8 @@
 
             <div style="margin-top: 20px;">
                 {{-- 2. TABLE PERFORMANCE SOI --}}
-                <div style="background: white; border-radius: 8px; padding: 15px; margin-bottom: 25px; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.3); width: 100%;">
-                    <h4 style="color: #dc2626; margin-bottom: 10px; font-weight: bold;">🔍 PERFORMANCE SOI ({{ strtoupper($bulan) }})</h4>
+                <div class="table-responsive" style="background: white; border-radius: 8px; padding: 15px; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.06); width: 100%; border: 1px solid #e2e8f0;">
+                    <h4 style="color: #dc2626; margin: 0 0 12px 0; font-weight: bold; font-size: 14px;">🔍 PERFORMANCE SOI ({{ strtoupper($bulan) }})</h4>
                     <table style="width:100%; border-collapse: collapse; color: black; font-size: 11px; text-align: center;">
                         <thead style="background: #fee2e2; color: #991b1b;">
                             <tr>
@@ -159,7 +159,135 @@
                     </table>
                 </div>
 
-                {{-- 3. TABLE SALES FORCE PERFORMANCE (DIKOMEN/DIHAPUS SESUAI PERMINTAAN USER) --}}
+                {{-- 2b. TABLE ITS RESULT PER CABANG (13-MONTH ROLLING GRID) --}}
+                @if(!empty($data['its_result_data']))
+                <div style="background: #ffffff; border-radius: 8px; padding: 16px; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; width: 100%;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <h4 style="font-weight: 800; font-size: 13px; color: #0f172a; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
+                                📊 ITS RESULT ({{ strtoupper($nama_cabang) }})
+                            </h4>
+                            <span style="font-size: 10px; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 12px; font-weight: 700; border: 1px solid #bae6fd;">
+                                Cabang: {{ strtoupper($nama_cabang) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- 2 Columns Grid Layout --}}
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 16px; align-items: start;">
+                        
+                        {{-- LEFT COLUMN: NEW CARRY, APV, ERTIGA, XL7 --}}
+                        <div>
+                            @foreach($data['its_result_data']['left'] as $modelName => $rows)
+                                <div class="table-responsive" style="margin-bottom: 12px; overflow-x: auto;">
+                                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: center; border: 1px solid #cbd5e1; background: #fff;">
+                                        <thead>
+                                            <tr style="background: #f8fafc; color: #1e293b; font-weight: 700; border-bottom: 1px solid #cbd5e1; font-size: 10px;">
+                                                <th style="border: 1px solid #cbd5e1; padding: 4px; width: 42px; background: #f1f5f9;"></th>
+                                                <th style="border: 1px solid #cbd5e1; padding: 4px; width: 52px; background: #f1f5f9;"></th>
+                                                <th style="border: 1px solid #cbd5e1; padding: 4px; background: #e0f2fe; color: #0369a1; text-align: center; width: 48px;">INQ</th>
+                                                <th style="border: 1px solid #cbd5e1; padding: 4px; background: #e0f2fe; color: #0369a1; text-align: center; width: 48px;">INQ TD</th>
+                                                <th style="border: 1px solid #cbd5e1; padding: 4px; background: #fef08a; color: #854d0e; text-align: center; width: 42px;">SPK</th>
+                                                <th style="border: 1px solid #cbd5e1; padding: 4px; background: #fed7aa; color: #9a3412; text-align: center; width: 42px;">FP</th>
+                                                <th style="border: 1px solid #cbd5e1; padding: 4px; background: #e0e7ff; color: #3730a3; text-align: center; width: 55px;">INQtoSPK</th>
+                                                <th style="border: 1px solid #cbd5e1; padding: 4px; background: #e0e7ff; color: #3730a3; text-align: center; width: 55px;">SPKtoFP</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($rows as $idx => $r)
+                                                @php $isCurrent = $r['is_current'] ?? false; @endphp
+                                                <tr style="border-bottom: 1px solid #cbd5e1; background: {{ $isCurrent ? '#fefce8' : '#ffffff' }}; font-weight: {{ $isCurrent ? '700' : 'normal' }};">
+                                                    @if($idx === 0)
+                                                        <td rowspan="{{ count($rows) }}" style="border: 1px solid #cbd5e1; padding: 4px; background: #f8fafc; font-weight: 800; font-size: 11px; text-align: center; vertical-align: middle; width: 42px; color: #1e293b; writing-mode: vertical-lr; transform: rotate(180deg); letter-spacing: 2px;">
+                                                            {{ $modelName }}
+                                                        </td>
+                                                    @endif
+                                                    <td style="border: 1px solid #cbd5e1; padding: 3px 4px; text-align: center; background: {{ $isCurrent ? '#fef08a' : '#f1f5f9' }}; color: #334155; font-weight: {{ $isCurrent ? '700' : '600' }}; font-size: 10px;">
+                                                        {{ $r['label'] }}
+                                                    </td>
+                                                    <td style="border: 1px solid #cbd5e1; padding: 3px 4px; text-align: right; background: #f0fdf4; color: #166534; font-size: 10px;">
+                                                        {{ number_format($r['inq']) }}
+                                                    </td>
+                                                    <td style="border: 1px solid #cbd5e1; padding: 3px 4px; text-align: right; background: #f0fdf4; color: #166534; font-size: 10px;">
+                                                        {{ number_format($r['inq_td']) }}
+                                                    </td>
+                                                    <td style="border: 1px solid #cbd5e1; padding: 3px 4px; text-align: right; background: {{ $isCurrent ? '#facc15' : '#fef9c3' }}; color: #854d0e; font-weight: {{ $isCurrent ? '800' : '600' }}; font-size: 10px;">
+                                                        {{ number_format($r['spk']) }}
+                                                    </td>
+                                                    <td style="border: 1px solid #cbd5e1; padding: 3px 4px; text-align: right; background: {{ $isCurrent ? '#fb923c' : '#ffedd5' }}; color: #7c2d12; font-weight: {{ $isCurrent ? '800' : '600' }}; font-size: 10px;">
+                                                        {{ number_format($r['fp']) }}
+                                                    </td>
+                                                    <td style="border: 1px solid #cbd5e1; padding: 3px 4px; text-align: right; color: #475569; font-size: 10px;">
+                                                        {{ number_format($r['inq_to_spk'], 1) }}%
+                                                    </td>
+                                                    <td style="border: 1px solid #cbd5e1; padding: 3px 4px; text-align: right; color: #475569; font-size: 10px;">
+                                                        {{ number_format($r['spk_to_fp'], 1) }}%
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        {{-- RIGHT COLUMN: GRAND VITARA, JIMNY, FRONX, SPRESSO --}}
+                        <div>
+                            @foreach($data['its_result_data']['right'] as $modelName => $rows)
+                                <div class="table-responsive" style="margin-bottom: 12px; overflow-x: auto;">
+                                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: center; border: 1px solid #cbd5e1; background: #fff;">
+                                        <thead>
+                                            <tr style="background: #f8fafc; color: #1e293b; font-weight: 700; border-bottom: 1px solid #cbd5e1; font-size: 10px;">
+                                                <th style="border: 1px solid #cbd5e1; padding: 4px; width: 42px; background: #f1f5f9;"></th>
+                                                <th style="border: 1px solid #cbd5e1; padding: 4px; width: 52px; background: #f1f5f9;"></th>
+                                                <th style="border: 1px solid #cbd5e1; padding: 4px; background: #e0f2fe; color: #0369a1; text-align: center; width: 48px;">INQ</th>
+                                                <th style="border: 1px solid #cbd5e1; padding: 4px; background: #e0f2fe; color: #0369a1; text-align: center; width: 48px;">INQ TD</th>
+                                                <th style="border: 1px solid #cbd5e1; padding: 4px; background: #fef08a; color: #854d0e; text-align: center; width: 42px;">SPK</th>
+                                                <th style="border: 1px solid #cbd5e1; padding: 4px; background: #fed7aa; color: #9a3412; text-align: center; width: 42px;">FP</th>
+                                                <th style="border: 1px solid #cbd5e1; padding: 4px; background: #e0e7ff; color: #3730a3; text-align: center; width: 55px;">INQtoSPK</th>
+                                                <th style="border: 1px solid #cbd5e1; padding: 4px; background: #e0e7ff; color: #3730a3; text-align: center; width: 55px;">SPKtoFP</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($rows as $idx => $r)
+                                                @php $isCurrent = $r['is_current'] ?? false; @endphp
+                                                <tr style="border-bottom: 1px solid #cbd5e1; background: {{ $isCurrent ? '#fefce8' : '#ffffff' }}; font-weight: {{ $isCurrent ? '700' : 'normal' }};">
+                                                    @if($idx === 0)
+                                                        <td rowspan="{{ count($rows) }}" style="border: 1px solid #cbd5e1; padding: 4px; background: #f8fafc; font-weight: 800; font-size: 11px; text-align: center; vertical-align: middle; width: 42px; color: #1e293b; writing-mode: vertical-lr; transform: rotate(180deg); letter-spacing: 2px;">
+                                                            {{ $modelName }}
+                                                        </td>
+                                                    @endif
+                                                    <td style="border: 1px solid #cbd5e1; padding: 3px 4px; text-align: center; background: {{ $isCurrent ? '#fef08a' : '#f1f5f9' }}; color: #334155; font-weight: {{ $isCurrent ? '700' : '600' }}; font-size: 10px;">
+                                                        {{ $r['label'] }}
+                                                    </td>
+                                                    <td style="border: 1px solid #cbd5e1; padding: 3px 4px; text-align: right; background: #f0fdf4; color: #166534; font-size: 10px;">
+                                                        {{ number_format($r['inq']) }}
+                                                    </td>
+                                                    <td style="border: 1px solid #cbd5e1; padding: 3px 4px; text-align: right; background: #f0fdf4; color: #166534; font-size: 10px;">
+                                                        {{ number_format($r['inq_td']) }}
+                                                    </td>
+                                                    <td style="border: 1px solid #cbd5e1; padding: 3px 4px; text-align: right; background: {{ $isCurrent ? '#facc15' : '#fef9c3' }}; color: #854d0e; font-weight: {{ $isCurrent ? '800' : '600' }}; font-size: 10px;">
+                                                        {{ number_format($r['spk']) }}
+                                                    </td>
+                                                    <td style="border: 1px solid #cbd5e1; padding: 3px 4px; text-align: right; background: {{ $isCurrent ? '#fb923c' : '#ffedd5' }}; color: #7c2d12; font-weight: {{ $isCurrent ? '800' : '600' }}; font-size: 10px;">
+                                                        {{ number_format($r['fp']) }}
+                                                    </td>
+                                                    <td style="border: 1px solid #cbd5e1; padding: 3px 4px; text-align: right; color: #475569; font-size: 10px;">
+                                                        {{ number_format($r['inq_to_spk'], 1) }}%
+                                                    </td>
+                                                    <td style="border: 1px solid #cbd5e1; padding: 3px 4px; text-align: right; color: #475569; font-size: 10px;">
+                                                        {{ number_format($r['spk_to_fp'], 1) }}%
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                @endif
                 {{-- 
                 <div style="background: white; border-radius: 8px; padding: 15px; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.3); height: fit-content; align-self: flex-start;">
                     <h4 style="color: #dc2626; margin-bottom: 10px; font-weight: bold;">👥 SALES FORCE PERFORMANCE ({{ strtoupper($bulan) }})</h4>

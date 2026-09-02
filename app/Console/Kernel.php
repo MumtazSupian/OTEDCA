@@ -22,6 +22,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:send-in-unit-email')
             ->dailyAt('09:00')
             ->timezone('Asia/Jakarta');
+
+        $schedule->command('dms:sync-users')
+            ->everyTenMinutes()
+            ->timezone('Asia/Jakarta');
     }
 
     protected function commands()

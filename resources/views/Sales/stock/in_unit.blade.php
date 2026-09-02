@@ -9,7 +9,7 @@
         <h1 class="page-title">Data IN UNIT</h1>
         <p class="page-subtitle">Data kedatangan unit dari gudang ke cabang.</p>
     </div>
-    @if(!$isRestrictedBranch && auth()->user()->role !== 'adh')
+    @if(!$isRestrictedBranch && !auth()->user()->is_adh)
     <div>
         <a href="{{ route('admin.in-units.create') }}" class="btn btn-primary" style="background: #dc2626; color: #ffffff !important; font-weight:800; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600;">+ Tambah Data</a>
     </div>
@@ -59,7 +59,7 @@
                     <td style="border: 1px solid #cbd5e1; padding: 6px 10px; text-align: center;">
                         <div style="display: flex; gap: 6px; justify-content: center;">
                             <a href="{{ route('admin.in-units.edit', $unit->id) }}" style="color: #0284c7; text-decoration: none; font-size: 11px; background: #e0f2fe; padding: 3px 8px; border-radius: 4px;">Edit</a>
-                            @if(!$isRestrictedBranch && auth()->user()->role !== 'adh')
+                            @if(!$isRestrictedBranch && !auth()->user()->is_adh)
                             <form action="{{ route('admin.in-units.destroy', $unit->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?');" style="margin: 0;">
                                 @csrf
                                 @method('DELETE')

@@ -5,16 +5,62 @@
 @section('content')
 
 <style>
+    /* RESPONSIVE CARDS GRID */
+    .mobil-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    @media (max-width: 1200px) {
+        .mobil-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+    }
+    @media (max-width: 820px) {
+        .mobil-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+    }
+    @media (max-width: 480px) {
+        .mobil-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+    }
+    @media (max-width: 350px) {
+        .mobil-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .page-header-responsive {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    @media (max-width: 768px) {
+        .page-header-responsive {
+            flex-direction: column;
+            gap: 12px;
+        }
+    }
+
     /* SERVICE AC STYLES */
     .cabang-section {
         margin-top: 20px;
         margin-bottom: 45px;
     }
     .modern-cabang-title {
-        font-size: 22px;
+        font-size: 20px;
         color: #1a237e;
         font-weight: 800;
-        margin-bottom: 25px;
+        margin-bottom: 20px;
         display: flex;
         align-items: center;
         gap: 12px;
@@ -24,22 +70,30 @@
     .modern-cabang-title::before {
         content: '';
         width: 6px;
-        height: 28px;
+        height: 24px;
         background: linear-gradient(to bottom, #3498db, #2ecc71);
         border-radius: 4px;
         display: inline-block;
     }
     .cards-row {
-        display: flex;
-        gap: 25px;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+    @media (max-width: 576px) {
+        .cards-row {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        .service-card {
+            min-width: 0 !important;
+            padding: 18px !important;
+        }
     }
     .service-card {
-        flex: 1;
-        min-width: 320px;
         background: #fff;
-        border-radius: 20px;
-        padding: 25px;
+        border-radius: 16px;
+        padding: 22px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.04);
         border: 1px solid rgba(0,0,0,0.02);
         transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -58,32 +112,33 @@
     .service-card.modern-orange::after { background: #f39c12; }
     .service-card.modern-green::after { background: #2ecc71; }
     .service-card:hover {
-        transform: translateY(-8px);
+        transform: translateY(-4px);
         box-shadow: 0 15px 35px rgba(0,0,0,0.08);
     }
     .card-title-area {
         display: flex;
         align-items: center;
-        gap: 15px;
-        margin-bottom: 25px;
+        gap: 12px;
+        margin-bottom: 20px;
         border-bottom: 1px solid #f0f4f8;
-        padding-bottom: 20px;
+        padding-bottom: 15px;
     }
     .icon-wrap {
-        width: 50px;
-        height: 50px;
-        border-radius: 14px;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 22px;
+        font-size: 18px;
+        flex-shrink: 0;
     }
     .modern-blue .icon-wrap { background: rgba(52, 152, 219, 0.1); color: #3498db; }
     .modern-orange .icon-wrap { background: rgba(243, 156, 18, 0.1); color: #f39c12; }
     .modern-green .icon-wrap { background: rgba(46, 204, 113, 0.1); color: #2ecc71; }
     .card-title-area h4 {
         margin: 0;
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 700;
     }
     .modern-blue h4 { color: #3498db; }
@@ -92,16 +147,16 @@
     .stats-area {
         display: flex;
         justify-content: space-between;
-        padding: 0 10px;
+        padding: 0 5px;
     }
     .stat-item {
         text-align: center;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
     }
     .stat-num {
-        font-size: 24px;
+        font-size: 22px;
         font-weight: 800;
     }
     .modern-blue .stat-num { color: #2980b9; }
@@ -116,12 +171,12 @@
     }
 </style>
 
-    <div class="page-header">
+    <div class="page-header-responsive">
         <div>
-            <h1 class="page-title">Data SPK dan DO {{ $isPusat ? 'Semua Cabang' : ucfirst(strtolower($cabang)) }}</h1>
-            <p class="page-subtitle" style="margin-bottom: 12px;">Operation Transformation Excellent DCA</p>
+            <h1 class="page-title" style="font-size: 1.5rem; margin: 0 0 6px 0;">Data SPK dan DO {{ $isPusat ? 'Semua Cabang' : ucfirst(strtolower($cabang)) }}</h1>
+            <p class="page-subtitle" style="margin: 0 0 12px 0;">Operation Transformation Excellent DCA</p>
             {{-- Tambahan TOTAL SPK dan DO Keseluruhan --}}
-            <div style="display: flex; gap: 15px; margin-top: 5px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px;">
                 <div style="background: #eff6ff; padding: 6px 12px; border-radius: 6px; border: 1px solid #bfdbfe; font-weight: bold; color: #1e40af; font-size: 13px;">
                     TOTAL SPK: {{ $sections[0]->totalSpk }}
                 </div>
@@ -130,17 +185,17 @@
                 </div>
             </div>
         </div>
-        <div class="server-time" style="align-self: flex-start;">
-            <span class="dot"></span>
+        <div class="server-time" style="align-self: flex-start; background: #ffffff; padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 12px; display: flex; align-items: center; gap: 8px;">
+            <span class="dot" style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%; display: inline-block;"></span>
             <span>Waktu Server: {{ now()->setTimezone('Asia/Jakarta')->format('d M Y \\p\\u\\k\\u\\l H.i') }} WIB</span>
         </div>
     </div>
 
     {{-- Filter Bulan --}}
     <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-        <form action="{{ url('/dashboard') }}" method="GET" id="filterForm" style="display: flex; align-items: center; gap: 10px; background: white; padding: 10px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-            <label for="bulan" style="font-size: 13px; font-weight: 600; color: #475569; margin: 0;">PERIODE DATA:</label>
-            <select name="bulan" id="bulan" onchange="document.getElementById('filterForm').submit();" style="padding: 6px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #1e293b; background-color: #f8fafc; cursor: pointer; outline: none;">
+        <form action="{{ url('/dashboard') }}" method="GET" id="filterForm" style="display: flex; align-items: center; gap: 10px; background: white; padding: 10px 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: auto; max-width: 100%;">
+            <label for="bulan" style="font-size: 13px; font-weight: 600; color: #475569; margin: 0; white-space: nowrap;">PERIODE DATA:</label>
+            <select name="bulan" id="bulan" onchange="document.getElementById('filterForm').submit();" style="padding: 6px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; color: #1e293b; background-color: #f8fafc; cursor: pointer; outline: none; flex: 1;">
                 @foreach($bulanMap as $num => $namaBulan)
                     <option value="{{ $namaBulan }}" {{ strtolower($selectedBulan) == strtolower($namaBulan) ? 'selected' : '' }}>
                         {{ strtoupper($namaBulan) }}
@@ -168,9 +223,9 @@
         @if($index > 0)
             {{-- Pembatas antar cabang khusus untuk admin --}}
             <hr style="margin: 40px 0; border: 0; border-top: 2px dashed #cbd5e1;">
-            <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <h2 style="font-size: 1.25rem; font-weight: 700; color: #1e293b; margin: 0;">Data SPK dan DO {{ $section->title }}</h2>
-                <div style="display: flex; gap: 15px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
                     <div style="background: #eff6ff; padding: 6px 12px; border-radius: 6px; border: 1px solid #bfdbfe; font-weight: bold; color: #1e40af; font-size: 12px;">
                         TOTAL SPK: {{ $section->totalSpk }}
                     </div>
@@ -181,7 +236,7 @@
             </div>
         @endif
 
-        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:24px;margin-bottom:30px;">
+        <div class="mobil-grid">
             @forelse($section->mobilStats as $mobil)
                 <div style="background:white;border-radius:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);overflow:hidden;transition:all 0.3s ease;display:flex;flex-direction:column;height:100%;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)'">
                     
@@ -249,6 +304,134 @@
         </h2>
     </div>
 
+    <style>
+        .cabang-section {
+            margin-bottom: 35px;
+        }
+        .modern-cabang-title {
+            font-size: 18px;
+            color: #1a237e;
+            font-weight: 800;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .modern-cabang-title::before {
+            content: '';
+            width: 6px;
+            height: 24px;
+            background: linear-gradient(to bottom, #3498db, #2ecc71);
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .cards-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        @media (max-width: 576px) {
+            .cards-row {
+                grid-template-columns: 1fr;
+                gap: 14px;
+            }
+            .service-card {
+                min-width: 0 !important;
+                padding: 16px !important;
+            }
+        }
+        .service-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.02);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .service-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+        }
+        .service-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+        }
+        .card-title-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #f0f4f8;
+            padding-bottom: 20px;
+        }
+        .icon-wrap {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+        .card-title-area h4 {
+            font-weight: 800;
+            margin: 0;
+            font-size: 16px;
+            letter-spacing: 0.3px;
+        }
+        .stats-area {
+            display: flex;
+            justify-content: space-between;
+        }
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+        .stat-item:not(:last-child) {
+            border-right: 1px dashed #e2e8f0;
+        }
+        .stat-num {
+            display: block;
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 8px;
+        }
+        .stat-text {
+            display: block;
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+        /* THEME: BLUE (ENTRY SERVICE) */
+        .modern-blue::after { background: linear-gradient(to right, #1976d2, #64b5f6); }
+        .modern-blue .icon-wrap { background: #e3f2fd; color: #1976d2; }
+        .modern-blue h4 { color: #1565c0; }
+        .modern-blue .stat-num { color: #1976d2; }
+
+        /* THEME: ORANGE (SPOORING BALANCING) */
+        .modern-orange::after { background: linear-gradient(to right, #f57c00, #ffb74d); }
+        .modern-orange .icon-wrap { background: #fff3e0; color: #f57c00; }
+        .modern-orange h4 { color: #e65100; }
+        .modern-orange .stat-num { color: #f57c00; }
+
+        /* THEME: GREEN (UNIT AC) */
+        .modern-green::after { background: linear-gradient(to right, #388e3c, #81c784); }
+        .modern-green .icon-wrap { background: #e8f5e9; color: #388e3c; }
+        .modern-green h4 { color: #1b5e20; }
+        .modern-green .stat-num { color: #388e3c; }
+    </style>
+
     @foreach($dataCabangService as $cabang => $data)
     <div class="cabang-section">
         <div class="modern-cabang-title">{{ $cabang }}</div>
@@ -292,7 +475,7 @@
                         <span class="stat-text">Hari Ini</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-num">{{ $data['spooring']['target'] ?? 0 }}</span>
+                        <span class="stat-num">{{ $data['spooring']['target'] ?? 80 }}</span>
                         <span class="stat-text">Target</span>
                     </div>
                 </div>
@@ -314,7 +497,7 @@
                         <span class="stat-text">Hari Ini</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-num">{{ $data['ac']['target'] ?? 0 }}</span>
+                        <span class="stat-num">{{ $data['ac']['target'] ?? 80 }}</span>
                         <span class="stat-text">Target</span>
                     </div>
                 </div>

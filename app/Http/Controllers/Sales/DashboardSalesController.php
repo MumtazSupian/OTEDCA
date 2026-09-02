@@ -112,7 +112,14 @@ class DashboardSalesController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+        if ($user && ($user->role === 'ho_unit' || strtolower($user->email ?? '') === 'dcahounit')) {
+            return redirect()->route('sales.dashboard');
+        }
+
         $cabang = $user->cabang ?: ($user->branch ?: 'Ciawi');
+        if (strtolower($cabang) === 'bp' || strtolower($user->branch ?? '') === 'bp') {
+            $cabang = 'Jatiasih';
+        }
 
         $bulanMap = [
             1 => 'jan', 2 => 'feb', 3 => 'mar', 4 => 'apr', 5 => 'mei', 6 => 'jun',

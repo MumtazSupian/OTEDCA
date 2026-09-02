@@ -54,10 +54,17 @@
         </div>
     </div>
 
+    @php
+        $authUser = auth()->user();
+        $isPusat = $authUser && ($authUser->is_admin || strtolower($authUser->role ?? '') === 'om');
+        $userBranch = strtolower($authUser->branch ?? '');
+    @endphp
+
     {{-- Quick Links --}}
     <div class="table-container" style="padding:24px; margin-top: 16px;">
         <h2 style="font-size:16px;font-weight:600;margin-bottom:16px;">Akses Cepat Cabang</h2>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+            @if($isPusat || $userBranch === 'bp')
             <a href="{{ url('/bp') }}"
                 style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:10px;text-decoration:none;color:var(--text-primary);transition:all .2s;">
                 <div
@@ -73,6 +80,9 @@
                     <div style="font-size:11px;color:var(--text-muted);">Bukti Piutang</div>
                 </div>
             </a>
+            @endif
+
+            @if($isPusat || $userBranch === 'cinere')
             <a href="{{ url('/gr/cinere') }}"
                 style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:10px;text-decoration:none;color:var(--text-primary);transition:all .2s;">
                 <div
@@ -88,6 +98,9 @@
                     <div style="font-size:11px;color:var(--text-muted);">Cabang Cinere</div>
                 </div>
             </a>
+            @endif
+
+            @if($isPusat || $userBranch === 'jatiasih')
             <a href="{{ url('/gr/jatiasih') }}"
                 style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:10px;text-decoration:none;color:var(--text-primary);transition:all .2s;">
                 <div
@@ -103,6 +116,9 @@
                     <div style="font-size:11px;color:var(--text-muted);">Cabang Jatiasih</div>
                 </div>
             </a>
+            @endif
+
+            @if($isPusat || $userBranch === 'cianjur')
             <a href="{{ url('/gr/cianjur') }}"
                 style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:10px;text-decoration:none;color:var(--text-primary);transition:all .2s;">
                 <div style="width:36px;height:36px;background:rgba(20,184,166,.12);border-radius:8px;display:flex;align-items:center;justify-content:center;">
@@ -117,6 +133,9 @@
                     <div style="font-size:11px;color:var(--text-muted);">Cabang Cianjur</div>
                 </div>
             </a>
+            @endif
+
+            @if($isPusat || $userBranch === 'ciawi')
             <a href="{{ url('/gr/ciawi') }}"
                 style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:10px;text-decoration:none;color:var(--text-primary);transition:all .2s;">
                 <div
@@ -132,6 +151,7 @@
                     <div style="font-size:11px;color:var(--text-muted);">Cabang Ciawi</div>
                 </div>
             </a>
+            @endif
         </div>
     </div>
 
@@ -180,7 +200,8 @@
         </div>
     @endif
 
-    {{-- BP Insurance Totals --}}
+    {{-- BP Insurance Totals (HANYA tampil untuk Superadmin/OM atau Cabang BP) --}}
+    @if($isPusat || $userBranch === 'bp')
     <div class="table-container" style="padding:24px; margin-top:16px;">
         <h2 style="font-size:16px;font-weight:600;margin-bottom:8px;">Tabel Asuransi BP</h2>
         <p style="margin-bottom:16px;color:#6b7280;font-size:13px;">Ringkasan nama asuransi dan total konsumen yang menggunakan asuransi tersebut di cabang BP.</p>
@@ -207,4 +228,6 @@
             </table>
         </div>
     </div>
+    @endif
 @endsection
+

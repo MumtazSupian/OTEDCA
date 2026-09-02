@@ -62,13 +62,13 @@ class SyncDmsUsers extends Command
                 $position = $positions[$lowerUserId] ?? '';
 
                 $role = null;
-                if (strtoupper($userId) === 'DCAHOUNIT') {
+                if (strtoupper($userId) === 'DCAHOUNIT' || str_contains($lowerUserId, 'hounit')) {
                     $role = 'ho_unit';
                 } elseif (in_array(strtoupper($position), ['BM', 'SH'])) {
                     $role = 'bm_sh';
-                } elseif (strtoupper($position) === 'FD') {
+                } elseif (strtoupper($position) === 'FD' || str_contains($lowerUserId, 'adh')) {
                     $role = 'adh';
-                } elseif (strtoupper($position) === 'GM') {
+                } elseif (strtoupper($position) === 'GM' || in_array(strtoupper($userId), ['DCASR', 'IT', 'HERUIT', 'MUMTAZIT', 'RIZKYIT'])) {
                     $role = 'om';
                 }
 
@@ -98,11 +98,10 @@ class SyncDmsUsers extends Command
                     $user->role = 'adh';
                 } elseif ($role === 'ho_unit') {
                     $user->is_admin = 0;
-                    $user->is_admin_stock = 0;
+                    $user->is_admin_stock = 1;
                     $user->role = 'ho_unit';
                 }
 
-                // Tetap set branch biar aplikasi lama tidak error
                 $user->branch = $cabang;
                 $user->save();
                 $count++;

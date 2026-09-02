@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\InUnit;
+use App\Models\Sales\InUnit;
 use App\Mail\InUnitNotificationMail;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;

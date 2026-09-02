@@ -44,16 +44,10 @@
                 ];
             @endphp
 
-            @php
-                $editableFields = [
-                    'faktur', 'bln_naik_faktur', 'penjualan', 'tanggal_matching_do',
-                    'cabang', 'status', 'keterangan', 'unit', 'lokasi', 'nama_mobil', 'varian', 'warna', 'norangka', 'nomesin', 'enginecode'
-                ];
-            @endphp
-
             @foreach($fields as $name => $field)
                 @php
-                    $isEditable = in_array($name, $editableFields);
+                    // Hanya HPP yang readonly/terkunci
+                    $isEditable = ($name !== 'hpp');
                     $readonlyAttr = $isEditable ? '' : 'readonly';
                     $disabledAttr = $isEditable ? '' : 'disabled';
                     $bgColor = $isEditable ? '#fff' : '#f1f5f9';
@@ -72,10 +66,7 @@
                     <label for="{{ $name }}" style="font-size:13px; font-weight:600; color:#475569;">{{ $field['label'] }}</label>
                     
                     @if(isset($field['type']) && $field['type'] === 'select')
-                        @if(!$isEditable)
-                            <input type="hidden" name="{{ $name }}" value="{{ $currentValue }}">
-                        @endif
-                        <select name="{{ $isEditable ? $name : '' }}" id="{{ $name }}" {{ $disabledAttr }} style="padding:10px 14px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-size:14px; color:#1e293b; width:100%; box-sizing:border-box; background:{{ $bgColor }};">
+                        <select name="{{ $name }}" id="{{ $name }}" style="padding:10px 14px; border-radius:8px; border:1px solid #cbd5e1; outline:none; font-size:14px; color:#1e293b; width:100%; box-sizing:border-box; background:{{ $bgColor }};">
                             <option value="">-- Pilih {{ $field['label'] }} --</option>
                             @foreach($field['options'] as $val => $text)
                                 <option value="{{ $val }}" @selected($currentValue == $val)>{{ $text }}</option>
@@ -99,4 +90,31 @@
         </div>
     </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const hargaInput = document.getElementById('harga');
+    const kptKfInput = document.getElementById('kpt_kf');
+    const acs2Input = document.getElementById('acs2');
+    const subsidiInput = document.getElementById('subsidi');
+    const hppInput = document.getElementById('hpp');
+
+    function calculateHpp() {
+        if (!hppInput) return;
+        const harga = parseFloat(hargaInput?.value) || 0;
+        const kptKf = parseFloat(kptKfInput?.value) || 0;
+        const acs2 = parseFloat(acs2Input?.value) || 0;
+        const subsidi = parseFloat(subsidiInput?.value) || 0;
+        
+        const hpp = (harga + kptKf + acs2) - subsidi;
+        hppInput.value = hpp;
+    }
+
+    [hargaInput, kptKfInput, acs2Input, subsidiInput].forEach(function(input) {
+        if (input) {
+            input.addEventListener('input', calculateHpp);
+        }
+    });
+});
+</script>
 @endsection
