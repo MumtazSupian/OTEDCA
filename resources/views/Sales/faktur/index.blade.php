@@ -489,9 +489,6 @@
                                         <line x1="16" y1="17" x2="8" y2="17"></line>
                                     </svg>
                                     <span style="font-size: 14px; font-weight: 600;">Belum ada data Faktur yang diinput.</span>
-                                    <a href="{{ route('sales.faktur.create') }}" class="btn-create-faktur" style="padding: 8px 16px; font-size: 13px; margin-top: 5px;">
-                                        + Tambah Data Faktur Sekarang
-                                    </a>
                                 </div>
                             </td>
                         </tr>

@@ -634,7 +634,7 @@ class DashboardController extends Controller
         $nextMonthNum   = ($currMonthNum < 12) ? $currMonthNum + 1 : 12;
 
         $cabangUserForCache = $user->branch ?? $user->cabang ?? '';
-        $cacheKeyV2 = 'dash_v2_pure_server_fix_ertiga_v36_' . $tahunSekarang . '_' . $currMonthNum . '_' . ($isPusat ? 'pusat' : $cabangUserForCache);
+        $cacheKeyV2 = 'dash_v2_pure_server_fix_ertiga_v38_' . $tahunSekarang . '_' . $currMonthNum . '_' . ($isPusat ? 'pusat' : $cabangUserForCache);
 
         $viewDataV2 = Cache::remember($cacheKeyV2, 600, function() use (
             $cabangs, $branchCodeMap, $modelList, $tahunSekarang, $currMonthNum, $daysInMonth, $startDateMonth, $endDateMonth,
@@ -798,12 +798,46 @@ class DashboardController extends Controller
                 }
                 $all13mTd = $q13Td->select(['s.BranchCode', 's.CreationDate', 'p.TipeKendaraan', 'p.Variant', 's.TipeKendaraan2', 's.DurasiTestDrive', 's.JarakTestDrive'])->get();
 
-                $q13Spk = \Illuminate\Support\Facades\DB::connection('dms')->table('pmKDP')
+                // 3. SPK: Dari pmKDP untuk Cianjur (641940102) & Cipanas (641940106)
+                $q13SpkPmkdp = \Illuminate\Support\Facades\DB::connection('dms')->table('pmKDP')
+                    ->whereIn('BranchCode', ['641940102', '641940106'])
                     ->whereBetween('SPKDate', [substr($startDate13Months, 0, 10), substr($endDate13Months, 0, 10)]);
                 if (!empty($allBranchCodes)) {
-                    $q13Spk->whereIn('BranchCode', $allBranchCodes);
+                    $q13SpkPmkdp->whereIn('BranchCode', $allBranchCodes);
                 }
-                $all13mSpk = $q13Spk->select(['BranchCode', 'SPKDate', 'TipeKendaraan', 'Variant'])->get();
+                $spkPmkdpRows = $q13SpkPmkdp->select(['BranchCode', 'SPKDate', 'TipeKendaraan', 'Variant'])->get();
+
+                // 3. SPK: Dari salesAppTable untuk Ciawi (641940101), Cinere (641940103), Jatiasih (641940104)
+                $q13SpkSat = \Illuminate\Support\Facades\DB::connection('dms')->table('salesAppTable as t')
+                    ->leftJoin('pmKDP as p', 't.InquiryNumber', '=', 'p.InquiryNumber')
+                    ->whereIn('t.BranchCode', ['641940101', '641940103', '641940104'])
+                    ->whereNotNull('t.HID')
+                    ->where('t.HID', 'like', 'PBK%')
+                    ->whereBetween('t.CreationDate', [$startDate13Months, $endDate13Months]);
+                if (!empty($allBranchCodes)) {
+                    $q13SpkSat->whereIn('t.BranchCode', $allBranchCodes);
+                }
+                $spkSatRows = $q13SpkSat->select(['t.BranchCode', 't.InquiryNumber', 'p.TipeKendaraan', 'p.Variant', 't.TipeKendaraan2', 't.CreationDate as SPKDate'])->get();
+
+                $all13mSpk = collect();
+                foreach ($spkPmkdpRows as $r) {
+                    $all13mSpk->push((object)[
+                        'BranchCode'    => $r->BranchCode,
+                        'SPKDate'       => $r->SPKDate,
+                        'TipeKendaraan' => $r->TipeKendaraan,
+                        'Variant'       => $r->Variant,
+                    ]);
+                }
+                foreach ($spkSatRows as $r) {
+                    $tipe = trim($r->TipeKendaraan ?? ($r->TipeKendaraan2 ?? ''));
+                    if (empty($tipe)) $tipe = trim($r->TipeKendaraan2 ?? '');
+                    $all13mSpk->push((object)[
+                        'BranchCode'    => $r->BranchCode,
+                        'SPKDate'       => $r->SPKDate,
+                        'TipeKendaraan' => $tipe,
+                        'Variant'       => $r->Variant,
+                    ]);
+                }
 
                 $q13Fp = \Illuminate\Support\Facades\DB::connection('dms')->table('omTrSalesReqDetail as d')
                     ->leftJoin('omTrSalesSOModel as m', function($join) {
@@ -1314,7 +1348,6 @@ class DashboardController extends Controller
             $selectedCabang = $matchedCabang;
         }
 
-        // Resolusi 15 Sales Head Resmi per cabang (Jatiasih: 3 SH, Cinere: 3 SH termasuk Adrian, Ciawi: 4 SH, Cianjur: 4 SH, Cipanas: 1 SH)
         $officialBranchShMap = [
             'Ciawi' => [
                 '11.21.07.005' => 'HENNARDY DERMAWAN',
@@ -1372,18 +1405,21 @@ class DashboardController extends Controller
         $all13mFp  = collect();
 
         try {
-            // 1. INQUIRY
+            // 1. INQUIRY SALES HEAD
             $q13Inq = \Illuminate\Support\Facades\DB::connection('dms')->table('pmKDP')
                 ->whereBetween('InquiryDate', [$startDate13Months, $endDate13Months]);
             if (!empty($bCodes)) {
                 $q13Inq->whereIn('BranchCode', $bCodes);
             }
             if (!empty($selectedSpv)) {
-                $q13Inq->where('SpvEmployeeID', $selectedSpv);
+                $q13Inq->where(function($q) use ($selectedSpv) {
+                    $q->where('SpvEmployeeID', $selectedSpv)
+                      ->orWhere('EmployeeID', $selectedSpv);
+                });
             }
             $all13mInq = $q13Inq->select(['BranchCode', 'InquiryDate', 'TipeKendaraan', 'Variant', 'SpvEmployeeID'])->get();
 
-            // 2. TEST DRIVE
+            // 2. TEST DRIVE SALES HEAD
             $q13Td = \Illuminate\Support\Facades\DB::connection('dms')->table('salesAppTable as s')
                 ->leftJoin('pmKDP as p', 's.InquiryNumber', '=', 'p.InquiryNumber')
                 ->whereBetween('s.CreationDate', [$startDate13Months, $endDate13Months]);
@@ -1391,11 +1427,14 @@ class DashboardController extends Controller
                 $q13Td->whereIn('s.BranchCode', $bCodes);
             }
             if (!empty($selectedSpv)) {
-                $q13Td->where('p.SpvEmployeeID', $selectedSpv);
+                $q13Td->where(function($q) use ($selectedSpv) {
+                    $q->where('p.SpvEmployeeID', $selectedSpv)
+                      ->orWhere('p.EmployeeID', $selectedSpv);
+                });
             }
             $all13mTd = $q13Td->select(['s.BranchCode', 's.CreationDate', 'p.TipeKendaraan', 'p.Variant', 's.TipeKendaraan2', 's.DurasiTestDrive', 's.JarakTestDrive', 'p.SpvEmployeeID'])->get();
 
-            // 3. SPK
+            // 3. SPK SALES HEAD
             // Dari pmKDP
             $q13SpkPmkdp = \Illuminate\Support\Facades\DB::connection('dms')->table('pmKDP')
                 ->whereIn('BranchCode', ['641940102', '641940106'])
@@ -1404,11 +1443,14 @@ class DashboardController extends Controller
                 $q13SpkPmkdp->whereIn('BranchCode', $bCodes);
             }
             if (!empty($selectedSpv)) {
-                $q13SpkPmkdp->where('SpvEmployeeID', $selectedSpv);
+                $q13SpkPmkdp->where(function($q) use ($selectedSpv) {
+                    $q->where('SpvEmployeeID', $selectedSpv)
+                      ->orWhere('EmployeeID', $selectedSpv);
+                });
             }
             $spkPmkdpRows = $q13SpkPmkdp->select(['BranchCode', 'SPKDate', 'TipeKendaraan', 'Variant', 'SpvEmployeeID'])->get();
 
-            // Dari salesAppTable untuk Ciawi, Cinere, Jatiasih
+            // Dari salesAppTable 
             $q13SpkSat = \Illuminate\Support\Facades\DB::connection('dms')->table('salesAppTable as t')
                 ->leftJoin('pmKDP as p', 't.InquiryNumber', '=', 'p.InquiryNumber')
                 ->whereIn('t.BranchCode', ['641940101', '641940103', '641940104'])
@@ -1419,7 +1461,10 @@ class DashboardController extends Controller
                 $q13SpkSat->whereIn('t.BranchCode', $bCodes);
             }
             if (!empty($selectedSpv)) {
-                $q13SpkSat->where('p.SpvEmployeeID', $selectedSpv);
+                $q13SpkSat->where(function($q) use ($selectedSpv) {
+                    $q->where('p.SpvEmployeeID', $selectedSpv)
+                      ->orWhere('p.EmployeeID', $selectedSpv);
+                });
             }
             $spkSatRows = $q13SpkSat->select(['t.BranchCode', 't.InquiryNumber', 'p.TipeKendaraan', 'p.Variant', 't.TipeKendaraan2', 't.CreationDate as SPKDate', 'p.SpvEmployeeID'])->get();
 
@@ -1445,8 +1490,12 @@ class DashboardController extends Controller
                 ]);
             }
 
-            // 4. FAKTUR POLISI
+            // 4. FAKTUR POLISI SALES HEAD
             $q13Fp = \Illuminate\Support\Facades\DB::connection('dms')->table('omTrSalesReqDetail as d')
+                ->leftJoin('omTrSalesSO as so', function($join) {
+                    $join->on('d.SONo', '=', 'so.SONo')
+                         ->on('d.BranchCode', '=', 'so.BranchCode');
+                })
                 ->leftJoin('omTrSalesSOModel as m', function($join) {
                     $join->on('d.SONo', '=', 'm.SONo')
                          ->on('d.BranchCode', '=', 'm.BranchCode');
@@ -1454,6 +1503,25 @@ class DashboardController extends Controller
                 ->whereBetween('d.CreatedDate', [$startDate13Months, $endDate13Months]);
             if (!empty($bCodes)) {
                 $q13Fp->whereIn('d.BranchCode', $bCodes);
+            }
+            if (!empty($selectedSpv)) {
+                $spvSalesmanIds = \Illuminate\Support\Facades\DB::connection('dms')->table('pmKDP')
+                    ->whereIn('BranchCode', $bCodes)
+                    ->where(function($q) use ($selectedSpv) {
+                        $q->where('SpvEmployeeID', $selectedSpv)
+                          ->orWhere('EmployeeID', $selectedSpv);
+                    })
+                    ->pluck('EmployeeID')
+                    ->filter()
+                    ->unique()
+                    ->toArray();
+                $spvSalesmanIds[] = $selectedSpv;
+
+                $q13Fp->where(function($q) use ($spvSalesmanIds, $selectedSpv) {
+                    $q->whereIn('d.SalesmanCode', $spvSalesmanIds)
+                      ->orWhereIn('so.Salesman', $spvSalesmanIds)
+                      ->orWhere('so.SalesHead', $selectedSpv);
+                });
             }
             $all13mFp = $q13Fp->select(['d.BranchCode', 'd.CreatedDate', 'm.SalesModelCode'])->get();
         } catch (\Throwable $e) {
