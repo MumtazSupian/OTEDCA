@@ -245,19 +245,23 @@ class CustomerListController extends Controller
                 // 1. Total konsumen unik
                 $totalMaster = (int)DB::connection('dms')->table('gnMstCustomer')->count();
 
-                // 2. Data Penjualan (Total seluruh transaksi unit penjualan)
+                // 2. Data Penjualan 
                 $hanyaPenjualan = (int)DB::connection('dms')->table('omTrSalesReqDetail')->count();
 
-                // 3. Hanya service (unit luar)
-                $srvOnlyRes = DB::connection('dms')->select("
-                    SELECT COUNT(DISTINCT s.ChassisNo) as total
-                    FROM svTrnService s
-                    LEFT JOIN omTrSalesReqDetail d ON s.ChassisNo = d.ChassisNo
-                    WHERE d.ChassisNo IS NULL AND s.ChassisNo IS NOT NULL AND s.ChassisNo <> '';
+                // 3. Database doang (tanpa riwayat transaksi)
+                $dbOnlyRes = DB::connection('dms')->select("
+                    SELECT COUNT(*) as total
+                    FROM gnMstCustomer c
+                    LEFT JOIN omTrSalesSO so ON c.CustomerCode = so.CustomerCode
+                    LEFT JOIN svTrnService s ON c.CustomerCode = s.CustomerCode
+                    WHERE so.CustomerCode IS NULL AND s.CustomerCode IS NULL;
                 ");
-                $hanyaService = (int)($srvOnlyRes[0]->total ?? 0);
+                $hanyaDatabase = (int)($dbOnlyRes[0]->total ?? 0);
 
-                // 4. Total Kendaraan (Penjualan + Service Luar termasuk record transaksi)
+                // 4. Hanya Service 
+                $hanyaService = max(0, $totalMaster - $hanyaPenjualan - $hanyaDatabase);
+
+                // 5. Total Kendaraan 
                 $totalVehicles = $hanyaPenjualan + $hanyaService;
 
                 // 3. Duplikat transaksi penjualan
@@ -287,16 +291,6 @@ class CustomerListController extends Controller
                     WHERE d.ChassisNo IS NOT NULL AND d.ChassisNo <> '';
                 ");
                 $penjualanDanService = (int)($bothRes[0]->total ?? 0);
-
-                // 7. Database doang (tanpa riwayat transaksi)
-                $dbOnlyRes = DB::connection('dms')->select("
-                    SELECT COUNT(*) as total
-                    FROM gnMstCustomer c
-                    LEFT JOIN omTrSalesSO so ON c.CustomerCode = so.CustomerCode
-                    LEFT JOIN svTrnService s ON c.CustomerCode = s.CustomerCode
-                    WHERE so.CustomerCode IS NULL AND s.CustomerCode IS NULL;
-                ");
-                $hanyaDatabase = (int)($dbOnlyRes[0]->total ?? 0);
 
                 return [
                     'konsumen_unik'      => $totalMaster,
