@@ -50,12 +50,12 @@ class CustomerListController extends Controller
         $whereSql = !empty($whereClauses) ? "WHERE " . implode(" AND ", $whereClauses) : "";
         $filterRnSql = $isDuplicateOn ? "" : "WHERE r.rn = 1";
 
-        // Hitung total record (pakai cache 10 menit biar paginasi enteng)
+        // Hitung total record
         $cacheKeyTotal = 'customer_list_total_' . md5($q . $statusNikFilter . ($isDuplicateOn ? '1' : '0'));
         $totalRecords = Cache::remember($cacheKeyTotal, 600, function() use ($whereSql, $filterRnSql, $bindings, $isDuplicateOn) {
             try {
                 $countSql = "
-                WITH RankedSales AS (
+                WITH Customer AS (
                     SELECT 
                         d.BranchCode,
                         d.SONo,
@@ -70,7 +70,7 @@ class CustomerListController extends Controller
                     FROM omTrSalesReqDetail d
                     {$whereSql}
                 )
-                SELECT COUNT(*) AS total FROM RankedSales r " . ($isDuplicateOn ? "" : "WHERE r.rn = 1") . ";
+                SELECT COUNT(*) AS total FROM Customer r " . ($isDuplicateOn ? "" : "WHERE r.rn = 1") . ";
                 ";
                 $res = DB::connection('dms')->select($countSql, $bindings);
                 return (int)($res[0]->total ?? 22874);
@@ -82,7 +82,7 @@ class CustomerListController extends Controller
         // Tarik data per page + grouping duplikat pakai CTE
         $offset = ($page - 1) * $perPage;
         $cteSql = "
-        WITH RankedSales AS (
+        WITH Customer AS (
             SELECT 
                 d.BranchCode,
                 d.SONo,
@@ -138,7 +138,7 @@ class CustomerListController extends Controller
             c.PhoneNo,
             c.Email,
             m.SalesModelCode AS tipe_kendaraan
-        FROM RankedSales r
+        FROM Customer r
         LEFT JOIN omTrSalesSO so ON r.SONo = so.SONo AND r.BranchCode = so.BranchCode
         LEFT JOIN gnMstCustomer c ON so.CustomerCode = c.CustomerCode
         LEFT JOIN omTrSalesSOModel m ON r.SONo = m.SONo AND r.BranchCode = m.BranchCode
@@ -248,7 +248,7 @@ class CustomerListController extends Controller
 
                 // 3. Duplikat transaksi penjualan
                 $dupRes = DB::connection('dms')->select("
-                    WITH RankedSales AS (
+                    WITH Customer AS (
                         SELECT 
                             ROW_NUMBER() OVER (
                                 PARTITION BY CASE 
@@ -261,18 +261,12 @@ class CustomerListController extends Controller
                         FROM omTrSalesReqDetail
                         WHERE (IDNo IS NOT NULL AND IDNo <> '') OR (FakturPolisiName IS NOT NULL AND FakturPolisiName <> '')
                     )
-                    SELECT COUNT(*) as total FROM RankedSales WHERE rn > 1;
+                    SELECT COUNT(*) as total FROM Customer WHERE rn > 1;
                 ");
                 $totalDups = (int)($dupRes[0]->total ?? 0);
 
-                // 4. Hanya penjualan (belum pernah service)
-                $salesOnlyRes = DB::connection('dms')->select("
-                    SELECT COUNT(DISTINCT d.ChassisNo) as total
-                    FROM omTrSalesReqDetail d
-                    LEFT JOIN svTrnService s ON d.ChassisNo = s.ChassisNo
-                    WHERE s.ChassisNo IS NULL AND d.ChassisNo IS NOT NULL AND d.ChassisNo <> '';
-                ");
-                $hanyaPenjualan = (int)($salesOnlyRes[0]->total ?? 0);
+                // 4. Data Penjualan (Total seluruh transaksi unit penjualan)
+                $hanyaPenjualan = (int)DB::connection('dms')->table('omTrSalesReqDetail')->count();
 
                 // 5. Hanya service (unit luar)
                 $srvOnlyRes = DB::connection('dms')->select("
