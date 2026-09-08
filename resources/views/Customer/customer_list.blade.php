@@ -11,8 +11,8 @@
             <p class="page-subtitle">Database dari SDMS</p>
         </div>
         <div class="header-action-group">
-            <button type="button" class="btn-export-excel" onclick="alert('Export Excel sedang dipersiapkan...')">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button type="button" class="btn-export-excel" id="btnExportExcel">
+                <svg class="export-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                     <polyline points="14 2 14 8 20 8"></polyline>
                     <line x1="8" y1="13" x2="16" y2="13"></line>
@@ -335,6 +335,95 @@
             </div>
         </div>
         @endif
+    </div>
+
+    {{-- MODAL EXPORT DATABASE KONSUMEN --}}
+    <div class="export-modal-overlay" id="exportModalOverlay" style="display: none;">
+        <div class="export-modal-card">
+            {{-- Modal Header --}}
+            <div class="export-modal-header">
+                <h3 class="export-modal-title">Export Database Konsumen</h3>
+                <button type="button" class="export-modal-close" id="btnCloseExportModal" title="Tutup">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="exportFormModal" method="GET" action="{{ route('customer.list.export') }}">
+                {{-- Hidden input filter dari halaman --}}
+                <input type="hidden" name="q" id="exportHiddenQ" value="{{ request('q') }}">
+                <input type="hidden" name="tipe" id="exportHiddenTipe" value="{{ request('tipe') }}">
+                <input type="hidden" name="status_nik" id="exportHiddenStatusNik" value="{{ request('status_nik') }}">
+                <input type="hidden" name="kendaraan" id="exportHiddenKendaraan" value="{{ request('kendaraan') }}">
+
+                <div class="export-modal-body">
+                    {{-- Section 1: Kategori Sumber Data --}}
+                    <div class="export-section">
+                        <label class="export-section-label">Kategori Sumber Data (pilih satu atau lebih)</label>
+                        <div class="export-checkbox-group">
+                            <label class="export-check-item">
+                                <input type="checkbox" name="kategori_sumber[]" value="Penjualan" class="custom-checkbox">
+                                <span>Hanya Penjualan</span>
+                            </label>
+                            <label class="export-check-item">
+                                <input type="checkbox" name="kategori_sumber[]" value="Hanya Service" class="custom-checkbox">
+                                <span>Hanya Service</span>
+                            </label>
+                            <label class="export-check-item">
+                                <input type="checkbox" name="kategori_sumber[]" value="Penjualan & Service" class="custom-checkbox">
+                                <span>Penjualan & Service</span>
+                            </label>
+                            <label class="export-check-item">
+                                <input type="checkbox" name="kategori_sumber[]" value="Hanya Database" class="custom-checkbox">
+                                <span>Hanya Database</span>
+                            </label>
+                        </div>
+                        <div class="export-hint-text">Tidak ada yang dicentang = semua kategori</div>
+                    </div>
+
+                    {{-- Section 2: Status Review Duplikat --}}
+                    <div class="export-section">
+                        <label class="export-section-label">Status Review Duplikat</label>
+                        <div class="export-radio-group">
+                            <label class="export-radio-item">
+                                <input type="radio" name="status_review" value="semua" checked class="custom-radio">
+                                <span>Semua</span>
+                            </label>
+                            <label class="export-radio-item">
+                                <input type="radio" name="status_review" value="bersih" class="custom-radio">
+                                <span>Bersih (tanpa duplikat menunggu review)</span>
+                            </label>
+                            <label class="export-radio-item">
+                                <input type="radio" name="status_review" value="menunggu_review" class="custom-radio">
+                                <span>Menunggu review duplikat saja</span>
+                            </label>
+                        </div>
+
+                        <div class="export-include-dup-box">
+                            <label class="export-check-item">
+                                <input type="checkbox" name="include_duplicates" id="modalIncludeDuplicates" value="1" class="custom-checkbox" checked>
+                                <span>Sertakan record duplikat (yang sudah digabung ke master)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Modal Footer --}}
+                <div class="export-modal-footer">
+                    <button type="button" class="btn-modal-cancel" id="btnCancelExportModal">Batal</button>
+                    <button type="submit" class="btn-modal-download" id="btnModalSubmitDownload">
+                        <svg class="download-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Download Excel</span>
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -873,5 +962,263 @@
         background: #ffffff;
         outline: none;
     }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+
+    /* ===================================================
+       EXPORT MODAL STYLES (MATCHING SCREENSHOT)
+       =================================================== */
+    .export-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(3px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        padding: 16px;
+        box-sizing: border-box;
+        animation: fadeInModalBg 0.2s ease-out;
+    }
+    @keyframes fadeInModalBg {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .export-modal-card {
+        background: #ffffff;
+        border-radius: 14px;
+        width: 100%;
+        max-width: 480px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+        padding: 22px 24px;
+        box-sizing: border-box;
+        animation: scaleUpModalCard 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes scaleUpModalCard {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .export-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+    }
+    .export-modal-title {
+        font-size: 17.5px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        letter-spacing: -0.2px;
+    }
+    .export-modal-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .export-modal-close:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+        border-color: #94a3b8;
+    }
+
+    .export-section {
+        margin-bottom: 18px;
+    }
+    .export-section-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 10px;
+    }
+    .export-checkbox-group, .export-radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+    }
+    .export-check-item, .export-radio-item {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 13px;
+        color: #334155;
+        cursor: pointer;
+        user-select: none;
+    }
+    .custom-checkbox {
+        width: 17px;
+        height: 17px;
+        border-radius: 4px;
+        border: 1px solid #cbd5e1;
+        cursor: pointer;
+        accent-color: #dc2626;
+    }
+    .custom-radio {
+        width: 17px;
+        height: 17px;
+        cursor: pointer;
+        accent-color: #e11d48;
+    }
+    .export-hint-text {
+        font-size: 12px;
+        color: #94a3b8;
+        margin-top: 6px;
+    }
+    .export-include-dup-box {
+        margin-top: 14px;
+    }
+
+    .export-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 10px;
+        margin-top: 22px;
+        padding-top: 14px;
+    }
+    .btn-modal-cancel {
+        background: transparent;
+        border: none;
+        color: #64748b;
+        font-size: 13.5px;
+        font-weight: 600;
+        padding: 8px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    .btn-modal-cancel:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+    }
+    .btn-modal-download {
+        background: #16a34a;
+        color: #ffffff;
+        font-size: 13.5px;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        transition: background 0.15s ease;
+    }
+    .btn-modal-download:hover {
+        background: #15803d;
+    }
+    .btn-modal-download:disabled {
+        opacity: 0.75;
+        cursor: not-allowed;
+    }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnExport = document.getElementById('btnExportExcel');
+        const modalOverlay = document.getElementById('exportModalOverlay');
+        const btnCloseModal = document.getElementById('btnCloseExportModal');
+        const btnCancelModal = document.getElementById('btnCancelExportModal');
+        const exportForm = document.getElementById('exportFormModal');
+        const btnDownload = document.getElementById('btnModalSubmitDownload');
+
+        // Buka modal saat klik Export Excel di header
+        if (btnExport && modalOverlay) {
+            btnExport.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                // Sinkronkan parameter filter aktif dari formulir filter halaman ke hidden inputs modal
+                const searchInput = document.querySelector('input[name="q"]');
+                const tipeSelect = document.querySelector('select[name="tipe"]');
+                const statusNikSelect = document.querySelector('select[name="status_nik"]');
+                const kendaraanSelect = document.querySelector('select[name="kendaraan"]');
+                const toggleDup = document.querySelector('input[name="show_duplicates"]');
+
+                document.getElementById('exportHiddenQ').value = searchInput ? searchInput.value : '';
+                document.getElementById('exportHiddenTipe').value = tipeSelect ? tipeSelect.value : '';
+                document.getElementById('exportHiddenStatusNik').value = statusNikSelect ? statusNikSelect.value : '';
+                document.getElementById('exportHiddenKendaraan').value = kendaraanSelect ? kendaraanSelect.value : '';
+
+                // Sinkronkan checkbox sertakan duplikat dengan toggle di halaman
+                const modalDupCheck = document.getElementById('modalIncludeDuplicates');
+                if (modalDupCheck && toggleDup) {
+                    modalDupCheck.checked = toggleDup.checked;
+                }
+
+                // Tampilkan modal
+                modalOverlay.style.display = 'flex';
+            });
+        }
+
+        // Fungsi tutup modal
+        function closeModal() {
+            if (modalOverlay) {
+                modalOverlay.style.display = 'none';
+            }
+        }
+
+        if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
+        if (btnCancelModal) btnCancelModal.addEventListener('click', closeModal);
+
+        // Tutup modal jika user klik area gelap di luar kartu modal
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === modalOverlay) {
+                    closeModal();
+                }
+            });
+        }
+
+        // Handle submit download
+        if (exportForm && btnDownload) {
+            exportForm.addEventListener('submit', function() {
+                const origHtml = btnDownload.innerHTML;
+                btnDownload.innerHTML = `
+                    <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="2" x2="12" y2="6"></line>
+                        <line x1="12" y1="18" x2="12" y2="22"></line>
+                        <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                        <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                        <line x1="2" y1="12" x2="6" y2="12"></line>
+                        <line x1="18" y1="12" x2="22" y2="12"></line>
+                        <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                        <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+                    </svg>
+                    <span>Mengekspor...</span>
+                `;
+                btnDownload.disabled = true;
+
+                // Tutup modal dan reset tombol setelah beberapa detik
+                setTimeout(function() {
+                    btnDownload.innerHTML = origHtml;
+                    btnDownload.disabled = false;
+                    closeModal();
+                }, 2500);
+            });
+        }
+    });
+</script>
 @endsection

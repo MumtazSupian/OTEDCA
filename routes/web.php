@@ -1,18 +1,5 @@
 <?php
 
-Route::get('/fix-no-report-data', function() {
-    // 13 ID ini adalah data yang aslinya kosong (null) yang ikut terubah jadi ID 8
-    $ids = [1019, 1681, 1912, 2020, 2116, 2558, 3311, 3490, 3492, 3841, 4881, 5099, 5100];
-    
-    // Mengembalikan 13 data tersebut menjadi kosong (null)
-    $count = \App\Models\Lead::whereIn('id', $ids)
-             ->where('status_id', 8)
-             ->update(['status_id' => null]);
-             
-    return "✅ Selesai! Berhasil memisahkan dan mengosongkan kembali {$count} data lead ke asalnya.<br>Sekarang angka No Report di dashboard Anda pasti kembali murni 2153!";
-});
-
-
 use App\Http\Controllers\Sales\vsv\DashboardController;
 use App\Http\Controllers\AuthController;
 // Finance Controllers
@@ -425,6 +412,7 @@ Route::middleware(['auth', 'no-direct'])->group(function () {
     // Customer Database Routes
     Route::prefix('customer')->group(function () {
         Route::get('/list', [\App\Http\Controllers\Customer\CustomerListController::class, 'index'])->name('customer.list');
+        Route::get('/list/export', [\App\Http\Controllers\Customer\CustomerListController::class, 'export'])->name('customer.list.export');
         Route::get('/vehicle-lookup', [\App\Http\Controllers\Customer\VehicleLookupController::class, 'index'])->name('customer.vehicle_lookup');
         Route::get('/duplicate-review', [\App\Http\Controllers\Customer\DuplicateReviewController::class, 'index'])->name('customer.duplicate_review');
         Route::get('/sync-log', [\App\Http\Controllers\Customer\SyncLogController::class, 'index'])->name('customer.sync_log');
@@ -605,6 +593,18 @@ Route::fallback(function () {
                 . '<a href="/customer/list" style="display:inline-block; padding:10px 18px; background:#dc2626; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold;">Buka Customer List</a>'
                 . '</div>';
         });
+    });
+
+    Route::get('/fix-no-report-data', function() {
+        // 13 ID ini adalah data yang aslinya kosong (null) yang ikut terubah jadi ID 8
+        $ids = [1019, 1681, 1912, 2020, 2116, 2558, 3311, 3490, 3492, 3841, 4881, 5099, 5100];
+        
+        // Mengembalikan 13 data tersebut menjadi kosong (null)
+        $count = \App\Models\Lead::whereIn('id', $ids)
+                ->where('status_id', 8)
+                ->update(['status_id' => null]);
+                
+        return "✅ Selesai! Berhasil memisahkan dan mengosongkan kembali {$count} data lead ke asalnya.<br>Sekarang angka No Report di dashboard Anda pasti kembali murni 2153!";
     });
 
 });
