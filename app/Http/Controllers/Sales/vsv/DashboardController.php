@@ -419,17 +419,17 @@ class DashboardController extends Controller
                     });
 
                     $fpRPrev = $fpPrevForModel->filter(function($item) {
-                        return empty($item->IsBlanko) || $item->IsBlanko == 0;
+                        return !$this->isFleetCustomer($item->SKPKName ?? '', $item->FakturPolisiName ?? '');
                     })->count();
                     $fpFPrev = $fpPrevForModel->filter(function($item) {
-                        return isset($item->IsBlanko) && $item->IsBlanko == 1;
+                        return $this->isFleetCustomer($item->SKPKName ?? '', $item->FakturPolisiName ?? '');
                     })->count();
 
                     $fpRCurr = $fpCurrForModel->filter(function($item) {
-                        return empty($item->IsBlanko) || $item->IsBlanko == 0;
+                        return !$this->isFleetCustomer($item->SKPKName ?? '', $item->FakturPolisiName ?? '');
                     })->count();
                     $fpFCurr = $fpCurrForModel->filter(function($item) {
-                        return isset($item->IsBlanko) && $item->IsBlanko == 1;
+                        return $this->isFleetCustomer($item->SKPKName ?? '', $item->FakturPolisiName ?? '');
                     })->count();
 
                     $fpTotalPrev = $fpRPrev + $fpFPrev;
@@ -1251,6 +1251,77 @@ class DashboardController extends Controller
 
         foreach ($patterns as $pat) {
             if (stripos($fullStr, strtoupper($pat)) !== false) return true;
+        }
+        return false;
+    }
+
+    private function isFleetCustomer($spkName, $fpName = '', $isBlanko = 0)
+    {
+        if (!empty($isBlanko) && $isBlanko == 1) {
+            return true;
+        }
+
+        $combined = strtoupper(trim(($spkName ?? '') . ' ' . ($fpName ?? '')));
+        if (empty($combined)) return false;
+
+        $patterns = [
+            '/\bPT[\.\s]/i',
+            '/\bPT$/i',
+            '/\bP\.T[\.\s]/i',
+            '/\bCV[\.\s]/i',
+            '/\bCV$/i',
+            '/\bC\.V[\.\s]/i',
+            '/\bCP[\.\s]/i',
+            '/\bCP$/i',
+            '/\bFIRMA\b/i',
+            '/\bFA[\.\s]/i',
+            '/\bUD[\.\s]/i',
+            '/\bUD$/i',
+            '/\bU\.D[\.\s]/i',
+            '/\bKOPERASI\b/i',
+            '/\bKOPKAR\b/i',
+            '/\bKOP\b/i',
+            '/\bKSU\b/i',
+            '/\bYAYASAN\b/i',
+            '/\bPERUM\b/i',
+            '/\bPERUMDA\b/i',
+            '/\bBUMD\b/i',
+            '/\bBUMN\b/i',
+            '/\bDINAS\b/i',
+            '/\bKEMEN/i',
+            '/\bPEMKAB\b/i',
+            '/\bPEMKOT\b/i',
+            '/\bPEMDA\b/i',
+            '/\bPEMPROV\b/i',
+            '/\bKECAMATAN\b/i',
+            '/\bKELURAHAN\b/i',
+            '/\bPOLRES\b/i',
+            '/\bPOLDA\b/i',
+            '/\bKODIM\b/i',
+            '/\bKORAMIL\b/i',
+            '/\bBANK\b/i',
+            '/\bLEASING\b/i',
+            '/\bFINANCE\b/i',
+            '/\bTBK\b/i',
+            '/\bCORP\b/i',
+            '/\bCORPORATION\b/i',
+            '/\bLTD\b/i',
+            '/\bLLC\b/i',
+            '/\bINC\b/i',
+            '/\bSEKOLAH\b/i',
+            '/\bUNIVERSITAS\b/i',
+            '/\bINSTITUT\b/i',
+            '/\bRSUD\b/i',
+            '/\bRSUP\b/i',
+            '/\bRUMAH SAKIT\b/i',
+            '/\bKLINIK\b/i',
+            '/\bPO[\.\s]/i',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $combined)) {
+                return true;
+            }
         }
         return false;
     }

@@ -8,3 +8,20 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 use Illuminate\Support\Facades\Schedule;
+
+Schedule::command('app:send-weekly-branch-data-email')
+    ->wednesdays()
+    ->at('09:00')
+    ->timezone('Asia/Jakarta');
+
+Schedule::command('app:send-stock-email')
+    ->dailyAt('09:00')
+    ->timezone('Asia/Jakarta');
+
+Schedule::command('app:send-in-unit-email')
+    ->dailyAt('09:00')
+    ->timezone('Asia/Jakarta');
+
+Schedule::command('dms:sync-users')
+    ->everyTenMinutes()
+    ->timezone('Asia/Jakarta');

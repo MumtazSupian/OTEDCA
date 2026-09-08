@@ -86,6 +86,14 @@ class EvaluasiWiraniagaController extends Controller
         ];
         $monthKeys = ['jan', 'feb', 'mar', 'apr', 'mei', 'jun', 'jul', 'agu', 'sep', 'okt', 'nov', 'des'];
 
+        // Ambil manual grading dari tabel evaluasi_wiraniaga
+        $manualGrades = EvaluasiWiraniaga::whereNotNull('grading')
+            ->where('grading', '!=', '')
+            ->get()
+            ->keyBy(function($item) {
+                return strtoupper(trim($item->nama_sales)) . '_' . strtoupper(trim($item->cabang));
+            });
+
         try {
             // pmKDP JOIN HrEmployee dari DMS
             $records = DB::connection('dms')
@@ -102,11 +110,18 @@ class EvaluasiWiraniagaController extends Controller
             $salesMatrix = [];
             foreach ($records as $r) {
                 $bCode = trim($r->BranchCode);
+                $bName = $allowedBranches[$bCode] ?? ($branchMap[$bCode] ?? '');
                 $empId = trim($r->EmployeeID);
                 $empName = trim($r->EmployeeName);
-                $gNum = (int)$r->Grade;
-                $gName = $gradeMap[$gNum] ?? 'TRAINEE';
                 $mNum = (int)$r->m_num;
+
+                $key = strtoupper($empName) . '_' . strtoupper($bName);
+                if (isset($manualGrades[$key]) && !empty($manualGrades[$key]->grading)) {
+                    $gName = strtoupper(trim($manualGrades[$key]->grading));
+                } else {
+                    $gNum = (int)$r->Grade;
+                    $gName = $gradeMap[$gNum] ?? 'TRAINEE';
+                }
 
                 if (!isset($salesMatrix[$bCode][$empId])) {
                     $salesMatrix[$bCode][$empId] = [
@@ -233,6 +248,13 @@ class EvaluasiWiraniagaController extends Controller
         $gradeOrder = ['PLATINUM' => 1, 'GOLD' => 2, 'SILVER' => 3, 'TRAINEE' => 4];
         $monthKeys = ['jan', 'feb', 'mar', 'apr', 'mei', 'jun', 'jul', 'agu', 'sep', 'okt', 'nov', 'des'];
 
+        $manualGrades = EvaluasiWiraniaga::whereNotNull('grading')
+            ->where('grading', '!=', '')
+            ->get()
+            ->keyBy(function($item) {
+                return strtoupper(trim($item->nama_sales)) . '_' . strtoupper(trim($item->cabang));
+            });
+
         $records = DB::connection('dms')
             ->table('pmKDP')
             ->join('HrEmployee', 'pmKDP.EmployeeID', '=', 'HrEmployee.EmployeeID')
@@ -247,11 +269,18 @@ class EvaluasiWiraniagaController extends Controller
         $salesMatrix = [];
         foreach ($records as $r) {
             $bCode = trim($r->BranchCode);
+            $bName = $allowedBranches[$bCode] ?? ($branchMap[$bCode] ?? '');
             $empId = trim($r->EmployeeID);
             $empName = trim($r->EmployeeName);
-            $gNum = (int)$r->Grade;
-            $gName = $gradeMap[$gNum] ?? 'TRAINEE';
             $mNum = (int)$r->m_num;
+
+            $key = strtoupper($empName) . '_' . strtoupper($bName);
+            if (isset($manualGrades[$key]) && !empty($manualGrades[$key]->grading)) {
+                $gName = strtoupper(trim($manualGrades[$key]->grading));
+            } else {
+                $gNum = (int)$r->Grade;
+                $gName = $gradeMap[$gNum] ?? 'TRAINEE';
+            }
 
             if (!isset($salesMatrix[$bCode][$empId])) {
                 $salesMatrix[$bCode][$empId] = [
@@ -343,6 +372,60 @@ class EvaluasiWiraniagaController extends Controller
         $year = (int)$request->input('year', 2026);
         $selectedCabang = $request->input('cabang');
         return Excel::download(new ActualDoSalesforceExport($year, $selectedCabang), 'Evaluasi_Wiraniaga_' . $year . '.xlsx'); 
+    }
+
+    public function updateGrade(Request $request)
+    {
+        $request->validate([
+            'nama_sales' => 'required',
+            'cabang'     => 'required',
+            'grading'    => 'required',
+        ]);
+
+        $namaSales = trim($request->input('nama_sales'));
+        $cabang    = trim($request->input('cabang'));
+        $grading   = strtoupper(trim($request->input('grading')));
+
+        $eval = EvaluasiWiraniaga::whereRaw('UPPER(TRIM(nama_sales)) = ?', [strtoupper($namaSales)])
+            ->whereRaw('UPPER(TRIM(cabang)) = ?', [strtoupper($cabang)])
+            ->first();
+
+        if (!$eval) {
+            $eval = new EvaluasiWiraniaga();
+            $eval->nama_sales = $namaSales;
+            $eval->cabang     = $cabang;
+            $eval->nama_sales_head = '-';
+            $eval->tanggal_masuk = now();
+            $eval->tanggal_evaluasi = now();
+            $eval->evaluasi = '-';
+            $eval->jan = 0;
+            $eval->feb = 0;
+            $eval->mar = 0;
+            $eval->apr = 0;
+            $eval->mei = 0;
+            $eval->jun = 0;
+            $eval->jul = 0;
+            $eval->agu = 0;
+            $eval->sep = 0;
+            $eval->okt = 0;
+            $eval->nov = 0;
+            $eval->des = 0;
+            $eval->total = 0;
+        }
+
+        $eval->grading = $grading;
+        $eval->user_id = Auth::id();
+        $eval->save();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'grading' => $grading,
+                'message' => "Grading untuk {$namaSales} berhasil diubah menjadi {$grading}!"
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Grading untuk {$namaSales} berhasil diubah menjadi {$grading}!");
     }
 
     // --- METODE CRUD CADANGAN / LAMA YANG DIPERTAHANKAN ---

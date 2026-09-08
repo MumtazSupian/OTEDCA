@@ -252,6 +252,7 @@ Route::middleware(['auth', 'no-direct'])->group(function () {
         });
         Route::get('/evaluasi/export/excel', [EvaluasiWiraniagaController::class, 'exportExcel'])->name('evaluasi.excel');
         Route::get('/evaluasi/export/pdf', [EvaluasiWiraniagaController::class, 'exportPdf'])->name('evaluasi.pdf');
+        Route::post('/evaluasi/update-grade', [EvaluasiWiraniagaController::class, 'updateGrade'])->name('evaluasi.update-grade');
 
         Route::resource('evaluasi', EvaluasiWiraniagaController::class);
     });

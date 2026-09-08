@@ -8,7 +8,7 @@
     <div class="page-header-row">
         <div class="header-text-group">
             <h1 class="page-title">Customer List</h1>
-            <p class="page-subtitle">Database dari DMS</p>
+            <p class="page-subtitle">Database dari SDMS</p>
         </div>
         <div class="header-action-group">
             <button type="button" class="btn-export-excel" onclick="alert('Export Excel sedang dipersiapkan...')">
@@ -31,7 +31,7 @@
             <div class="metric-val">{{ number_format($metrics['konsumen_unik'] ?? 0, 0, ',', '.') }}</div>
             <div class="metric-lbl">
                 <span>Konsumen Unik</span>
-                <span class="info-icon" title="Jumlah total konsumen unik yang terdata">ⓘ</span>
+                <span class="info-icon" title="Jumlah total konsumen unik yang terdata di gnMstCustomer">ⓘ</span>
             </div>
         </div>
 
@@ -40,7 +40,7 @@
             <div class="metric-val">{{ number_format($metrics['duplikat_tergabung'] ?? 0, 0, ',', '.') }}</div>
             <div class="metric-lbl">
                 <span>Duplikat Tergabung</span>
-                <span class="info-icon" title="Data duplikat yang telah digabungkan">ⓘ</span>
+                <span class="info-icon" title="Data transaksi NIK/Nama ganda yang digabungkan">ⓘ</span>
             </div>
         </div>
 
@@ -49,7 +49,7 @@
             <div class="metric-val">{{ number_format($metrics['hanya_penjualan'] ?? 0, 0, ',', '.') }}</div>
             <div class="metric-lbl">
                 <span>Hanya Penjualan</span>
-                <span class="info-icon" title="Konsumen yang hanya memiliki riwayat transaksi unit">ⓘ</span>
+                <span class="info-icon" title="Unit dibeli di dealer tapi belum pernah tercatat service">ⓘ</span>
             </div>
         </div>
 
@@ -58,7 +58,7 @@
             <div class="metric-val">{{ number_format($metrics['hanya_service'] ?? 0, 0, ',', '.') }}</div>
             <div class="metric-lbl">
                 <span>Hanya Service</span>
-                <span class="info-icon" title="Konsumen yang hanya memiliki riwayat service">ⓘ</span>
+                <span class="info-icon" title="Kendaraan luar yang hanya melakukan perawatan service di bengkel">ⓘ</span>
             </div>
         </div>
 
@@ -67,7 +67,7 @@
             <div class="metric-val">{{ number_format($metrics['penjualan_service'] ?? 0, 0, ',', '.') }}</div>
             <div class="metric-lbl">
                 <span>Penjualan & Service</span>
-                <span class="info-icon" title="Konsumen aktif penjualan dan perawatan service">ⓘ</span>
+                <span class="info-icon" title="Unit dibeli di dealer dan aktif melakukan perawatan berkala">ⓘ</span>
             </div>
         </div>
 
@@ -76,7 +76,7 @@
             <div class="metric-val">{{ number_format($metrics['hanya_database'] ?? 0, 0, ',', '.') }}</div>
             <div class="metric-lbl">
                 <span>Hanya Database</span>
-                <span class="info-icon" title="Data master konsumen tanpa transaksi aktif">ⓘ</span>
+                <span class="info-icon" title="Master kontak customer tanpa riwayat transaksi unit maupun service">ⓘ</span>
             </div>
         </div>
 
@@ -85,7 +85,7 @@
             <div class="metric-val">{{ number_format($metrics['total_kendaraan'] ?? 0, 0, ',', '.') }}</div>
             <div class="metric-lbl">
                 <span>Total Kendaraan</span>
-                <span class="info-icon" title="Jumlah total unit kendaraan terdaftar">ⓘ</span>
+                <span class="info-icon" title="Jumlah total kendaraan yang terdaftar di database service">ⓘ</span>
             </div>
         </div>
     </div>
@@ -184,7 +184,7 @@
                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
-                <span>{{ number_format(count($customers), 0, ',', '.') }} customer</span>
+                <span>{{ number_format($customers instanceof \Illuminate\Pagination\AbstractPaginator ? $customers->total() : count($customers), 0, ',', '.') }} customer</span>
             </div>
             <div>
                 <a href="{{ route('customer.list') }}" class="btn-refresh-icon" title="Reset / Refresh Filter">
@@ -211,7 +211,7 @@
                         <th style="min-width: 135px;">Transaksi Terakhir</th>
                         <th style="min-width: 130px;">Service Terakhir</th>
                         <th style="min-width: 160px;">Sumber Data</th>
-                        <th style="min-width: 70px; text-align: center;">Flag</th>
+                        <th style="min-width: 100px; text-align: center;">Flag</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -220,8 +220,16 @@
                         <td>
                             <div class="cell-nama">
                                 <span class="customer-name-text">{{ $c['nama'] }}</span>
-                                @if(!empty($c['duplicate_count']) && $c['duplicate_count'] > 0)
-                                    <span class="badge-duplicate">{{ $c['duplicate_count'] }} data</span>
+                                @if(!empty($c['is_duplicate']) && $c['is_duplicate'])
+                                    <div class="custom-tooltip-wrapper">
+                                        <span class="badge-duplicate-child">Duplikat</span>
+                                        <div class="custom-tooltip">Sudah digabungkan ke master #{{ $c['master_id'] ?? '' }}</div>
+                                    </div>
+                                @elseif(!empty($c['duplicate_count']) && $c['duplicate_count'] > 1)
+                                    <div class="custom-tooltip-wrapper">
+                                        <span class="badge-duplicate-master">{{ $c['duplicate_count'] }} data</span>
+                                        <div class="custom-tooltip">Master dari {{ $c['duplicate_count'] - 1 }} record duplikat</div>
+                                    </div>
                                 @endif
                             </div>
                         </td>
@@ -233,14 +241,18 @@
                         <td>
                             <div class="cell-nik">
                                 <span>{{ $c['nik'] }}</span>
-                                @if($c['nik_valid'])
-                                    <span class="badge-valid">valid</span>
+                                @if(!empty($c['nik']) && $c['nik'] !== '-')
+                                    @if($c['nik_valid'])
+                                        <span class="badge-valid">valid</span>
+                                    @else
+                                        <span class="badge-invalid">invalid</span>
+                                    @endif
                                 @endif
                             </div>
                         </td>
                         <td>{{ $c['hp'] }}</td>
                         <td>
-                            <span class="cell-email">{{ $c['email'] }}</span>
+                            <span class="cell-email">{{ $c['email'] ?: '-' }}</span>
                         </td>
                         <td style="text-align: center;">
                             <span class="badge-kendaraan">{{ $c['kendaraan'] }}</span>
@@ -248,11 +260,23 @@
                         <td>{{ $c['transaksi_terakhir'] }}</td>
                         <td>{{ $c['service_terakhir'] }}</td>
                         <td>
-                            <span class="badge-sumber">
+                            @php
+                                $sumberClass = 'badge-sumber-penjualan';
+                                if ($c['sumber_data'] === 'Penjualan & Service') $sumberClass = 'badge-sumber-both';
+                                elseif ($c['sumber_data'] === 'Hanya Service') $sumberClass = 'badge-sumber-service';
+                                elseif ($c['sumber_data'] === 'Hanya Database') $sumberClass = 'badge-sumber-db';
+                            @endphp
+                            <span class="badge-sumber {{ $sumberClass }}">
                                 {{ $c['sumber_data'] }}
                             </span>
                         </td>
-                        <td style="text-align: center; color: #cbd5e1;">-</td>
+                        <td style="text-align: center;">
+                            @if(!empty($c['flag']) && $c['flag'] !== '-')
+                                <span class="badge-flag-ktp-invalid">{{ $c['flag'] }}</span>
+                            @else
+                                <span style="color: #cbd5e1;">-</span>
+                            @endif
+                        </td>
                     </tr>
                     @empty
                     <tr>
@@ -266,27 +290,51 @@
         </div>
 
         {{-- 5. PAGINATION FOOTER --}}
+        @if($customers instanceof \Illuminate\Pagination\AbstractPaginator && $customers->hasPages())
         <div class="table-pagination-footer">
             <div class="pagination-controls">
-                <button type="button" class="btn-page" title="Halaman Pertama">«</button>
-                <button type="button" class="btn-page" title="Sebelumnya">‹</button>
-                <button type="button" class="btn-page btn-page-active">1</button>
-                <button type="button" class="btn-page">2</button>
-                <button type="button" class="btn-page">3</button>
-                <button type="button" class="btn-page">4</button>
-                <button type="button" class="btn-page">5</button>
-                <button type="button" class="btn-page" title="Selanjutnya">›</button>
-                <button type="button" class="btn-page" title="Halaman Terakhir">»</button>
+                {{-- First & Prev --}}
+                @if($customers->currentPage() > 1)
+                    <a href="{{ $customers->url(1) }}" class="btn-page" title="Halaman Pertama">«</a>
+                    <a href="{{ $customers->previousPageUrl() }}" class="btn-page" title="Sebelumnya">‹</a>
+                @else
+                    <button type="button" class="btn-page btn-disabled" disabled>«</button>
+                    <button type="button" class="btn-page btn-disabled" disabled>‹</button>
+                @endif
+
+                {{-- Page Window --}}
+                @php
+                    $start = max(1, $customers->currentPage() - 2);
+                    $end = min($customers->lastPage(), $customers->currentPage() + 2);
+                @endphp
+
+                @for($p = $start; $p <= $end; $p++)
+                    @if($p == $customers->currentPage())
+                        <button type="button" class="btn-page btn-page-active">{{ $p }}</button>
+                    @else
+                        <a href="{{ $customers->url($p) }}" class="btn-page">{{ $p }}</a>
+                    @endif
+                @endfor
+
+                {{-- Next & Last --}}
+                @if($customers->hasMorePages())
+                    <a href="{{ $customers->nextPageUrl() }}" class="btn-page" title="Selanjutnya">›</a>
+                    <a href="{{ $customers->url($customers->lastPage()) }}" class="btn-page" title="Halaman Terakhir">»</a>
+                @else
+                    <button type="button" class="btn-page btn-disabled" disabled>›</button>
+                    <button type="button" class="btn-page btn-disabled" disabled>»</button>
+                @endif
             </div>
 
             <div class="pagination-rows-select">
-                <select class="select-page-rows">
-                    <option value="50">50 / halaman</option>
-                    <option value="100">100 / halaman</option>
-                    <option value="200">200 / halaman</option>
+                <select class="select-page-rows" onchange="window.location.href='{{ request()->fullUrlWithQuery(['page' => 1]) }}' + '&per_page=' + this.value">
+                    <option value="50" {{ request('per_page', 50) == 50 ? 'selected' : '' }}>50 / halaman</option>
+                    <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100 / halaman</option>
+                    <option value="200" {{ request('per_page') == 200 ? 'selected' : '' }}>200 / halaman</option>
                 </select>
             </div>
         </div>
+        @endif
     </div>
 </div>
 
@@ -610,14 +658,72 @@
         font-weight: 700;
         color: #0f172a;
     }
-    .badge-duplicate {
+
+    /* Tooltip Bubble for Badges */
+    .custom-tooltip-wrapper {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        cursor: default;
+    }
+    .custom-tooltip {
+        visibility: hidden;
+        opacity: 0;
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #1e293b;
+        color: #ffffff;
+        text-align: center;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 11.5px;
+        font-weight: 600;
+        white-space: nowrap;
+        z-index: 1000;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
+        transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
+        pointer-events: none;
+    }
+    .custom-tooltip::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 5px;
+        border-style: solid;
+        border-color: #1e293b transparent transparent transparent;
+    }
+    .custom-tooltip-wrapper:hover .custom-tooltip {
+        visibility: visible;
+        opacity: 1;
+        transform: translateX(-50%) translateY(-2px);
+    }
+    .badge-duplicate-master {
         font-size: 10.5px;
         font-weight: 700;
         background: #dbeafe;
         color: #1d4ed8;
-        padding: 2px 6px;
-        border-radius: 4px;
+        padding: 2px 7px;
+        border-radius: 5px;
+        display: inline-flex;
+        align-items: center;
+        line-height: 1.3;
     }
+    .badge-duplicate-child {
+        font-size: 10.5px;
+        font-weight: 700;
+        background: #ffedd5;
+        color: #c2410c;
+        padding: 2px 7px;
+        border-radius: 5px;
+        display: inline-flex;
+        align-items: center;
+        line-height: 1.3;
+    }
+
     .badge-tipe {
         font-size: 11px;
         font-weight: 700;
@@ -649,6 +755,25 @@
         border-radius: 4px;
         font-family: 'Inter', sans-serif;
     }
+    .badge-invalid {
+        font-size: 9.5px;
+        font-weight: 800;
+        background: #fee2e2;
+        color: #dc2626;
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-family: 'Inter', sans-serif;
+    }
+    .badge-flag-ktp-invalid {
+        font-size: 10px;
+        font-weight: 700;
+        background: #ffedd5;
+        color: #c2410c;
+        padding: 3px 8px;
+        border-radius: 4px;
+        display: inline-block;
+        white-space: nowrap;
+    }
     .cell-email {
         color: #64748b;
     }
@@ -665,14 +790,33 @@
         border-radius: 5px;
     }
     .badge-sumber {
-        background: #dcfce7;
-        color: #166534;
         padding: 4px 9px;
         border-radius: 6px;
         font-size: 11px;
         font-weight: 700;
         display: inline-block;
         white-space: nowrap;
+    }
+    .badge-sumber-both {
+        background: #dcfce7;
+        color: #166534;
+    }
+    .badge-sumber-penjualan {
+        background: #e0f2fe;
+        color: #0369a1;
+    }
+    .badge-sumber-service {
+        background: #ffedd5;
+        color: #c2410c;
+    }
+    .badge-sumber-db {
+        background: #f1f5f9;
+        color: #475569;
+    }
+    .btn-disabled {
+        opacity: 0.4;
+        cursor: not-allowed !important;
+        background: #f8fafc !important;
     }
 
     /* Pagination */
@@ -707,6 +851,7 @@
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.15s ease;
+        text-decoration: none;
     }
     .btn-page:hover {
         background: #f1f5f9;
@@ -724,8 +869,8 @@
         border-radius: 6px;
         border: 1px solid #cbd5e1;
         font-size: 12px;
-        font-weight: 600;
-        color: #475569;
+        color: #334155;
+        background: #ffffff;
         outline: none;
     }
 </style>

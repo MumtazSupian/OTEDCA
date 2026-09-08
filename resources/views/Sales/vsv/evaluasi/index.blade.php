@@ -170,6 +170,12 @@
     .grade-GOLD     { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
     .grade-SILVER   { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
     .grade-TRAINEE  { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    .grade-FREELANCE{ background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+    @keyframes modalFadeIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
 
     /* GRAND TOTAL KESELURUHAN */
     .grand-card {
@@ -284,7 +290,19 @@
                                     {{ $row->salesman_name ?? $row->user->name ?? $row->employee_id ?? '-' }}
                                 </td>
                                 <td>
-                                    <span class="grade-badge grade-{{ $row->grading }}">{{ $row->grading }}</span>
+                                    <div style="display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                                        <span class="grade-badge grade-{{ $row->grading }}">{{ $row->grading }}</span>
+                                        <button type="button" 
+                                                onclick="openEditGradeModal('{{ addslashes($row->salesman_name ?? $row->user->name ?? $row->employee_id ?? '') }}', '{{ addslashes($row->cabang) }}', '{{ $row->grading }}')"
+                                                title="Edit Grade {{ $row->salesman_name ?? $row->user->name ?? $row->employee_id ?? '' }}"
+                                                style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 5px; padding: 4px 6px; cursor: pointer; color: #475569; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.15s ease;"
+                                                onmouseover="this.style.background='#e0f2fe'; this.style.color='#0284c7'; this.style.borderColor='#38bdf8';"
+                                                onmouseout="this.style.background='#ffffff'; this.style.color='#475569'; this.style.borderColor='#cbd5e1';">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </td>
                                 <td style="font-weight:600; color:#475569;">{{ $row->cabang }}</td>
                                 
@@ -365,4 +383,117 @@
         </div>
     @endif
 </div>
+
+{{-- MODAL EDIT GRADING WIRANIAGA --}}
+<div id="modalEditGrade" style="display:none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: #ffffff; width: 100%; max-width: 420px; border-radius: 14px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; border: 1px solid #e2e8f0; animation: modalFadeIn 0.2s ease-out;">
+        <div style="background: #0f172a; padding: 16px 20px; color: #ffffff; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #dc2626;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.1rem;">✏️</span>
+                <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800; letter-spacing: 0.5px;">EDIT GRADING WIRANIAGA</h4>
+            </div>
+            <button type="button" onclick="closeEditGradeModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; line-height: 1; padding: 0 4px;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">&times;</button>
+        </div>
+        
+        <form id="formEditGrade" onsubmit="submitEditGrade(event)" style="padding: 20px;">
+            @csrf
+            <input type="hidden" id="editSalesmanName" name="nama_sales">
+            <input type="hidden" id="editCabang" name="cabang">
+
+            <div style="margin-bottom: 14px;">
+                <label style="display: block; font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">Nama Salesman</label>
+                <div id="labelSalesmanName" style="font-size: 0.95rem; font-weight: 800; color: #1e293b; background: #f8fafc; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0;"></div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">Cabang</label>
+                <div id="labelCabang" style="font-size: 0.85rem; font-weight: 700; color: #475569; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0;"></div>
+            </div>
+
+            <div style="margin-bottom: 22px;">
+                <label for="selectGrade" style="display: block; font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">Pilih Grading</label>
+                <select id="selectGrade" name="grading" required style="width: 100%; padding: 10px 14px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; font-weight: 700; color: #1e293b; outline: none; background: #ffffff; cursor: pointer;">
+                    <option value="PLATINUM">PLATINUM</option>
+                    <option value="GOLD">GOLD</option>
+                    <option value="SILVER">SILVER</option>
+                    <option value="TRAINEE">TRAINEE</option>
+                    <option value="FREELANCE">FREELANCE</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeEditGradeModal()" style="padding: 9px 16px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer;">Batal</button>
+                <button type="submit" id="btnSaveGrade" style="padding: 9px 20px; background: #dc2626; color: #ffffff; border: none; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.3);">
+                    <span>Simpan Perubahan</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openEditGradeModal(salesmanName, cabang, currentGrade) {
+    document.getElementById('editSalesmanName').value = salesmanName;
+    document.getElementById('labelSalesmanName').innerText = salesmanName;
+    document.getElementById('editCabang').value = cabang;
+    document.getElementById('labelCabang').innerText = 'Cabang ' + cabang;
+    document.getElementById('selectGrade').value = currentGrade;
+    
+    const modal = document.getElementById('modalEditGrade');
+    modal.style.display = 'flex';
+}
+
+function closeEditGradeModal() {
+    document.getElementById('modalEditGrade').style.display = 'none';
+}
+
+function submitEditGrade(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveGrade');
+    const salesmanName = document.getElementById('editSalesmanName').value;
+    const cabang = document.getElementById('editCabang').value;
+    const newGrade = document.getElementById('selectGrade').value;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span>Menyimpan...</span>';
+
+    fetch("{{ route('evaluasi.update-grade') }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            nama_sales: salesmanName,
+            cabang: cabang,
+            grading: newGrade
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Simpan Perubahan</span>';
+        if (data.success) {
+            closeEditGradeModal();
+            window.location.reload();
+        } else {
+            alert('Gagal mengubah grading: ' + (data.message || 'Terjadi kesalahan'));
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Simpan Perubahan</span>';
+        alert('Terjadi kesalahan koneksi.');
+    });
+}
+
+// Tutup modal jika klik di luar box modal
+window.addEventListener('click', function(e) {
+    const modal = document.getElementById('modalEditGrade');
+    if (e.target === modal) {
+        closeEditGradeModal();
+    }
+});
+</script>
 @endsection

@@ -436,12 +436,18 @@
             {{-- DROPDOWN FILTER CABANG --}}
             <div class="branch-selector-wrap">
                 <span style="color:#94a3b8; font-size:0.75rem; font-weight:700;">📍 CABANG:</span>
-                <select class="branch-select" id="filter-cabang" onchange="applyFilters()">
-                    <option value="" {{ empty($selectedCabang) || $selectedCabang == 'Semua Cabang' ? 'selected' : '' }}>Semua Cabang (Pusat)</option>
-                    @foreach(['Ciawi', 'Cianjur', 'Cinere', 'Jatiasih', 'Cipanas'] as $cb)
-                        <option value="{{ $cb }}" {{ ($selectedCabang == $cb) ? 'selected' : '' }}>Cabang {{ $cb }}</option>
-                    @endforeach
-                </select>
+                @if(!empty($isPusat))
+                    <select class="branch-select" id="filter-cabang" onchange="applyFilters()">
+                        <option value="" {{ empty($selectedCabang) || $selectedCabang == 'Semua Cabang' ? 'selected' : '' }}>Semua Cabang (Pusat)</option>
+                        @foreach(['Ciawi', 'Cianjur', 'Cinere', 'Jatiasih', 'Cipanas'] as $cb)
+                            <option value="{{ $cb }}" {{ ($selectedCabang == $cb) ? 'selected' : '' }}>Cabang {{ $cb }}</option>
+                        @endforeach
+                    </select>
+                @else
+                    <select class="branch-select" id="filter-cabang" disabled style="opacity: 0.9; cursor: not-allowed; background: #0f172a; color: #38bdf8; font-weight: 700;">
+                        <option value="{{ $selectedCabang }}">Cabang {{ $selectedCabang }}</option>
+                    </select>
+                @endif
             </div>
 
             {{-- DROPDOWN FILTER BULAN --}}
