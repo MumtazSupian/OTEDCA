@@ -44,12 +44,12 @@
             </div>
         </div>
 
-        {{-- Card 3: Hanya Penjualan --}}
+        {{-- Card 3: Data Penjualan --}}
         <div class="metric-card card-accent-blue">
             <div class="metric-val">{{ number_format($metrics['hanya_penjualan'] ?? 0, 0, ',', '.') }}</div>
             <div class="metric-lbl">
-                <span>Hanya Penjualan</span>
-                <span class="info-icon" title="Unit dibeli di dealer tapi belum pernah tercatat service">ⓘ</span>
+                <span>Data Penjualan</span>
+                <span class="info-icon" title="Seluruh transaksi unit yang dibeli di dealer (termasuk unit yang dikirim ke luar daerah)">ⓘ</span>
             </div>
         </div>
 
@@ -85,7 +85,7 @@
             <div class="metric-val">{{ number_format($metrics['total_kendaraan'] ?? 0, 0, ',', '.') }}</div>
             <div class="metric-lbl">
                 <span>Total Kendaraan</span>
-                <span class="info-icon" title="Jumlah total kendaraan yang terdaftar di database service">ⓘ</span>
+                <span class="info-icon" title="Jumlah seluruh kendaraan unik yang pernah masuk dealer (dari Penjualan & Service)">ⓘ</span>
             </div>
         </div>
     </div>
@@ -365,7 +365,7 @@
                         <div class="export-checkbox-group">
                             <label class="export-check-item">
                                 <input type="checkbox" name="kategori_sumber[]" value="Penjualan" class="custom-checkbox">
-                                <span>Hanya Penjualan</span>
+                                <span>Data Penjualan</span>
                             </label>
                             <label class="export-check-item">
                                 <input type="checkbox" name="kategori_sumber[]" value="Hanya Service" class="custom-checkbox">

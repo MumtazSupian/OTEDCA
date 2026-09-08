@@ -245,8 +245,20 @@ class CustomerListController extends Controller
                 // 1. Total konsumen unik
                 $totalMaster = (int)DB::connection('dms')->table('gnMstCustomer')->count();
 
-                // 2. Total unit kendaraan di database service
-                $totalVehicles = (int)DB::connection('dms')->table('svMstCustomerVehicle')->count();
+                // 2. Data Penjualan (Total seluruh transaksi unit penjualan)
+                $hanyaPenjualan = (int)DB::connection('dms')->table('omTrSalesReqDetail')->count();
+
+                // 3. Hanya service (unit luar)
+                $srvOnlyRes = DB::connection('dms')->select("
+                    SELECT COUNT(DISTINCT s.ChassisNo) as total
+                    FROM svTrnService s
+                    LEFT JOIN omTrSalesReqDetail d ON s.ChassisNo = d.ChassisNo
+                    WHERE d.ChassisNo IS NULL AND s.ChassisNo IS NOT NULL AND s.ChassisNo <> '';
+                ");
+                $hanyaService = (int)($srvOnlyRes[0]->total ?? 0);
+
+                // 4. Total Kendaraan (Penjualan + Service Luar termasuk record transaksi)
+                $totalVehicles = $hanyaPenjualan + $hanyaService;
 
                 // 3. Duplikat transaksi penjualan
                 $dupRes = DB::connection('dms')->select("
@@ -267,19 +279,7 @@ class CustomerListController extends Controller
                 ");
                 $totalDups = (int)($dupRes[0]->total ?? 0);
 
-                // 4. Data Penjualan (Total seluruh transaksi unit penjualan)
-                $hanyaPenjualan = (int)DB::connection('dms')->table('omTrSalesReqDetail')->count();
-
-                // 5. Hanya service (unit luar)
-                $srvOnlyRes = DB::connection('dms')->select("
-                    SELECT COUNT(DISTINCT s.ChassisNo) as total
-                    FROM svTrnService s
-                    LEFT JOIN omTrSalesReqDetail d ON s.ChassisNo = d.ChassisNo
-                    WHERE d.ChassisNo IS NULL AND s.ChassisNo IS NOT NULL AND s.ChassisNo <> '';
-                ");
-                $hanyaService = (int)($srvOnlyRes[0]->total ?? 0);
-
-                // 6. Penjualan & service (unit dealer yang pernah service)
+                // 4. Penjualan & service (unit dealer yang pernah service)
                 $bothRes = DB::connection('dms')->select("
                     SELECT COUNT(DISTINCT d.ChassisNo) as total
                     FROM omTrSalesReqDetail d
