@@ -498,9 +498,7 @@ class VehicleLookupController extends Controller
         return $vehicles;
     }
 
-    /**
-     * Ambil Spesifikasi Kendaraan Lengkap & Riwayat Service (Foto 1 / 3)
-     */
+    //Ambil Spesifikasi Kendaraan Lengkap & Riwayat Service
     private function getVehicleDetail(string $chassisNo, string $policeRegNo = '', array $parentCustomer = null): array
     {
         $spec = [
@@ -521,7 +519,6 @@ class VehicleLookupController extends Controller
 
             // 1. Ambil data transaksi service dari svTrnService
             $srvRows = DB::connection('dms')->table('svTrnService as s')
-                ->leftJoin('gnMstEmployee as e', 's.ForemanID', '=', 'e.EmployeeID')
                 ->leftJoin('gnMstCustomer as c', 's.CustomerCode', '=', 'c.CustomerCode')
                 ->where(function($w) use ($cleanChassis, $policeRegNo) {
                     if (!empty($cleanChassis)) {
@@ -543,7 +540,6 @@ class VehicleLookupController extends Controller
                     's.LastUpdateDate',
                     's.ServiceRequestDesc',
                     's.ForemanID',
-                    'e.EmployeeName as SAName',
                     's.Odometer',
                     's.PoliceRegNo',
                     's.BasicModel',
@@ -597,15 +593,23 @@ class VehicleLookupController extends Controller
                 $spec['no_mesin'] = trim($latestSrv->EngineNo ?? '-');
                 $spec['warna'] = strtoupper(trim($latestSrv->ColorCode ?: 'WHITE'));
                 
-                // Susun Riwayat Service (SPK)
+                // Susun Riwayat Service (SPK) tanpa duplikasi
+                $seenSpk = [];
                 foreach ($srvRows as $row) {
+                    $spkNo = trim($row->JobOrderNo ?? '');
+                    $spkKey = $spkNo ?: (($row->CompanyCode ?? '') . '-' . ($row->BranchCode ?? '') . '-' . ($row->JobOrderDate ?? '') . '-' . ($row->Odometer ?? ''));
+                    if (!empty($spkKey) && isset($seenSpk[$spkKey])) {
+                        continue;
+                    }
+                    $seenSpk[$spkKey] = true;
+
                     $tglSpk = !empty($row->CreatedDate) ? date('d/m/Y', strtotime($row->CreatedDate)) : (!empty($row->JobOrderDate) ? date('d/m/Y', strtotime($row->JobOrderDate)) : '-');
                     $tglBilling = !empty($row->LastUpdateDate) ? date('d/m/Y', strtotime($row->LastUpdateDate)) : $tglSpk;
-                    $sa = $this->resolveSAName($row->ForemanID, $row->SAName);
+                    $sa = $this->resolveSAName($row->ForemanID, null);
                     $km = is_numeric($row->Odometer) ? number_format((float)$row->Odometer, 0, ',', '.') : ($row->Odometer ?: '-');
 
                     $services[] = [
-                        'no_wo' => $row->JobOrderNo ?: '-', // No. SPK
+                        'no_wo' => $spkNo ?: '-',           // No. SPK
                         'tgl_wo' => $tglSpk,                // Tgl SPK
                         'tgl_billing' => $tglBilling,
                         'kategori' => trim($row->ServiceRequestDesc ?: 'General Service'),
@@ -637,7 +641,7 @@ class VehicleLookupController extends Controller
 
             $spec['stnk_nama'] = $latestOwnerName;
 
-            // Susun Keterkaitan Konsumen LENGKAP (Termasuk data Penjualan & Riwayat Servis Pemilik Sebelumnya)
+            // Susun Keterkaitan Konsumen 
             $seenCust = [];
             $ketList = [];
 
@@ -650,14 +654,14 @@ class VehicleLookupController extends Controller
                 $tglBeli = !empty($salesInfo->CreatedDate) ? date('d/m/Y', strtotime($salesInfo->CreatedDate)) : date('d/m/Y');
                 $rawDate = !empty($salesInfo->CreatedDate) ? strtotime($salesInfo->CreatedDate) : time();
 
-                // Pemilik dari Faktur Polisi / STNK (e.g. EMA LISTIANI)
+                // Pemilik dari Faktur Polisi / STNK
                 $pemilikName = $fakturName ?: ($skpkName ?: '-');
                 $pemilikHp = $fakturHp ?: ($skpkHp ?: '-');
                 if ($pemilikName !== '-' && !empty($pemilikName)) {
                     $seenCust[$pemilikName] = true;
                     $ketList[] = [
                         'peran' => 'Pemilik',
-                        'sumber' => 'DLR',
+                        'sumber' => 'SDMS',
                         'konsumen' => $pemilikName,
                         'hp' => $pemilikHp,
                         'periode' => "{$tglBeli} – sekarang",
@@ -665,14 +669,14 @@ class VehicleLookupController extends Controller
                     ];
                 }
 
-                // Pembeli dari SKPK (e.g. DOLI SURYATMAN)
+                // Pembeli dari SKPK 
                 $pembeliName = $skpkName ?: ($fakturName ?: '-');
                 $pembeliHp = $skpkHp ?: ($fakturHp ?: '-');
                 if ($pembeliName !== '-' && !empty($pembeliName)) {
                     $seenCust[$pembeliName] = true;
                     $ketList[] = [
                         'peran' => 'Pembeli',
-                        'sumber' => 'DLR',
+                        'sumber' => 'SDMS',
                         'konsumen' => $pembeliName,
                         'hp' => $pembeliHp,
                         'periode' => "{$tglBeli} – sekarang",
@@ -681,7 +685,7 @@ class VehicleLookupController extends Controller
                 }
             }
 
-            // 2. Tambahkan dari svTrnService (semua customer yang pernah servis kendaraan ini, termasuk pemilik lama seperti Rudi dsb)
+            // 2. Tambahkan dari svTrnService 
             if ($srvRows->isNotEmpty()) {
                 foreach ($srvRows as $row) {
                     $srvCustName = strtoupper(trim($row->CustomerName ?: '-'));
@@ -693,7 +697,7 @@ class VehicleLookupController extends Controller
                         $seenCust[$srvCustName] = true;
                         $ketList[] = [
                             'peran' => 'Pemilik',
-                            'sumber' => 'DLR',
+                            'sumber' => 'SDMS',
                             'konsumen' => $srvCustName,
                             'hp' => $srvCustHp,
                             'periode' => "{$srvDateStr} – sekarang",
@@ -709,7 +713,7 @@ class VehicleLookupController extends Controller
                 $pHp = trim($parentCustomer['hp'] ?? '-');
                 $ketList[] = [
                     'peran' => 'Pemilik',
-                    'sumber' => 'DLR',
+                    'sumber' => 'SDMS',
                     'konsumen' => $pName,
                     'hp' => $pHp,
                     'periode' => date('d/m/Y') . ' – sekarang',
@@ -742,9 +746,7 @@ class VehicleLookupController extends Controller
         ];
     }
 
-    /**
-     * Fallback detail untuk konsumen tanpa catatan chassis spesifik
-     */
+    //Fallback detail untuk konsumen tanpa catatan chassis spesifik
     private function getConsumerVehicleFallbackDetail(array $customer): array
     {
         $nama = strtoupper(trim($customer['nama'] ?? '-'));
@@ -764,7 +766,7 @@ class VehicleLookupController extends Controller
             'keterkaitans' => [
                 [
                     'peran' => 'Pemilik',
-                    'sumber' => 'DLR',
+                    'sumber' => 'SDMS',
                     'konsumen' => $nama,
                     'hp' => $hp,
                     'periode' => date('d/m/Y') . ' – sekarang',
@@ -776,9 +778,9 @@ class VehicleLookupController extends Controller
         ];
     }
 
-    /**
-     * Resolve Service Advisor Name
-     */
+    private static $saNameCache = [];
+
+    //Resolve Service Advisor Name
     private function resolveSAName(?string $foremanId, ?string $employeeName): string
     {
         if (!empty($employeeName)) {
@@ -786,6 +788,9 @@ class VehicleLookupController extends Controller
         }
         if (!empty($foremanId)) {
             $cleanId = trim($foremanId, "' \t\n\r\0\x0B");
+            if (isset(self::$saNameCache[$cleanId])) {
+                return self::$saNameCache[$cleanId];
+            }
             $varId = str_replace('.00.', '.0', $cleanId);
             try {
                 $emp = DB::connection('dms')->table('gnMstEmployee')
@@ -793,11 +798,11 @@ class VehicleLookupController extends Controller
                     ->orWhere('EmployeeID', $varId)
                     ->first();
                 if ($emp && !empty($emp->EmployeeName)) {
-                    return trim($emp->EmployeeName);
+                    return self::$saNameCache[$cleanId] = trim($emp->EmployeeName);
                 }
             } catch (\Throwable $e) {}
 
-            return $cleanId;
+            return self::$saNameCache[$cleanId] = $cleanId;
         }
 
         return '-';
@@ -805,9 +810,7 @@ class VehicleLookupController extends Controller
 
     private static $modelDescCache = [];
 
-    /**
-     * Resolve Vehicle Model Description
-     */
+    //Resolve Vehicle Model Description
     private function resolveModelDesc(?string $basicModel): string
     {
         if (empty($basicModel)) return 'Suzuki Unit';

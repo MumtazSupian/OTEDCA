@@ -8,7 +8,7 @@
     <div class="page-header-row">
         <div>
             <h1 class="page-title">Sync Log</h1>
-            <p class="page-subtitle">Riwayat sinkronisasi data customer dari DLR_13_STG</p>
+            <p class="page-subtitle">Riwayat sinkronisasi data customer dari SDMS</p>
         </div>
     </div>
 

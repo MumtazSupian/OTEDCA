@@ -230,6 +230,113 @@ class CustomerListController extends Controller
             ];
         }
 
+        // Tambahkan pencarian dari gnMstCustomer jika ada kata kunci ($q)
+        if (!empty($q)) {
+            try {
+                $masterMatches = DB::connection('dms')->table('gnMstCustomer as c')
+                    ->where(function($w) use ($q) {
+                        $w->where('c.CustomerName', 'LIKE', "%{$q}%")
+                          ->orWhere('c.Spare05', 'LIKE', "%{$q}%")
+                          ->orWhere('c.HPNo', 'LIKE', "%{$q}%")
+                          ->orWhere('c.PhoneNo', 'LIKE', "%{$q}%")
+                          ->orWhere('c.CustomerCode', 'LIKE', "%{$q}%");
+                    })
+                    ->select([
+                        'c.CustomerCode',
+                        'c.CustomerName as nama',
+                        'c.Spare05 as nik',
+                        'c.HPNo as hp',
+                        'c.PhoneNo as telp',
+                        'c.Email as email',
+                        'c.CreatedDate as created_date'
+                    ])
+                    ->limit(50)
+                    ->get();
+
+                $seenNames = collect($customerItems)->pluck('nama')->map(fn($n) => strtoupper(trim($n)))->toArray();
+                $seenNiks = collect($customerItems)->pluck('nik')->filter(fn($n) => !empty($n) && $n !== '-')->toArray();
+
+                foreach ($masterMatches as $m) {
+                    $mNama = strtoupper(trim($m->nama ?: ''));
+                    $mNik = trim($m->nik ?: '-');
+                    if (in_array($mNama, $seenNames) || ($mNik !== '-' && in_array($mNik, $seenNiks))) {
+                        continue;
+                    }
+
+                    $cleanNik = preg_replace('/[^0-9]/', '', $mNik);
+                    $isValidNik = strlen($cleanNik) === 16;
+                    $tipe = $this->isInstitusi($mNama) ? 'Institusi' : 'Personal';
+
+                    if (!empty($tipeFilter) && strcasecmp($tipe, $tipeFilter) !== 0) {
+                        continue;
+                    }
+
+                    // Cek riwayat service
+                    $srvRows = DB::connection('dms')->table('svTrnService')
+                        ->where('CustomerCode', $m->CustomerCode)
+                        ->orderBy('JobOrderDate', 'DESC')
+                        ->select(['JobOrderDate', 'ChassisNo'])
+                        ->get();
+
+                    $lastService = $srvRows->isNotEmpty() && !empty($srvRows->first()->JobOrderDate)
+                        ? date('d/m/Y', strtotime($srvRows->first()->JobOrderDate))
+                        : '-';
+                    
+                    $unitCount = max(1, $srvRows->pluck('ChassisNo')->filter()->unique()->count());
+
+                    // Cek riwayat sales
+                    $lastSales = DB::connection('dms')->table('omTrSalesSO as so')
+                        ->join('omTrSalesReqDetail as d', function($j) {
+                            $j->on('so.SONo', '=', 'd.SONo')->on('so.BranchCode', '=', 'd.BranchCode');
+                        })
+                        ->where('so.CustomerCode', $m->CustomerCode)
+                        ->orderBy('d.CreatedDate', 'DESC')
+                        ->select(['d.CreatedDate', 'd.SONo'])
+                        ->first();
+
+                    $lastSalesDate = $lastSales && !empty($lastSales->CreatedDate)
+                        ? date('d/m/Y', strtotime($lastSales->CreatedDate))
+                        : (!empty($m->created_date) ? date('d/m/Y', strtotime($m->created_date)) : '-');
+
+                    $sumberData = 'Hanya Database';
+                    if ($lastSales && $srvRows->isNotEmpty()) {
+                        $sumberData = 'Penjualan & Service';
+                    } elseif ($lastSales) {
+                        $sumberData = 'Hanya Penjualan';
+                    } elseif ($srvRows->isNotEmpty()) {
+                        $sumberData = 'Hanya Service';
+                    }
+
+                    if (!empty($sumberDataFilter) && $sumberDataFilter !== $sumberData) {
+                        continue;
+                    }
+
+                    $customerItems[] = [
+                        'nama'               => $mNama,
+                        'is_duplicate'       => false,
+                        'master_id'          => $m->CustomerCode,
+                        'duplicate_count'    => 1,
+                        'tipe'               => $tipe,
+                        'nik'                => $mNik !== '-' ? $mNik : '-',
+                        'nik_valid'          => $isValidNik,
+                        'hp'                 => !empty($m->hp) ? trim($m->hp) : (!empty($m->telp) ? trim($m->telp) : '-'),
+                        'email'              => !empty($m->email) ? trim($m->email) : '',
+                        'kendaraan'          => $unitCount,
+                        'transaksi_terakhir' => $lastSalesDate,
+                        'service_terakhir'   => $lastService,
+                        'sumber_data'        => $sumberData,
+                        'flag'               => $isValidNik ? '-' : 'KTP Invalid',
+                    ];
+                }
+
+                if (!empty($q)) {
+                    $totalRecords = count($customerItems);
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error("CustomerList Master Match Error: " . $e->getMessage());
+            }
+        }
+
         // Paginasi Laravel
         $customers = new LengthAwarePaginator(
             $customerItems,
