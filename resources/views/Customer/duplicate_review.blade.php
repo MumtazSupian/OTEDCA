@@ -159,8 +159,15 @@
                             <tr>
                                 <td class="spec-lbl">Sumber</td>
                                 <td class="spec-val">
-                                    @if($pair['data_left']['sumber'] != '-')
-                                        <span class="badge-source badge-src-penjualan">{{ $pair['data_left']['sumber'] }}</span>
+                                    @php
+                                        $sLeft = $pair['data_left']['sumber'] ?? '-';
+                                        $clsLeft = 'badge-src-database';
+                                        if (stripos($sLeft, 'penjualan &') !== false) $clsLeft = 'badge-src-both';
+                                        elseif (stripos($sLeft, 'penjualan') !== false) $clsLeft = 'badge-src-penjualan';
+                                        elseif (stripos($sLeft, 'service') !== false) $clsLeft = 'badge-src-service';
+                                    @endphp
+                                    @if($sLeft != '-')
+                                        <span class="badge-source {{ $clsLeft }}">{{ $sLeft }}</span>
                                     @else
                                         -
                                     @endif
@@ -192,7 +199,7 @@
                             </tr>
                             <tr>
                                 <td class="spec-lbl">Kendaraan</td>
-                                <td class="spec-val">{{ $pair['data_left']['kendaraan'] }}</td>
+                                <td class="spec-val font-mono" style="color: #16a34a;">{{ $pair['data_left']['kendaraan'] }}</td>
                             </tr>
                             <tr>
                                 <td class="spec-lbl">Transaksi</td>
@@ -235,8 +242,15 @@
                             <tr>
                                 <td class="spec-lbl">Sumber</td>
                                 <td class="spec-val">
-                                    @if($pair['data_right']['sumber'] != '-')
-                                        <span class="badge-source badge-src-service">{{ $pair['data_right']['sumber'] }}</span>
+                                    @php
+                                        $sRight = $pair['data_right']['sumber'] ?? '-';
+                                        $clsRight = 'badge-src-database';
+                                        if (stripos($sRight, 'penjualan &') !== false) $clsRight = 'badge-src-both';
+                                        elseif (stripos($sRight, 'penjualan') !== false) $clsRight = 'badge-src-penjualan';
+                                        elseif (stripos($sRight, 'service') !== false) $clsRight = 'badge-src-service';
+                                    @endphp
+                                    @if($sRight != '-')
+                                        <span class="badge-source {{ $clsRight }}">{{ $sRight }}</span>
                                     @else
                                         -
                                     @endif
@@ -268,7 +282,7 @@
                             </tr>
                             <tr>
                                 <td class="spec-lbl">Kendaraan</td>
-                                <td class="spec-val">{{ $pair['data_right']['kendaraan'] }}</td>
+                                <td class="spec-val font-mono" style="color: #16a34a;">{{ $pair['data_right']['kendaraan'] }}</td>
                             </tr>
                             <tr>
                                 <td class="spec-lbl">Transaksi</td>

@@ -121,16 +121,20 @@ class ActualActivityController extends Controller
             ];
 
             $activityPatterns = [
-                'Call In (Dari iklan)' => ['CALL IN', 'CALL-IN', 'CALLIN', 'IKLAN', 'TELEPON', 'PHONE', 'TELP'],
-                'Canvasing'            => ['CANVASING', 'KANVASING', 'CANVAS', 'FLYERING', 'SEBAR BROSUR', 'BROSUR', 'CANVASING/FLYERING'],
-                'Database'             => ['DATABASE', 'DATA BASE', 'DB', 'CUSTOMER LAMA', 'RO', 'DATA BASE SERVICE', 'DB SERVICE'],
-                'Exhibition/Event'     => ['EXHIBITION', 'PAMERAN', 'EVENT', 'EXPO', 'MALL', 'BAZAAR', 'DISPLAY', 'AUTO SHOW'],
-                'Media Digital'        => ['MEDIA DIGITAL', 'DIGITAL', 'SOSMED', 'INSTAGRAM', 'IG', 'FACEBOOK', 'FB', 'TIKTOK', 'GOOGLE', 'ADS', 'YOUTUBE', 'MEDSOS'],
-                'Mediator'             => ['MEDIATOR', 'BROKER', 'PERANTARA', 'PIHAK KETIGA', 'AGENT', 'AGEN', 'SHOWROOM MOBIL BEKAS'],
-                'Referensi Customer'   => ['REFERENSI CUSTOMER', 'REFERENSI', 'REF', 'TEMAN', 'KENALAN', 'KELUARGA', 'RELASI', 'REF CUSTOMER', 'REF CUST', 'RO CUSTOMER', 'REKOMENDASI'],
-                'Showroom Walk-in'     => ['SHOWROOM WALK-IN', 'SHOWROOM WALK IN', 'WALK-IN', 'WALK IN', 'WALKIN', 'SHOWROOM', 'DATANG LANGSUNG', 'KUNJUNGAN', 'WALK-IN SHOWROOM', 'WALK IN SHOWROOM', 'SHOWROOM ACTIVITY', 'SHOWROOM EVENT', 'WEEKEND SALES', 'CUSTOMER GATHERING', 'GATHERING'],
-                'Website Dealer'       => ['WEBSITE DEALER', 'WEBSITE', 'WEB', 'PORTAL', 'LANDING PAGE', 'WEB DEALER', 'WEBSITE RESMI'],
-                'Workshop Inquiry'     => ['WORKSHOP', 'BENGKEL', 'SERVICE', 'AFTER SALES', 'AFTERSALES', 'WORKSHOP INQUIRY'],
+                'Call In (dari Iklan)'   => ['CALL IN', 'CALL-IN', 'CALLIN', 'IKLAN', 'TELEPON', 'PHONE', 'TELP'],
+                'Canvasing'              => ['CANVASING', 'KANVASING', 'CANVAS', 'FLYERING', 'SEBAR BROSUR', 'BROSUR', 'CANVASING/FLYERING', 'MOVING EXHIBITION', 'MOVEC', 'MO VEC', 'MO-VEC', 'MOVE C', 'MOVING EXPO', 'MOVING'],
+                'Data Base'              => ['DATABASE', 'DATA BASE', 'DATA BASE SERVICE', 'DB SERVICE'],
+                'Digital Hyperlocal'     => ['DIGITAL HYPERLOCAL', 'HYPERLOCAL', 'HYPER LOCAL', 'HYPER-LOCAL'],
+                'Digital Non Hyperlocal' => ['DIGITAL NON-HYPERLOCAL', 'DIGITAL NON HYPERLOCAL', 'NON-HYPERLOCAL', 'NON HYPERLOCAL', 'NON-HYPER LOCAL', 'NON HYPER'],
+                'Exhibition'             => ['EXHIBITION', 'PAMERAN', 'EVENT', 'EXPO', 'MALL', 'BAZAAR', 'DISPLAY', 'AUTO SHOW'],
+                'Media Digital'          => ['MEDIA DIGITAL', 'DIGITAL', 'SOSMED', 'INSTAGRAM', 'IG', 'FACEBOOK', 'FB', 'TIKTOK', 'GOOGLE', 'ADS', 'YOUTUBE', 'MEDSOS'],
+                'Media Elektronik'       => ['MEDIA ELEKTRONIK', 'ELEKTRONIK', 'RADIO', 'TV', 'BILLBOARD', 'KORAN', 'MAJALAH', 'CETAK'],
+                'Mediator'               => ['MEDIATOR', 'BROKER', 'PERANTARA', 'PIHAK KETIGA', 'AGENT', 'AGEN', 'SHOWROOM MOBIL BEKAS'],
+                'Referensi Customer'     => ['REFERENSI CUSTOMER', 'REFERENSI', 'RELASI', 'REKOMENDASI', 'REF CUSTOMER', 'REF CUST', 'RO CUSTOMER', 'TEMAN', 'KENALAN', 'KELUARGA'],
+                'Showroom Activity'      => ['SHOWROOM ACTIVITY', 'SHOWROOM EVENT', 'WEEKEND SALES', 'CUSTOMER GATHERING', 'GATHERING', 'SHOWROOM EVENT / GATHERING'],
+                'Showroom Walk-in'       => ['SHOWROOM WALK-IN', 'SHOWROOM WALK IN', 'WALK-IN', 'WALK IN', 'WALKIN', 'SHOWROOM', 'DATANG LANGSUNG', 'KUNJUNGAN', 'WALK-IN SHOWROOM', 'WALK IN SHOWROOM'],
+                'Website Dealer'         => ['WEBSITE DEALER', 'WEBSITE', 'WEB', 'PORTAL', 'LANDING PAGE', 'WEB DEALER', 'WEBSITE RESMI'],
+                'Workshop Inquiry'       => ['WORKSHOP', 'BENGKEL', 'SERVICE', 'AFTER SALES', 'AFTERSALES', 'WORKSHOP INQUIRY'],
             ];
 
             $inquiryRecords = collect();
@@ -230,21 +234,19 @@ class ActualActivityController extends Controller
                 return null;
             };
 
-            // Mapping function ke tepat 1 Kategori Aktivitas (Unique match)
+            // Mapping function ke tepat 1 Kategori Aktivitas (Sesuai Dashboard V2 Foto 1)
             $mapToActivityFunc = function($perolehanStr) use ($activityPatterns) {
                 $str = strtoupper(trim($perolehanStr ?? ''));
                 if (empty($str)) return null;
 
-                // Exact match kategori dulu
-                foreach ($activityPatterns as $actName => $pats) {
-                    if (strtoupper($actName) === $str) return $actName;
+                foreach ($activityPatterns as $sourceName => $patterns) {
+                    if (strtoupper($sourceName) === $str) return $sourceName;
                 }
 
-                // Substring pattern match
-                foreach ($activityPatterns as $actName => $pats) {
-                    foreach ($pats as $pat) {
+                foreach ($activityPatterns as $sourceName => $patterns) {
+                    foreach ($patterns as $pat) {
                         if (stripos($str, strtoupper($pat)) !== false) {
-                            return $actName;
+                            return $sourceName;
                         }
                     }
                 }
@@ -376,11 +378,12 @@ class ActualActivityController extends Controller
             'GRAND-VITARA', 'JIMNY', 'FRONX', 'S-PRESSO'
         ];
 
-        // 10 Activity Sesuai Foto 5
+        // 14 Activity Sesuai Dashboard V2 (Foto 1)
         $activityList = [
-            'Call In (Dari iklan)', 'Canvasing', 'Database', 'Exhibition/Event',
-            'Media Digital', 'Mediator', 'Referensi Customer', 'Showroom Walk-in',
-            'Website Dealer', 'Workshop Inquiry'
+            'Call In (dari Iklan)', 'Canvasing', 'Data Base', 'Digital Hyperlocal',
+            'Digital Non Hyperlocal', 'Exhibition', 'Media Digital', 'Media Elektronik',
+            'Mediator', 'Referensi Customer', 'Showroom Activity',
+            'Showroom Walk-in', 'Website Dealer', 'Workshop Inquiry'
         ];
 
         $targetDate = sprintf('%04d-%02d-01', $currYear, $currMonthNum);

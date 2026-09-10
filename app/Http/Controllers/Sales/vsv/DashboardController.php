@@ -1003,7 +1003,7 @@ class DashboardController extends Controller
 
                 $soiPatternsMap = [
                     'Call In (dari Iklan)'   => ['CALL IN', 'CALL-IN', 'CALLIN', 'IKLAN', 'TELEPON', 'PHONE', 'TELP'],
-                    'Canvasing'              => ['CANVASING', 'KANVASING', 'CANVAS', 'FLYERING', 'SEBAR BROSUR', 'BROSUR', 'CANVASING/FLYERING'],
+                    'Canvasing'              => ['CANVASING', 'KANVASING', 'CANVAS', 'FLYERING', 'SEBAR BROSUR', 'BROSUR', 'CANVASING/FLYERING', 'MOVING EXHIBITION', 'MOVEC', 'MO VEC', 'MO-VEC', 'MOVE C', 'MOVING EXPO', 'MOVING'],
                     'Data Base'              => ['DATABASE', 'DATA BASE', 'DATA BASE SERVICE', 'DB SERVICE'],
                     'Digital Hyperlocal'     => ['DIGITAL HYPERLOCAL', 'HYPERLOCAL', 'HYPER LOCAL', 'HYPER-LOCAL'],
                     'Digital Non Hyperlocal' => ['DIGITAL NON-HYPERLOCAL', 'DIGITAL NON HYPERLOCAL', 'NON-HYPERLOCAL', 'NON HYPERLOCAL', 'NON-HYPER LOCAL', 'NON HYPER'],
@@ -1085,7 +1085,7 @@ class DashboardController extends Controller
                     ];
                 }
 
-                // 🔒 SINKRONISASI PRESISI 100%: Menjamin total ACT DO di Performance SOI == Sales Performance di SEMUA CABANG
+                //SINKRON: Menjamin total ACT DO di Performance SOI == Sales Performance di SEMUA CABANG
                 if ($totalSalesPerfActDo > 0) {
                     $currentSum = (int)collect($soi_performance_data)->sum('act_do');
                     if ($currentSum === 0) {
@@ -1385,7 +1385,7 @@ class DashboardController extends Controller
             $selectedCabang = $matchedCabang;
         }
 
-        // Resolusi 15 Sales Head Resmi per cabang (Jatiasih: 3 SH, Cinere: 3 SH termasuk Adrian, Ciawi: 4 SH, Cianjur: 4 SH, Cipanas: 1 SH)
+        // Resolusi 15 Sales Head Resmi per cabang
         $officialBranchShMap = [
             'Ciawi' => [
                 '11.21.07.005' => 'HENNARDY DERMAWAN',

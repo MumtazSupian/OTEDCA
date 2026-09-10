@@ -504,15 +504,19 @@
             'S-PRESSO'
         ];
 
-        // LIST BY ACTIVITY DARI FOTO 5
+        // LIST BY ACTIVITY SESUAI DASHBOARD V2 (FOTO 1)
         $activityList = [
-            'Call In (Dari iklan)',
+            'Call In (dari Iklan)',
             'Canvasing',
-            'Database',
-            'Exhibition/Event',
+            'Data Base',
+            'Digital Hyperlocal',
+            'Digital Non Hyperlocal',
+            'Exhibition',
             'Media Digital',
+            'Media Elektronik',
             'Mediator',
             'Referensi Customer',
+            'Showroom Activity',
             'Showroom Walk-in',
             'Website Dealer',
             'Workshop Inquiry'
