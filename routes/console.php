@@ -25,3 +25,7 @@ Schedule::command('app:send-in-unit-email')
 Schedule::command('dms:sync-users')
     ->everyTenMinutes()
     ->timezone('Asia/Jakarta');
+
+Schedule::command('customer:sync')
+    ->dailyAt('00:00')
+    ->timezone('Asia/Jakarta');

@@ -26,6 +26,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('dms:sync-users')
             ->everyTenMinutes()
             ->timezone('Asia/Jakarta');
+
+        $schedule->command('customer:sync')
+            ->dailyAt('00:00')
+            ->timezone('Asia/Jakarta');
     }
 
     protected function commands()

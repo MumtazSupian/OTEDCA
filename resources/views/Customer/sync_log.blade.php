@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="synclog-container">
-    {{-- 1. HEADER SECTION --}}
+    {{-- HEADER SECTION --}}
     <div class="page-header-row">
         <div>
             <h1 class="page-title">Sync Log</h1>
@@ -12,27 +12,48 @@
         </div>
     </div>
 
-    {{-- 2. METRIC CARDS STRIP --}}
+    @if(session('success'))
+    <div class="sync-alert sync-alert-success">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <span>{{ session('success') }}</span>
+    </div>
+    @endif
+
+    @if(session('error'))
+    <div class="sync-alert sync-alert-error">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <span>{{ session('error') }}</span>
+    </div>
+    @endif
+
+    {{-- METRIC CARDS STRIP --}}
     <div class="metrics-grid">
-        {{-- Card 1: Total Customer --}}
+        {{-- Total Customer --}}
         <div class="metric-card">
             <div class="metric-lbl">Total Customer</div>
             <div class="metric-val">{{ number_format($metrics['total_customer'] ?? 0, 0, ',', '.') }}</div>
         </div>
 
-        {{-- Card 2: Sudah Verified --}}
+        {{-- Sudah Verified --}}
         <div class="metric-card">
             <div class="metric-lbl">Sudah Verified</div>
             <div class="metric-val text-green">{{ number_format($metrics['sudah_verified'] ?? 0, 0, ',', '.') }}</div>
         </div>
 
-        {{-- Card 3: Duplikat Pending --}}
+        {{-- Duplikat Pending --}}
         <div class="metric-card">
             <div class="metric-lbl">Duplikat Pending</div>
             <div class="metric-val text-orange">{{ number_format($metrics['duplikat_pending'] ?? 0, 0, ',', '.') }}</div>
         </div>
 
-        {{-- Card 4: Sync Terakhir --}}
+        {{-- Sync Terakhir --}}
         <div class="metric-card card-sync-last">
             <div class="metric-lbl">Sync Terakhir</div>
             <div class="sync-last-row">
@@ -46,7 +67,7 @@
         </div>
     </div>
 
-    {{-- 3. SCHEDULED SYNC INFO CARD --}}
+    {{-- SCHEDULED SYNC INFO CARD --}}
     <div class="schedule-banner-card">
         <div class="schedule-icon-box">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -59,8 +80,8 @@
         <div class="schedule-text-info">
             <h4 class="schedule-title">{{ $syncSchedule['type'] ?? 'Sync Otomatis (Incremental)' }}</h4>
             <p class="schedule-desc">
-                {{ $syncSchedule['schedule'] ?? 'Setiap hari pukul 02:00 WIB' }} • 
-                Berikutnya: <strong>{{ $syncSchedule['next_run'] ?? '21 jam dari sekarang' }}</strong> • 
+                {{ $syncSchedule['schedule'] ?? 'Setiap hari pukul 00:00 WIB' }} • 
+                Berikutnya: <strong>{{ $syncSchedule['next_run'] ?? '14 jam dari sekarang' }}</strong> • 
                 Terakhir: <strong>{{ $syncSchedule['last_run'] ?? '-' }}</strong>
             </p>
         </div>
@@ -105,26 +126,36 @@
                 </thead>
                 <tbody>
                     @forelse($syncLogs as $log)
+                    @php
+                        $logType = is_array($log) ? ($log['type'] ?? 'Incremental') : ($log->type ?? 'Incremental');
+                        $logMulai = $log instanceof \App\Models\Customer\SyncLog ? ($log->mulai ? $log->mulai->format('d/m/Y, H.i') : '-') : ($log['mulai'] ?? '-');
+                        $logSelesai = $log instanceof \App\Models\Customer\SyncLog ? ($log->selesai ? $log->selesai->format('d/m/Y, H.i') : '-') : ($log['selesai'] ?? '-');
+                        $logStatus = is_array($log) ? ($log['status'] ?? 'completed') : ($log->status ?? 'completed');
+                        $logProgress = is_array($log) ? ($log['progress'] ?? '-') : ($log->progress ?: '-');
+                        $logPairBaru = is_array($log) ? ($log['pair_baru'] ?? '-') : ($log->pair_baru !== null ? $log->pair_baru : '-');
+                        $logAutoResolve = is_array($log) ? ($log['auto_resolve'] ?? '-') : ($log->auto_resolve !== null ? $log->auto_resolve : '-');
+                        $logError = is_array($log) ? ($log['error'] ?? null) : ($log->error ?: null);
+                    @endphp
                     <tr>
                         <td>
-                            <span class="badge-type {{ strtolower($log['type']) == 'full' ? 'badge-type-full' : 'badge-type-incremental' }}">
-                                {{ $log['type'] }}
+                            <span class="badge-type {{ strtolower($logType) == 'full' ? 'badge-type-full' : 'badge-type-incremental' }}">
+                                {{ $logType }}
                             </span>
                         </td>
-                        <td>{{ $log['mulai'] }}</td>
-                        <td>{{ $log['selesai'] }}</td>
+                        <td>{{ $logMulai }}</td>
+                        <td>{{ $logSelesai }}</td>
                         <td>
-                            <span class="badge-status-pill {{ strtolower($log['status']) == 'completed' ? 'badge-completed' : 'badge-failed' }}">
-                                {{ $log['status'] }}
+                            <span class="badge-status-pill {{ strtolower($logStatus) == 'completed' ? 'badge-completed' : 'badge-failed' }}">
+                                {{ $logStatus }}
                             </span>
                         </td>
-                        <td>{{ $log['progress'] }}</td>
-                        <td>{{ $log['pair_baru'] }}</td>
-                        <td>{{ $log['auto_resolve'] }}</td>
+                        <td>{{ $logProgress }}</td>
+                        <td>{{ $logPairBaru }}</td>
+                        <td>{{ $logAutoResolve }}</td>
                         <td>
-                            @if(!empty($log['error']) && $log['error'] !== '-')
-                                <a href="javascript:void(0)" class="error-cell-link" onclick="openErrorModal({{ json_encode($log['error']) }})">
-                                    <span class="error-text-truncate">{{ $log['error'] }}</span>
+                            @if(!empty($logError) && $logError !== '-')
+                                <a href="javascript:void(0)" class="error-cell-link" onclick="openErrorModal({{ json_encode($logError) }})">
+                                    <span class="error-text-truncate">{{ $logError }}</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                                         <polyline points="15 3 21 3 21 9"></polyline>
@@ -148,25 +179,69 @@
         </div>
 
         {{-- 5. PAGINATION FOOTER --}}
+        @if($syncLogs instanceof \Illuminate\Pagination\AbstractPaginator && $syncLogs->hasPages())
         <div class="table-pagination-footer">
             <div class="pagination-controls">
-                <button type="button" class="btn-page" title="Halaman Pertama">«</button>
-                <button type="button" class="btn-page" title="Sebelumnya">‹</button>
-                <button type="button" class="btn-page btn-page-active">1</button>
-                <button type="button" class="btn-page">2</button>
-                <button type="button" class="btn-page">3</button>
-                <button type="button" class="btn-page" title="Selanjutnya">›</button>
-                <button type="button" class="btn-page" title="Halaman Terakhir">»</button>
+                {{-- First & Prev --}}
+                @if($syncLogs->currentPage() > 1)
+                    <a href="{{ $syncLogs->url(1) }}" class="btn-page" title="Halaman Pertama">«</a>
+                    <a href="{{ $syncLogs->previousPageUrl() }}" class="btn-page" title="Sebelumnya">‹</a>
+                @else
+                    <button type="button" class="btn-page btn-disabled" disabled>«</button>
+                    <button type="button" class="btn-page btn-disabled" disabled>‹</button>
+                @endif
+
+                {{-- Page Window --}}
+                @php
+                    $start = max(1, $syncLogs->currentPage() - 2);
+                    $end = min($syncLogs->lastPage(), $syncLogs->currentPage() + 2);
+                @endphp
+
+                @for($p = $start; $p <= $end; $p++)
+                    @if($p == $syncLogs->currentPage())
+                        <button type="button" class="btn-page btn-page-active">{{ $p }}</button>
+                    @else
+                        <a href="{{ $syncLogs->url($p) }}" class="btn-page">{{ $p }}</a>
+                    @endif
+                @endfor
+
+                {{-- Next & Last --}}
+                @if($syncLogs->hasMorePages())
+                    <a href="{{ $syncLogs->nextPageUrl() }}" class="btn-page" title="Selanjutnya">›</a>
+                    <a href="{{ $syncLogs->url($syncLogs->lastPage()) }}" class="btn-page" title="Halaman Terakhir">»</a>
+                @else
+                    <button type="button" class="btn-page btn-disabled" disabled>›</button>
+                    <button type="button" class="btn-page btn-disabled" disabled>»</button>
+                @endif
             </div>
 
             <div class="pagination-rows-select">
-                <select class="select-page-rows">
-                    <option value="20">20 / halaman</option>
-                    <option value="50">50 / halaman</option>
-                    <option value="100">100 / halaman</option>
+                <select class="select-page-rows" onchange="location.href='{{ request()->fullUrlWithQuery(['per_page' => '___']) }}'.replace('___', this.value)">
+                    <option value="20" {{ ($perPage ?? 20) == 20 ? 'selected' : '' }}>20 / halaman</option>
+                    <option value="50" {{ ($perPage ?? 20) == 50 ? 'selected' : '' }}>50 / halaman</option>
+                    <option value="100" {{ ($perPage ?? 20) == 100 ? 'selected' : '' }}>100 / halaman</option>
                 </select>
             </div>
         </div>
+        @else
+        <div class="table-pagination-footer">
+            <div class="pagination-controls">
+                <button type="button" class="btn-page btn-disabled" disabled>«</button>
+                <button type="button" class="btn-page btn-disabled" disabled>‹</button>
+                <button type="button" class="btn-page btn-page-active">1</button>
+                <button type="button" class="btn-page btn-disabled" disabled>›</button>
+                <button type="button" class="btn-page btn-disabled" disabled>»</button>
+            </div>
+
+            <div class="pagination-rows-select">
+                <select class="select-page-rows" onchange="location.href='{{ request()->fullUrlWithQuery(['per_page' => '___']) }}'.replace('___', this.value)">
+                    <option value="20" {{ ($perPage ?? 20) == 20 ? 'selected' : '' }}>20 / halaman</option>
+                    <option value="50" {{ ($perPage ?? 20) == 50 ? 'selected' : '' }}>50 / halaman</option>
+                    <option value="100" {{ ($perPage ?? 20) == 100 ? 'selected' : '' }}>100 / halaman</option>
+                </select>
+            </div>
+        </div>
+        @endif
     </div>
 
     {{-- MODAL: DETAIL ERROR --}}
@@ -320,6 +395,54 @@
         border: 1px solid #e2e8f0;
         box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
         overflow: hidden;
+    }
+    /* Alerts */
+    .sync-alert {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 18px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        animation: modalFadeSlide 0.25s ease;
+    }
+    .sync-alert-success {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+    }
+    .sync-alert-error {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+    }
+
+    /* Trigger Sync Button */
+    .btn-sync-trigger {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(220, 38, 38, 0.2);
+        transition: all 0.2s ease;
+    }
+    .btn-sync-trigger:hover {
+        background: linear-gradient(135deg, #b91c1c, #991b1b);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
+    }
+    .btn-sync-trigger:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
     }
     .table-subtoolbar {
         display: flex;

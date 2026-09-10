@@ -416,6 +416,7 @@ Route::middleware(['auth', 'no-direct'])->group(function () {
         Route::get('/vehicle-lookup', [\App\Http\Controllers\Customer\VehicleLookupController::class, 'index'])->name('customer.vehicle_lookup');
         Route::get('/duplicate-review', [\App\Http\Controllers\Customer\DuplicateReviewController::class, 'index'])->name('customer.duplicate_review');
         Route::get('/sync-log', [\App\Http\Controllers\Customer\SyncLogController::class, 'index'])->name('customer.sync_log');
+        Route::post('/sync-log/run', [\App\Http\Controllers\Customer\SyncLogController::class, 'runSync'])->name('customer.sync_log.run');
     });
 
     // Asuransi Routes
