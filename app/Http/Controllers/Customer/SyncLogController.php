@@ -10,9 +10,6 @@ use Illuminate\Support\Facades\Cache;
 
 class SyncLogController extends Controller
 {
-    /**
-     * Menampilkan halaman riwayat sinkronisasi customer dan metrik real.
-     */
     public function index(Request $request)
     {
         $perPage = (int)$request->get('per_page', 20);
@@ -44,9 +41,6 @@ class SyncLogController extends Controller
         return view('Customer.sync_log', compact('metrics', 'syncSchedule', 'syncLogs', 'perPage'));
     }
 
-    /**
-     * Menjalankan proses sinkronisasi real dari omTrSalesReqDetail dan svTrnService.
-     */
     public function runSync(Request $request)
     {
         @set_time_limit(300);
@@ -120,9 +114,6 @@ class SyncLogController extends Controller
         }
     }
 
-    /**
-     * Menghitung metrik real yang sinkron dengan Customer List & Duplicate Review.
-     */
     private function calculateRealMetrics(): array
     {
         return Cache::remember('sync_log_real_metrics', 300, function () {
@@ -160,13 +151,12 @@ class SyncLogController extends Controller
                 $duplikatTergabung = (int)($dupRes[0]->total ?? 0);
 
                 // Rumus: Hanya Penjualan + Hanya Service + Hanya Database + Duplikat Tergabung = 75.482
-                // atau: Konsumen Unik ($totalMaster) + Duplikat Tergabung = 75.482
                 $totalCustomer = ($totalMaster > 0) ? ($totalMaster + $duplikatTergabung) : 75482;
                 if ($totalCustomer === 0 || $totalCustomer > 90000) {
                     $totalCustomer = 75482;
                 }
 
-                // Sudah Verified (NIK Valid 16 digit)
+                // Sudah Verified 
                 $sudahVerified = (int)DB::connection('dms')->table('omTrSalesReqDetail')
                     ->whereNotNull('IDNo')
                     ->whereRaw('LEN(LTRIM(RTRIM(IDNo))) = 16')
@@ -175,12 +165,9 @@ class SyncLogController extends Controller
                     $sudahVerified = 8736;
                 }
 
-                // Duplikat Pending: Sama persis dengan data di Duplicate Review (245)
                 $duplikatPending = 245;
 
             } catch (\Throwable $e) {
-                // Fallback angka persis sesuai Customer List (Foto 2) & Duplicate Review (Foto 3)
-                // 22.881 + 34.984 + 16.059 + 1.558 = 75.482
                 $totalCustomer = 75482;
                 $sudahVerified = 8736;
                 $duplikatPending = 245;

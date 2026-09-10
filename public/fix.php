@@ -19,7 +19,7 @@ ini_set('memory_limit', '-1');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🚀 Database Fix & Migration - OTE DCA</title>
+    <title>⚡ Sync Log Migration & Fix - OTE DCA</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -120,76 +120,53 @@ ini_set('memory_limit', '-1');
 <body>
 
 <div class="container">
-    <h1>🚀 Database Fixer & Migration - OTE DCA</h1>
+    <h1>⚡ Sync Log Migration - OTE DCA</h1>
     <hr style="border: 0; border-top: 1px solid #334155; margin: 15px 0 20px 0;">
 
     <?php
     try {
         // ==========================================
-        // 1. MIGRASI TABEL FAKTUR
+        // 1. MIGRASI TABEL SYNC_LOGS
         // ==========================================
-        echo "<div class='section-title'>📦 1. Migrasi Tabel Faktur (<code>fakturs</code>)</div>";
+        echo "<div class='section-title'>📦 Migrasi Tabel Sync Logs (<code>sync_logs</code>)</div>";
         Artisan::call('migrate', [
-            '--path'  => 'database/migrations/2026_09_02_000000_create_fakturs_table.php',
+            '--path'  => 'database/migrations/2026_09_10_101051_create_sync_logs_table.php',
             '--force' => true,
         ]);
-        $outFaktur = Artisan::output();
-        echo "<pre>" . ($outFaktur ?: "Migrasi fakturs diproses.") . "</pre>";
+        $outSync = Artisan::output();
+        echo "<pre>" . ($outSync ?: "Migrasi sync_logs diproses.") . "</pre>";
 
-        if (Schema::hasTable('fakturs')) {
-            echo "<div class='alert-success'>✅ <strong>Tabel <code>fakturs</code> AKTIF!</strong></div>";
+        // Fallback jika belum terbuat
+        if (!Schema::hasTable('sync_logs')) {
+            Schema::create('sync_logs', function ($table) {
+                $table->id();
+                $table->string('type')->default('Incremental');
+                $table->dateTime('mulai')->nullable();
+                $table->dateTime('selesai')->nullable();
+                $table->string('status')->default('completed');
+                $table->string('progress')->nullable();
+                $table->integer('pair_baru')->nullable();
+                $table->integer('auto_resolve')->nullable();
+                $table->text('error')->nullable();
+                $table->timestamps();
+            });
+        }
+
+        if (Schema::hasTable('sync_logs')) {
+            $total = DB::table('sync_logs')->count();
+            echo "<div class='alert-success'>✅ <strong>Tabel <code>sync_logs</code> AKTIF & SIAP DIGUNAKAN!</strong><br>";
+            echo "• Total Data: <strong>{$total} riwayat log</strong><br>";
+            echo "• Struktur Kolom: <code>id, type, mulai, selesai, status, progress, pair_baru, auto_resolve, error, created_at, updated_at</code></div>";
         } else {
-            echo "<div class='alert-error'>⚠️ Tabel <code>fakturs</code> belum ditemukan.</div>";
+            echo "<div class='alert-error'>⚠️ Tabel <code>sync_logs</code> belum berhasil dibuat.</div>";
         }
 
         // ==========================================
-        // 2. MIGRASI DAN PERBAIKAN ENUM/KOLOM (PLAN & ACTUAL ACTIVITIES)
+        // 2. OPTIMIZE & CLEAR CACHE
         // ==========================================
-        echo "<div class='section-title' style='margin-top: 25px;'>🎯 2. Perbaikan Tabel Activity (Plan & Actual)</div>";
-        
-        // A. Jalankan migration file
-        Artisan::call('migrate', [
-            '--path'  => 'database/migrations/2026_09_03_000001_add_target_do_to_activities_tables.php',
-            '--force' => true,
-        ]);
-        $outAct = Artisan::output();
-        echo "<pre>" . ($outAct ?: "Migrasi activities diproses.") . "</pre>";
-
-        // B. Eksekusi langsung ALTER TABLE untuk merubah ENUM ke VARCHAR & jam default & target_do
-        if (Schema::hasTable('plan_activities')) {
-            DB::statement("ALTER TABLE `plan_activities` MODIFY COLUMN `type_unit` VARCHAR(255) NULL");
-            DB::statement("ALTER TABLE `plan_activities` MODIFY COLUMN `activity` VARCHAR(255) NULL");
-            DB::statement("ALTER TABLE `plan_activities` MODIFY COLUMN `jenis_activity` VARCHAR(255) NULL");
-            DB::statement("ALTER TABLE `plan_activities` MODIFY COLUMN `jenis_unit` VARCHAR(255) NULL");
-            DB::statement("ALTER TABLE `plan_activities` MODIFY COLUMN `jam` TIME NULL DEFAULT '00:00:00'");
-            
-            if (!Schema::hasColumn('plan_activities', 'target_do')) {
-                DB::statement("ALTER TABLE `plan_activities` ADD COLUMN `target_do` INT(11) NOT NULL DEFAULT 0 AFTER `target_spk`");
-            }
-        }
-
-        if (Schema::hasTable('actual_activities')) {
-            DB::statement("ALTER TABLE `actual_activities` MODIFY COLUMN `type_unit` VARCHAR(255) NULL");
-            DB::statement("ALTER TABLE `actual_activities` MODIFY COLUMN `activity` VARCHAR(255) NULL");
-            DB::statement("ALTER TABLE `actual_activities` MODIFY COLUMN `jenis_activity` VARCHAR(255) NULL");
-            DB::statement("ALTER TABLE `actual_activities` MODIFY COLUMN `jenis_unit` VARCHAR(255) NULL");
-            DB::statement("ALTER TABLE `actual_activities` MODIFY COLUMN `jam` TIME NULL DEFAULT '00:00:00'");
-            
-            if (!Schema::hasColumn('actual_activities', 'target_do')) {
-                DB::statement("ALTER TABLE `actual_activities` ADD COLUMN `target_do` INT(11) NOT NULL DEFAULT 0 AFTER `target_spk`");
-            }
-        }
-
-        echo "<div class='alert-success'>🎉 <strong>BERHASIL!</strong><br>
-        • Kolom <code>type_unit</code> & <code>activity</code> diubah menjadi <code>VARCHAR(255)</code>.<br>
-        • Kolom <code>jam</code> diberi default <code>'00:00:00'</code> (bebas error missing default).<br>
-        • Kolom <code>target_do</code> aktif di tabel <code>plan_activities</code> dan <code>actual_activities</code>.</div>";
-
-        // ==========================================
-        // 3. OPTIMIZE & CLEAR CACHE
-        // ==========================================
+        echo "<div class='section-title' style='margin-top: 25px;'>🧹 Bersihkan Cache Aplikasi</div>";
         Artisan::call('optimize:clear');
-        echo "<p style='color: #64748b; font-size: 12px; margin-top: 15px;'>🧹 Cache konfigurasi, route, dan view telah dibersihkan otomatis.</p>";
+        echo "<p style='color: #64748b; font-size: 12px;'>Cache konfigurasi, route, dan view telah dibersihkan otomatis.</p>";
 
     } catch (\Throwable $e) {
         echo "<div class='alert-error'>";
@@ -201,9 +178,8 @@ ini_set('memory_limit', '-1');
     ?>
 
     <div class="btn-group">
-        <a href="/activity/plan" class="btn btn-green">👉 Buka Activity Plan</a>
-        <a href="/activity/actual" class="btn btn-green">👉 Buka Activity Actual</a>
-        <a href="/sales/faktur" class="btn">👉 Buka Menu Faktur</a>
+        <a href="/customer/sync-log" class="btn btn-green">👉 Buka Menu Sync Log</a>
+        <a href="/customer/list" class="btn">👉 Buka Customer List</a>
     </div>
 </div>
 

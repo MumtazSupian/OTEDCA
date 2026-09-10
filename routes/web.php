@@ -409,6 +409,9 @@ Route::middleware(['auth', 'no-direct'])->group(function () {
         Route::resource('data', ServiceAcController::class)->parameters(['data' => 'data']);
     });
 
+    // Promo Service Route (Khusus IT)
+    Route::get('/service/promo', [\App\Http\Controllers\Service\PromoController::class, 'index'])->name('service.promo');
+
     // Customer Database Routes
     Route::prefix('customer')->group(function () {
         Route::get('/list', [\App\Http\Controllers\Customer\CustomerListController::class, 'index'])->name('customer.list');

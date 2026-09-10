@@ -117,5 +117,24 @@ class User extends Authenticatable
     {
         return $this->is_admin || ($this->role ?? '') === 'om' || $this->is_adh || ($this->branch ?? '') === 'bp' || $this->is_service;
     }
+
+    public function getIsItAttribute()
+    {
+        $email = strtolower(trim($this->email ?? $this->attributes['email'] ?? ''));
+        if ($email === 'dcasr') {
+            return false;
+        }
+
+        $r = strtolower(trim($this->role ?? $this->attributes['role'] ?? ''));
+        $name = strtolower(trim($this->name ?? $this->attributes['name'] ?? ''));
+        return in_array($r, ['it', 'admin', 'superadmin', 'admin dca']) 
+            || str_contains($r, 'it') 
+            || str_contains($email, 'it')
+            || str_contains($name, 'it')
+            || in_array($email, ['it', 'heruit', 'mumtazit', 'rizkyit'])
+            || in_array($name, ['it', 'heruit', 'mumtazit', 'rizkyit', 'mumtaz'])
+            || (!empty($this->is_admin))
+            || (!empty($this->attributes['is_admin']) && $this->attributes['is_admin']);
+    }
 }
 

@@ -973,7 +973,7 @@
                             @endif
 
                             <!-- FAKTUR -->
-                            <a href="{{ route('sales.faktur.index') }}" class="nav-sublink {{ request()->is('sales/faktur*') ? 'active' : '' }}">
+                            <!-- <a href="{{ route('sales.faktur.index') }}" class="nav-sublink {{ request()->is('sales/faktur*') ? 'active' : '' }}">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                     <polyline points="14 2 14 8 20 8"></polyline>
@@ -982,7 +982,7 @@
                                     <polyline points="10 9 9 9 8 9"></polyline>
                                 </svg>
                                 <span>FAKTUR</span>
-                            </a>
+                            </a> -->
                         </div>
                     </div>
 
@@ -1176,6 +1176,51 @@
                                     </a>
                                 </div>
                             </div>
+
+                            <!-- PROMO (Khusus IT) -->
+                            @php
+                                $u = auth()->user();
+                                $uRole = strtolower(trim($u->role ?? ''));
+                                $uEmail = strtolower(trim($u->email ?? ''));
+                                $uName = strtolower(trim($u->name ?? ''));
+                                $canAccessPromo = $u && $uEmail !== 'dcasr' && ($u->is_it || $u->is_admin || str_contains($uRole, 'it') || str_contains($uEmail, 'it') || str_contains($uName, 'it') || in_array($uEmail, ['mumtazit', 'heruit', 'rizkyit', 'it']) || in_array($uRole, ['admin', 'it', 'superadmin']));
+                            @endphp
+                            @if($canAccessPromo)
+                            <div class="nav-group {{ request()->is('service/promo*') ? 'open' : '' }}" id="menuPromoDropdown">
+                                <button class="nav-sublink nav-toggle" onclick="toggleSubmenu('menuPromoDropdown')" style="width: 100%; text-align: left; background: none; border: none; cursor: pointer;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-right: 8px;">
+                                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                                        <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                                    </svg>
+                                    <span style="font-size: 13px;">PROMO</span>
+                                    <svg class="nav-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; margin-left: auto;">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </button>
+                                <div class="nav-submenu">
+                                    <a href="{{ route('service.promo', ['cabang' => 'CIAWI']) }}" class="nav-sublink {{ request()->is('service/promo*') && request('cabang', 'CIAWI') == 'CIAWI' ? 'active' : '' }}" style="padding-left: 25px; white-space: nowrap;">
+                                        <i class="far fa-circle" style="margin-right: 8px; font-size: 11px;"></i>
+                                        CIAWI
+                                    </a>
+                                    <a href="{{ route('service.promo', ['cabang' => 'CIANJUR']) }}" class="nav-sublink {{ request()->is('service/promo*') && request('cabang') == 'CIANJUR' ? 'active' : '' }}" style="padding-left: 25px; white-space: nowrap;">
+                                        <i class="far fa-circle" style="margin-right: 8px; font-size: 11px;"></i>
+                                        CIANJUR
+                                    </a>
+                                    <a href="{{ route('service.promo', ['cabang' => 'CINERE']) }}" class="nav-sublink {{ request()->is('service/promo*') && request('cabang') == 'CINERE' ? 'active' : '' }}" style="padding-left: 25px; white-space: nowrap;">
+                                        <i class="far fa-circle" style="margin-right: 8px; font-size: 11px;"></i>
+                                        CINERE
+                                    </a>
+                                    <a href="{{ route('service.promo', ['cabang' => 'JATIASIH']) }}" class="nav-sublink {{ request()->is('service/promo*') && request('cabang') == 'JATIASIH' ? 'active' : '' }}" style="padding-left: 25px; white-space: nowrap;">
+                                        <i class="far fa-circle" style="margin-right: 8px; font-size: 11px;"></i>
+                                        JATIASIH
+                                    </a>
+                                    <a href="{{ route('service.promo', ['cabang' => 'CIPANAS']) }}" class="nav-sublink {{ request()->is('service/promo*') && request('cabang') == 'CIPANAS' ? 'active' : '' }}" style="padding-left: 25px; white-space: nowrap;">
+                                        <i class="far fa-circle" style="margin-right: 8px; font-size: 11px;"></i>
+                                        CIPANAS
+                                    </a>
+                                </div>
+                            </div>
+                            @endif
                             
                         </div>
                     </div>
